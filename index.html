@@ -3,1083 +3,819 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vendit Data Verrijker — Schreeven</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<title>Schreeven Product Enrichment Tool</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
-
-  :root {
-    --bg: #0e0e0e;
-    --surface: #161616;
-    --surface2: #1e1e1e;
-    --border: #2a2a2a;h
-    --accent: #c8f542;
-    --accent2: #42f5b0;
-    --text: #f0f0f0;
-    --muted: #666;
-    --danger: #ff4d4d;
-    --warning: #f5a623;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    min-height: 100vh;
-  }
-
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 18px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: -0.5px;
-  }
-  .logo span { color: var(--accent); }
-
-  .badge {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 32px;
-  }
-
-  /* API KEY */
-  .api-bar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 28px;
-  }
-  .api-bar label {
-    color: var(--muted);
-    font-size: 11px;
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .api-bar input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    outline: none;
-  }
-  .api-status {
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 3px;
-    white-space: nowrap;
-  }
-  .api-status.ok { background: rgba(200,245,66,0.1); color: var(--accent); }
-  .api-status.empty { background: rgba(255,77,77,0.1); color: var(--danger); }
-
-  /* SECTIONS */
-  .section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 20px;
-    overflow: hidden;
-  }
-
-  .section-header {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface2);
-  }
-
-  .step-num {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #000;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .step-num.done { background: var(--accent2); }
-  .step-num.inactive { background: var(--border); color: var(--muted); }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .section-body { padding: 20px; }
-
-  /* UPLOAD */
-  .drop-zone {
-    border: 2px dashed var(--border);
-    border-radius: 8px;
-    padding: 40px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-  .drop-zone:hover, .drop-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(200,245,66,0.03);
-  }
-  .drop-zone input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .drop-icon { font-size: 32px; margin-bottom: 12px; }
-  .drop-text { color: var(--muted); font-size: 12px; }
-  .drop-text strong { color: var(--text); }
-
-  /* SHEET PICKER */
-  .sheet-tabs {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-  }
-  .sheet-tab {
-    padding: 5px 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.15s;
-  }
-  .sheet-tab:hover { border-color: var(--accent); color: var(--accent); }
-  .sheet-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
-
-  /* TABLE PREVIEW */
-  .table-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    max-height: 280px;
-    overflow-y: auto;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-  }
-  th {
-    background: var(--surface2);
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    color: var(--accent);
-    font-weight: 500;
-  }
-  td {
-    padding: 7px 12px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-
-  /* MAPPING */
-  .mapping-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-  }
-  .map-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 12px;
-  }
-  .map-label {
-    font-size: 11px;
-    color: var(--accent2);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    width: 110px;
-    flex-shrink: 0;
-  }
-  .map-arrow { color: var(--muted); font-size: 14px; }
-  select {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 5px 8px;
-    border-radius: 4px;
-    outline: none;
-    cursor: pointer;
-  }
-  select:focus { border-color: var(--accent); }
-
-  /* SETTINGS */
-  .settings-row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .setting-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .setting-item label { color: var(--muted); font-size: 12px; }
-  .setting-item input[type=number] {
-    width: 60px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 5px 8px;
-    border-radius: 4px;
-    outline: none;
-  }
-  .setting-item input[type=number]:focus { border-color: var(--accent); }
-
-  .toggle-group {
-    display: flex;
-    gap: 6px;
-  }
-  .toggle-btn {
-    padding: 5px 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    background: transparent;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-  .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-
-  /* PROGRESS */
-  .progress-bar-wrap {
-    background: var(--surface2);
-    border-radius: 4px;
-    height: 6px;
-    overflow: hidden;
-    margin: 12px 0;
-  }
-  .progress-bar-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 4px;
-    transition: width 0.3s;
-  }
-
-  /* PRODUCT CARDS */
-  .products-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-height: 600px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-
-  .product-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 16px;
-    transition: border-color 0.2s;
-  }
-  .product-card.processing { border-color: var(--warning); }
-  .product-card.done { border-color: var(--accent2); }
-  .product-card.error { border-color: var(--danger); }
-
-  .card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .card-artnum {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .card-name {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    line-height: 1.3;
-    flex: 1;
-  }
-  .card-status {
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 3px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .status-pending { background: rgba(102,102,102,0.15); color: var(--muted); }
-  .status-processing { background: rgba(245,166,35,0.15); color: var(--warning); }
-  .status-done { background: rgba(66,245,176,0.1); color: var(--accent2); }
-  .status-error { background: rgba(255,77,77,0.1); color: var(--danger); }
-
-  .card-desc {
-    font-size: 12px;
-    line-height: 1.7;
-    color: #ccc;
-    white-space: pre-wrap;
-    border-top: 1px solid var(--border);
-    padding-top: 10px;
-    margin-top: 4px;
-  }
-
-  .card-prices {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-  .price-item { font-size: 12px; }
-  .price-item .plabel { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; display: block; }
-  .price-item .pval { color: var(--accent); font-weight: 500; }
-
-  /* BUTTONS */
-  .btn {
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-  }
-  .btn-primary:hover { background: #d4f75a; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger {
-    background: rgba(255,77,77,0.1);
-    color: var(--danger);
-    border: 1px solid rgba(255,77,77,0.2);
-  }
-
-  .btn-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-top: 16px;
-  }
-
-  /* STATS */
-  .stats-row {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-  .stat-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 16px;
-    text-align: center;
-    min-width: 80px;
-  }
-  .stat-val {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    color: var(--accent);
-  }
-  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
-
-  /* LOG */
-  .log-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 11px;
-    color: var(--muted);
-    max-height: 120px;
-    overflow-y: auto;
-    line-height: 1.8;
-  }
-  .log-line.ok { color: var(--accent2); }
-  .log-line.warn { color: var(--warning); }
-  .log-line.err { color: var(--danger); }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-  .chip {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 10px;
-    background: rgba(200,245,66,0.08);
-    color: var(--accent);
-    border: 1px solid rgba(200,245,66,0.15);
-    margin-left: 8px;
-    vertical-align: middle;
-  }
-
-  .search-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: var(--accent2);
-  }
-  .dot-spin {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 1s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito','Avenir','Segoe UI',sans-serif;background:#f5f5f0;min-height:100vh;color:#1a1a1a;padding:28px 20px}
+.btn{cursor:pointer;border:none;border-radius:5px;font-family:'Nunito','Avenir',sans-serif;font-size:13px;font-weight:600;padding:9px 18px;transition:all .15s;letter-spacing:.01em}
+.btn-green{background:#006633;color:#fff}.btn-green:hover:not(:disabled){background:#007a3d;transform:translateY(-1px);box-shadow:0 3px 10px rgba(27,94,59,.3)}.btn-green:disabled{background:#c8c8c0;color:#888;cursor:not-allowed}
+.btn-red{background:#c0392b;color:#fff}.btn-red:hover{background:#e74c3c}
+.btn-blue{background:#2c5f8a;color:#fff}.btn-blue:hover{background:#3474a7}
+.btn-orange{background:#b45309;color:#fff}.btn-orange:hover{background:#d4620a}
+.btn-gray{background:#e5e7eb;color:#555}.btn-gray:hover{background:#d1d5db}
+.card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.lbl{color:#006633;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;display:block}
+.sbox{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:13px 15px}
+.upzone{border:2px dashed #c8c8be;border-radius:8px;padding:34px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafaf7}
+.upzone:hover{border-color:#006633;background:#f0f7f3}
+.pbar{height:7px;background:#e0e0d8;border-radius:4px;overflow:hidden;margin-bottom:14px}
+.pfill{height:100%;background:linear-gradient(90deg,#006633,#3aaa35);border-radius:4px;transition:width .4s ease}
+.pitem{background:#f9f9f6;border:1.5px solid #e0e0d8;border-radius:6px;padding:10px 13px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+.pitem:hover{border-color:#006633;background:#f0f7f3}.pitem.active{border-color:#006633;background:#edf7ed}
+.logbox{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:5px;padding:10px 12px;max-height:170px;overflow-y:auto;font-size:11px;line-height:1.85;font-family:'Courier New',monospace}
+.log-info{color:#888}.log-success{color:#006633;font-weight:600}.log-warn{color:#b45309}.log-error{color:#c0392b;font-weight:600}.log-save{color:#2c5f8a}
+.kwtag{background:#edf7ed;border:1px solid #a8d5a2;border-radius:4px;padding:3px 8px;font-size:11px;color:#006633;display:inline-block;margin:2px;font-weight:500}
+.toggle-wrap{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:7px;cursor:pointer;transition:all .15s;border:1.5px solid #ddd}
+.toggle-knob{width:36px;height:20px;border-radius:10px;background:#ccc;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-knob-ball{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.filter-btn{background:#f9f9f6;border:1.5px solid #ddd;border-radius:7px;padding:11px 13px;cursor:pointer;transition:all .15s;text-align:left}
+.filter-btn.active{background:#edf7ed;border-color:#006633}
+input[type=text]{width:100%;background:#f9f9f6;border:1.5px solid #ddd;border-radius:5px;padding:9px 13px;color:#1a1a1a;font-family:'Nunito','Avenir',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
+input[type=text]:focus{border-color:#006633}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#f0f0eb}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#aaa}
+.budget-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;background:#f0f7f3;border:1px solid #a8d5a2;border-radius:8px;margin-bottom:14px;font-size:12px}
+.budget-ok{color:#006633;font-weight:700}.budget-warn{color:#b45309;font-weight:700}.budget-err{color:#c0392b;font-weight:700}
+.api-input-wrap{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px 16px;margin-bottom:14px}
 </style>
 </head>
 <body>
+<div id="app" style="max-width:1000px;margin:0 auto">
 
-<header>
-  <div class="logo">Vendit <span>Verrijker</span></div>
-  <div class="badge">Schreeven Muziekinstrumenten</div>
-</header>
-
-<main>
-
-  <!-- API KEY -->
-  <div class="api-bar">
-    <label>Anthropic API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkApiKey()" />
-    <div class="api-status empty" id="apiStatus">Geen sleutel</div>
+  <!-- HEADER -->
+  <div style="margin-bottom:24px;border-bottom:3px solid #006633;padding-bottom:18px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+      <div style="width:38px;height:38px;border-radius:6px;overflow:hidden;flex-shrink:0;display:flex;flex-direction:column;border:1px solid #e0e0d8">
+        <div style="flex:1;background:#3aaa35"></div>
+        <div style="flex:1;background:#006633"></div>
+      </div>
+      <div>
+        <div style="color:#006633;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px">Schreeven Muziekinstrumenten</div>
+        <h1 style="font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:-.02em">Product Enrichment Tool</h1>
+      </div>
+    </div>
+    <p style="color:#888;font-size:12px">AI-gestuurde SEO-tekstverrijking · Auto-retry · Auto-save · Budget check · PrestaShop CSV-export</p>
   </div>
 
-  <!-- STAP 1: UPLOAD -->
-  <div class="section">
-    <div class="section-header">
-      <div class="step-num" id="step1num">1</div>
-      <div class="section-title">Bestand uploaden</div>
-    </div>
-    <div class="section-body">
-      <div class="drop-zone" id="dropZone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
-        <input type="file" accept=".xlsx,.xls,.csv" onchange="loadFile(this.files[0])" />
-        <div class="drop-icon">📂</div>
-        <div class="drop-text"><strong>Sleep een bestand hierheen</strong> of klik om te bladeren<br>Excel (.xlsx, .xls) of CSV</div>
-      </div>
-      <div id="sheetPicker" style="display:none; margin-top:16px;">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Tabblad kiezen</div>
-        <div class="sheet-tabs" id="sheetTabs"></div>
-      </div>
-      <div id="previewWrap" style="display:none; margin-top:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:11px; color:var(--muted);">Voorbeeld (eerste 10 rijen)</span>
-          <span id="totalRows" style="font-size:11px; color:var(--accent);"></span>
-        </div>
-        <div class="table-wrap" id="previewTable"></div>
-      </div>
-    </div>
+  <!-- API KEY + BUDGET -->
+  <div class="api-input-wrap">
+    <label style="color:#006633;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap">API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="flex:1;border:none;outline:none;font-size:13px;font-family:'Nunito',sans-serif;background:transparent" oninput="onApiKeyInput()">
+    <button class="btn btn-blue" onclick="checkBudget()" id="budgetBtn" style="white-space:nowrap;padding:7px 14px;font-size:12px">💰 Check budget</button>
+  </div>
+  <div id="budgetBar" style="display:none" class="budget-bar">
+    <span id="budgetStatus">—</span>
+    <span style="color:#999">|</span>
+    <span id="budgetEstimate" style="color:#555"></span>
   </div>
 
-  <!-- STAP 2: MAPPING -->
-  <div class="section">
-    <div class="section-header">
-      <div class="step-num inactive" id="step2num">2</div>
-      <div class="section-title">Kolommen koppelen</div>
-    </div>
-    <div class="section-body">
-      <div id="mappingArea">
-        <div style="color:var(--muted); font-size:12px;">Laad eerst een bestand om kolommen te koppelen.</div>
+  <!-- FILTER -->
+  <div class="card">
+    <span class="lbl">Filter — welke producten verrijken?</span>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div class="filter-btn active" id="filterStrict" onclick="setFilter('strict')">
+        <div style="font-size:12px;font-weight:700;color:#006633;margin-bottom:3px">Strikt</div>
+        <div style="font-size:11px;color:#3aaa35;line-height:1.4">Alleen als desc én short leeg zijn</div>
       </div>
-      <div id="mappingBtn" style="display:none;" class="btn-row">
-        <button class="btn btn-primary" onclick="applyMapping()">✓ Mapping bevestigen</button>
+      <div class="filter-btn" id="filterDesc" onclick="setFilter('desc')">
+        <div style="font-size:12px;font-weight:700;color:#444;margin-bottom:3px">Description</div>
+        <div style="font-size:11px;color:#999;line-height:1.4">Alleen als description leeg is</div>
+      </div>
+      <div class="filter-btn" id="filterAll" onclick="setFilter('all')">
+        <div style="font-size:12px;font-weight:700;color:#444;margin-bottom:3px">Alles</div>
+        <div style="font-size:11px;color:#999;line-height:1.4">Ook oud formaat herschrijven</div>
       </div>
     </div>
-  </div>
 
-  <!-- STAP 3: INSTELLINGEN -->
-  <div class="section">
-    <div class="section-header">
-      <div class="step-num inactive" id="step3num">3</div>
-      <div class="section-title">Instellingen</div>
-    </div>
-    <div class="section-body">
-      <div class="settings-row">
-        <div class="setting-item">
-          <label>BTW %</label>
-          <input type="number" id="btwPct" value="21" min="0" max="100" />
-        </div>
-        <div class="setting-item">
-          <label>Marge %</label>
-          <input type="number" id="margePct" value="40" min="0" max="200" />
-        </div>
-        <div class="setting-item">
-          <label>Parallel</label>
-          <input type="number" id="parallelCount" value="3" min="1" max="6" />
-        </div>
-        <div class="setting-item">
-          <label>AI beschrijvingen</label>
-          <div class="toggle-group">
-            <button class="toggle-btn active" id="toggleDesc" onclick="toggleSetting('desc')">Aan</button>
-            <button class="toggle-btn" id="toggleDescOff" onclick="toggleSettingOff('desc')">Uit</button>
-          </div>
-        </div>
-        <div class="setting-item">
-          <label>Websearch <span class="chip">nieuw</span></label>
-          <div class="toggle-group">
-            <button class="toggle-btn active" id="toggleSearch" onclick="toggleSetting('search')">Aan</button>
-            <button class="toggle-btn" id="toggleSearchOff" onclick="toggleSettingOff('search')">Uit</button>
-          </div>
-        </div>
+    <!-- Toggles -->
+    <div id="toggleGenDesc" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:8px" onclick="toggleSetting('genDesc')">
+      <div class="toggle-knob" id="knobGenDesc"><div class="toggle-knob-ball" id="ballGenDesc"></div></div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#555">Ook <em>description</em> (lange beschrijving) vullen</div>
+        <div id="labelGenDesc" style="font-size:11px;color:#999;margin-top:1px">Uit — alleen description_short wordt gevuld (standaard)</div>
       </div>
+    </div>
+    <div id="toggleClearDesc" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:14px" onclick="toggleSetting('clearDesc')">
+      <div class="toggle-knob" id="knobClearDesc"><div class="toggle-knob-ball" id="ballClearDesc"></div></div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#555">Bestaande <em>description</em> leegmaken</div>
+        <div id="labelClearDesc" style="font-size:11px;color:#999;margin-top:1px">Uit — bestaande description blijft staan</div>
+      </div>
+    </div>
+
+    <!-- Skip / Only keywords -->
+    <span class="lbl" style="margin-bottom:6px">Overslaan als naam bevat <span style="color:#aaa;font-weight:500">(optioneel)</span></span>
+    <input type="text" id="skipKw" placeholder="bijv. Fender, Sela, Pioneer" style="margin-bottom:8px" oninput="updateKwPreviews()">
+    <div id="skipKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#b45309;background:#fffbeb;padding:5px 10px;border-radius:4px;border:1px solid #fde68a"></div>
+
+    <span class="lbl" style="margin-bottom:6px">Alleen verwerken als naam bevat <span style="color:#aaa;font-weight:500">(optioneel)</span></span>
+    <input type="text" id="onlyKw" placeholder="bijv. DeoxIT, Yamaha, snare" style="margin-bottom:8px" oninput="updateKwPreviews()">
+    <div id="onlyKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#006633;background:#edf7ed;padding:5px 10px;border-radius:4px;border:1px solid #a8d5a2"></div>
+
+    <div id="herbereken-wrap" style="display:none;margin-top:6px;display:none;align-items:center;gap:12px;padding:12px 14px;background:#f0f7f3;border:1.5px solid #a8d5a2;border-radius:7px">
+      <button class="btn btn-green" onclick="herbereken()" style="padding:8px 18px;font-size:13px">🔄 Herbereken filter</button>
+      <div id="herberekenStatus" style="font-size:12px;color:#555"></div>
     </div>
   </div>
 
-  <!-- STAP 4: VERRIJKEN -->
-  <div class="section">
-    <div class="section-header">
-      <div class="step-num inactive" id="step4num">4</div>
-      <div class="section-title">Verrijken & exporteren</div>
+  <!-- UPLOAD -->
+  <div class="card">
+    <span class="lbl">Stap 1 — CSV uploaden</span>
+    <div class="upzone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+      <div style="font-size:30px;margin-bottom:10px">📂</div>
+      <div id="fileLabel" style="font-size:14px;font-weight:600;color:#555">Klik om CSV te uploaden</div>
+      <div style="font-size:11px;color:#bbb;margin-top:6px">UTF-8 of latin-1 · puntkomma-gescheiden</div>
     </div>
-    <div class="section-body">
-      <div class="stats-row" id="statsRow" style="display:none;">
-        <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Totaal</div></div>
-        <div class="stat-box"><div class="stat-val" id="statDone">0</div><div class="stat-label">Klaar</div></div>
-        <div class="stat-box"><div class="stat-val" id="statErrors">0</div><div class="stat-label">Fouten</div></div>
-        <div class="stat-box"><div class="stat-val" id="statPending">0</div><div class="stat-label">Wacht</div></div>
-      </div>
-      <div id="progressWrap" style="display:none;">
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
-        </div>
-        <div style="font-size:11px; color:var(--muted); margin-bottom:12px;" id="progressLabel">Klaar om te starten</div>
-      </div>
-      <div class="log-box" id="logBox" style="display:none;"></div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="startBtn" disabled onclick="startVerrijken()">▶ Starten</button>
-        <button class="btn btn-secondary" id="stopBtn" style="display:none;" onclick="stopVerrijken()">⏹ Stoppen</button>
-        <button class="btn btn-secondary" id="exportBtn" style="display:none;" onclick="exportCSV()">⬇ Exporteer Vendit CSV</button>
-        <button class="btn btn-danger" id="resetBtn" style="display:none;" onclick="resetAll()">↺ Reset</button>
-      </div>
-      <div id="productsContainer" style="margin-top:20px;"></div>
+    <div id="fileStatus" style="display:none;margin-top:10px;font-size:12px;color:#333;padding:10px 14px;background:#f5f5f0;border-radius:5px;border:1px solid #ddd;font-weight:500"></div>
+    <div id="saveBar" style="display:none;margin-top:10px;align-items:center;gap:10px;padding:11px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px">
+      <span style="font-size:12px;color:#1d4ed8;font-weight:500">💾 Vorige sessie gevonden — wil je verder gaan?</span>
+      <button class="btn btn-blue" onclick="resumeSession()" style="padding:6px 14px;font-size:12px">Herstel sessie</button>
+      <button class="btn btn-gray" onclick="document.getElementById('saveBar').style.display='none'" style="padding:6px 14px;font-size:12px">Overslaan</button>
     </div>
   </div>
 
-</main>
+  <!-- VERRIJKEN -->
+  <div class="card" id="enrichCard" style="display:none">
+    <span class="lbl">Stap 2 — Verrijken</span>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px" id="statsGrid">
+      <div class="sbox"><div id="sTotaal" style="font-size:20px;font-weight:600;color:#555">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Totaal CSV</div></div>
+      <div class="sbox"><div id="sTe" style="font-size:20px;font-weight:600;color:#006633">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Te verrijken</div></div>
+      <div class="sbox"><div id="sKlaar" style="font-size:20px;font-weight:600;color:#006633">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Verrijkt</div></div>
+      <div class="sbox"><div id="sRest" style="font-size:20px;font-weight:600;color:#888">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Resterend</div></div>
+      <div class="sbox"><div id="sOver" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Overgeslagen</div></div>
+      <div class="sbox"><div id="sGeen" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Geen data</div></div>
+    </div>
+    <div id="progressWrap" style="display:none">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:5px;font-weight:500">
+        <span id="progressLabel">0%</span>
+        <span id="etaLabel" style="color:#006633;font-weight:600"></span>
+      </div>
+      <div class="pbar"><div class="pfill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="actionBtns">
+      <button class="btn btn-green" id="startBtn" onclick="runEnrichment()">▶ Start</button>
+      <button class="btn btn-red" id="pauseBtn" style="display:none" onclick="stopProcessing()">⏸ Pauzeren</button>
+      <button class="btn btn-green" id="downloadBtn" style="display:none" onclick="downloadCsv()">⬇ Download CSV</button>
+      <button class="btn btn-blue" id="reportBtn" style="display:none" onclick="downloadReport()">📋 Download rapport</button>
+      <button class="btn btn-orange" id="insuffBtn" style="display:none" onclick="downloadInsufficient()">⚠ Geen data</button>
+    </div>
+    <div class="logbox" id="logBox" style="display:none"></div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="card" id="previewCard" style="display:none">
+    <span class="lbl" id="previewTitle">Stap 3 — Preview</span>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:16px">
+      <div style="max-height:460px;overflow-y:auto" id="previewList"></div>
+      <div id="previewDetail" style="color:#ccc;font-size:13px;padding-top:80px;text-align:center;line-height:3">← Selecteer een product</div>
+    </div>
+  </div>
+
+</div>
 
 <script>
-// ─── STATE ──────────────────────────────────────────────────────────────────
-let wb = null, rawRows = [], mappedRows = [], products = [];
-let running = false, stopRequested = false;
-let useDesc = true, useSearch = true;
-let colHeaders = [];
+// ── CONSTANTEN ──────────────────────────────────────────────────────
+const BATCH_SIZE    = 3;
+const MAX_RETRIES   = 3;
+const AUTOSAVE_EVERY = 10;
+const SAVE_KEY      = 'schreeven_enriched_v2';
+const MODEL         = 'claude-sonnet-4-20250514';
+const MAX_TOKENS    = 4000;
+// Kosten per 1M tokens (USD, Sonnet 4)
+const COST_IN  = 3.0;
+const COST_OUT = 15.0;
+// Gem tokens per product: ~800 input, ~600 output
+const AVG_IN   = 800;
+const AVG_OUT  = 600;
 
-const VENDIT_FIELDS = [
-  { key: 'artikelnummer', label: 'Artikelnummer', required: true },
-  { key: 'naam', label: 'Naam', required: true },
-  { key: 'merk', label: 'Merk', required: false },
-  { key: 'inkoopprijs', label: 'Inkoopprijs', required: false },
-  { key: 'adviesprijs', label: 'Adviesprijs (markt)', required: false },
-  { key: 'barcode', label: 'Barcode / EAN', required: false },
-  { key: 'categorie', label: 'Categorie', required: false },
-];
+const SYSTEM_PROMPT = `Je bent een professionele SEO-tekstschrijver gespecialiseerd in muziekinstrumenten, audioapparatuur en professionele gear. Je schrijft unieke, menselijke en SEO-geoptimaliseerde teksten voor de webshop van Schreeven Muziekinstrumenten in Nijmegen.
 
-// ─── API KEY ─────────────────────────────────────────────────────────────────
-function checkApiKey() {
-  const v = document.getElementById('apiKey').value.trim();
-  const el = document.getElementById('apiStatus');
-  if (v.startsWith('sk-ant-')) {
-    el.textContent = '✓ Sleutel ingesteld';
-    el.className = 'api-status ok';
-  } else {
-    el.textContent = 'Geen sleutel';
-    el.className = 'api-status empty';
-  }
+TAAL & STIJL:
+- Professioneel maar toegankelijk
+- Geen overdreven marketingtaal
+- Natuurlijke, menselijk klinkende zinnen
+- Teksten geschreven voor muzikanten
+- Engelse muziektermen mogen blijven staan (MIDI, pickup, preamp, fader, DAW, modeling, sequencer, polyphony, etc.)
+- "Limited" blijft altijd in het Engels
+- Gebruik "signature model" — NIET "handtekeningmodel"
+- Toon aanpassen aan productcategorie
+
+BELANGRIJKE REGEL: Bestaande tekst uit de data is ALLEEN ter inspiratie voor productkennis. De output moet altijd volledig nieuw geschreven worden in onderstaand format. Neem NOOIT de oude opmaak over.
+
+KRITIEKE DATAREGEL — VERPLICHT:
+Als een product ONVOLDOENDE brondata heeft om feitelijk correcte teksten te schrijven (alleen een naam, geen specs, geen beschrijving, geen materialen, geen kenmerken), geef dan terug:
+{"name": "(exacte naam)", "insufficient": true}
+NOOIT aannames doen over specs, materialen of kenmerken die niet in de data staan.
+
+STRUCTUUR — ALTIJD DEZE VOLGORDE:
+1. description_short — schrijf volledig in HTML, ALTIJD deze exacte volgorde:
+<p>[Wat IS het product — 1 zin: merk, type, materiaal, doel]</p>
+<b>[Actieve eigen titel: wat het doet]</b>
+<p>[Wat doet het — functioneel voordeel]</p>
+<b>[Actieve eigen titel: waarom dit kopen]</b>
+<p>[Waarom kopen — voor wie, welk probleem lost het op]</p>
+<b>[Actieve eigen titel: voordelen]</b>
+<ul><li>voordeel</li><li>voordeel</li><li>voordeel</li><li>voordeel</li><li>voordeel</li></ul>
+<b>[Actieve eigen titel: onderhoud/advies]</b>
+<p>[Onderhoud, gebruik, tips]</p>
+
+REGELS: gebruik <b> voor titels — NOOIT <h3>. Voordelen ALLEEN als <ul><li>.
+
+2. description — ALLEEN invullen als expliciet gevraagd. Zelfde structuur maar uitgebreider. NIET kopiëren.
+
+3. meta_title: Max 60 tekens. Bevat productnaam + hoofdkeyword. Eindigt NIET op "| Schreeven".
+
+4. meta_description: Max 155 tekens. Uitnodigend en informatief. Lichte call-to-action. SEO gericht op Nederland.
+
+5. meta_keywords: 8-12 relevante Nederlandse zoekwoorden. Kommagescheiden, lowercase.
+
+TERMINOLOGIE — VERPLICHT:
+- Gebruik bij snaarinstrumenten ALTIJD "bovenblad" — NOOIT "toplaag"
+- Noem NOOIT specifieke hardware-details tenzij EXPLICIET in de meegeleverde productdata
+
+EXTRA REGELS:
+- Geen externe links, geen bronvermeldingen, geen concurrenten
+- Productnaam NOOIT wijzigen
+- SEO gericht op Nederland
+
+OUTPUT: Geef ALLEEN een JSON array terug, geen uitleg, geen markdown backticks.`;
+
+// ── STATE ────────────────────────────────────────────────────────────
+let allProducts    = [];
+let priorityProducts = [];
+let enriched       = [];
+let insufficient   = [];
+let report         = [];
+let filterMode     = 'strict';
+let genDesc        = false;
+let clearDesc      = false;
+let skipKw         = '';
+let onlyKw         = '';
+let running        = false;
+let stopReq        = false;
+let cursor         = 0;
+let skippedCount   = 0;
+let csvHeaders     = [];
+let fileName       = '';
+let startTime      = null;
+let previewIdx     = null;
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+function stripHtml(html){ return (html||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim(); }
+function parseKw(s){ return (s||'').split(',').map(k=>k.trim().toLowerCase()).filter(Boolean); }
+function normName(s){ return (s||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
+function $(id){ return document.getElementById(id); }
+
+function addLog(msg, type='info'){
+  const box = $('logBox');
+  if(!box) return;
+  box.style.display='block';
+  const d = document.createElement('div');
+  d.className = 'log-'+type;
+  const t = new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent = '['+t+'] '+msg;
+  box.insertBefore(d, box.firstChild);
+  while(box.children.length > 60) box.removeChild(box.lastChild);
 }
 
-function getApiKey() { return document.getElementById('apiKey').value.trim(); }
-
-// ─── FILE LOADING ─────────────────────────────────────────────────────────────
-function dragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
-function dragLeave(e) { document.getElementById('dropZone').classList.remove('drag-over'); }
-function dropFile(e) {
-  e.preventDefault();
-  document.getElementById('dropZone').classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) loadFile(f);
+function saveSession(){
+  try { window._schreevenSave = JSON.stringify({fileName,enriched,cursor,insufficient,report}); } catch{}
+}
+function loadSession(){
+  try { const r=window._schreevenSave; return r?JSON.parse(r):null; } catch{ return null; }
 }
 
-function loadFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = new Uint8Array(e.target.result);
-    wb = XLSX.read(data, { type: 'array' });
-    if (wb.SheetNames.length > 1) {
-      document.getElementById('sheetPicker').style.display = 'block';
-      const tabs = document.getElementById('sheetTabs');
-      tabs.innerHTML = wb.SheetNames.map((n, i) =>
-        `<div class="sheet-tab ${i===0?'active':''}" onclick="selectSheet('${n}', this)">${n}</div>`
-      ).join('');
+// ── CSV PARSING ──────────────────────────────────────────────────────
+function parseCsv(text){
+  const lines = text.split(/\r?\n/);
+  if(lines.length < 2) return [];
+  const headers = lines[0].split(';').map(h=>h.replace(/^\uFEFF/,'').replace(/^"|"$/g,'').trim());
+  const rows=[];
+  let i=1;
+  while(i<lines.length){
+    if(!lines[i].trim()){i++;continue;}
+    let line=lines[i];
+    while((line.match(/"/g)||[]).length%2!==0 && i+1<lines.length){i++;line+='\n'+lines[i];}
+    const cols=[];let cur='',inQ=false;
+    for(let c=0;c<line.length;c++){
+      if(line[c]==='"')inQ=!inQ;
+      else if(line[c]===';'&&!inQ){cols.push(cur);cur='';}
+      else cur+=line[c];
     }
-    loadSheet(wb.SheetNames[0]);
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function selectSheet(name, el) {
-  document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  loadSheet(name);
-}
-
-function loadSheet(name) {
-  const ws = wb.Sheets[name];
-  const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-  // Find header row (first row with 3+ non-empty cells)
-  let headerIdx = 0;
-  for (let i = 0; i < Math.min(json.length, 10); i++) {
-    const filled = json[i].filter(c => String(c).trim() !== '').length;
-    if (filled >= 3) { headerIdx = i; break; }
+    cols.push(cur);
+    const obj={};
+    headers.forEach((h,idx)=>obj[h]=(cols[idx]||'').replace(/^"|"$/g,'').trim());
+    rows.push(obj);i++;
   }
-  colHeaders = json[headerIdx].map(h => String(h).trim());
-  rawRows = json.slice(headerIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
-
-  document.getElementById('totalRows').textContent = `${rawRows.length} producten gevonden`;
-  showPreview(colHeaders, rawRows.slice(0, 10));
-  showMapping(colHeaders);
-  document.getElementById('previewWrap').style.display = 'block';
-  document.getElementById('step1num').classList.add('done');
-  document.getElementById('step2num').classList.remove('inactive');
+  return rows;
 }
 
-function showPreview(headers, rows) {
-  const wrap = document.getElementById('previewTable');
-  const thead = `<thead><tr>${headers.map(h => `<th>${h||'—'}</th>`).join('')}</tr></thead>`;
-  const tbody = `<tbody>${rows.map(r =>
-    `<tr>${headers.map((_, i) => `<td>${String(r[i]||'').substring(0,60)}</td>`).join('')}</tr>`
-  ).join('')}</tbody>`;
-  wrap.innerHTML = `<table>${thead}${tbody}</table>`;
-}
-
-// ─── MAPPING ──────────────────────────────────────────────────────────────────
-function showMapping(headers) {
-  const area = document.getElementById('mappingArea');
-  const opts = ['— overslaan —', ...headers].map(h => `<option value="${h}">${h}</option>`).join('');
-
-  const rows = VENDIT_FIELDS.map(f => {
-    // Auto-detect best match
-    const autoMatch = autoDetect(f.key, headers);
-    const selOpts = ['— overslaan —', ...headers].map(h =>
-      `<option value="${h}" ${h===autoMatch?'selected':''}>${h}</option>`
-    ).join('');
-    return `
-      <div class="map-row">
-        <div class="map-label">${f.label}${f.required?' *':''}</div>
-        <div class="map-arrow">→</div>
-        <select id="map_${f.key}">${selOpts}</select>
-      </div>`;
-  }).join('');
-
-  area.innerHTML = `<div class="mapping-grid">${rows}</div>`;
-  document.getElementById('mappingBtn').style.display = 'flex';
-}
-
-function autoDetect(fieldKey, headers) {
-  const patterns = {
-    artikelnummer: ['artikel', 'artnr', 'art.', 'sku', 'code', 'item'],
-    naam: ['naam', 'name', 'omschrijving', 'product', 'description', 'artikel omschrijving'],
-    merk: ['merk', 'brand', 'fabrikant', 'manufacturer'],
-    inkoopprijs: ['inkoop', 'cost', 'netto', 'purchase', 'prijs netto', 'net price'],
-    adviesprijs: ['advies', 'srp', 'msrp', 'retail', 'consumer', 'aanbevolen'],
-    barcode: ['ean', 'barcode', 'gtin', 'upc'],
-    categorie: ['categorie', 'category', 'groep', 'group', 'type'],
+function normalizeRows(rows){
+  const MAP={
+    'meta_description_short':'description_short','short_description':'description_short','beschrijving_kort':'description_short',
+    'Meta_title':'meta_title','metatitle':'meta_title','meta title':'meta_title',
+    'Meta_description':'meta_description','metadescription':'meta_description',
+    'Name':'name','naam':'name','productnaam':'name',
+    'Description':'description','beschrijving':'description',
   };
-  const pats = patterns[fieldKey] || [];
-  for (const h of headers) {
-    const hl = h.toLowerCase();
-    for (const p of pats) {
-      if (hl.includes(p)) return h;
+  return rows.map(r=>{
+    const n={};
+    for(const [k,v] of Object.entries(r)){
+      const lk=k.toLowerCase().trim();
+      const mapped=MAP[k]||MAP[lk]||({'meta_title':'meta_title','meta_description':'meta_description','meta_keywords':'meta_keywords','name':'name','naam':'name'}[lk])||k;
+      n[mapped]=v;
     }
-  }
-  return '— overslaan —';
-}
-
-function applyMapping() {
-  const mapping = {};
-  VENDIT_FIELDS.forEach(f => {
-    const sel = document.getElementById(`map_${f.key}`);
-    if (sel && sel.value !== '— overslaan —') mapping[f.key] = sel.value;
+    return n;
   });
-
-  // Check required
-  const missingRequired = VENDIT_FIELDS.filter(f => f.required && !mapping[f.key]);
-  if (missingRequired.length > 0) {
-    alert(`Verplichte velden ontbreken: ${missingRequired.map(f=>f.label).join(', ')}`);
-    return;
-  }
-
-  // Build mapped rows
-  mappedRows = rawRows.map(row => {
-    const obj = {};
-    VENDIT_FIELDS.forEach(f => {
-      if (mapping[f.key]) {
-        const colIdx = colHeaders.indexOf(mapping[f.key]);
-        obj[f.key] = colIdx >= 0 ? String(row[colIdx] || '').trim() : '';
-      } else {
-        obj[f.key] = '';
-      }
-    });
-    return obj;
-  }).filter(r => r.artikelnummer || r.naam);
-
-  document.getElementById('step2num').classList.add('done');
-  document.getElementById('step3num').classList.remove('inactive');
-  document.getElementById('step4num').classList.remove('inactive');
-  document.getElementById('startBtn').disabled = false;
-  document.getElementById('statsRow').style.display = 'flex';
-  document.getElementById('progressWrap').style.display = 'block';
-  document.getElementById('logBox').style.display = 'block';
-  document.getElementById('resetBtn').style.display = 'inline-flex';
-
-  // Init products
-  products = mappedRows.map(r => ({ ...r, status: 'pending', beschrijving: '', prijsExcl: '', prijsIncl: '' }));
-  renderProducts();
-  updateStats();
-  log(`✓ ${products.length} producten klaar voor verrijking`, 'ok');
 }
 
-// ─── SETTINGS ────────────────────────────────────────────────────────────────
-function toggleSetting(type) {
-  if (type === 'desc') { useDesc = true; document.getElementById('toggleDesc').classList.add('active'); document.getElementById('toggleDescOff').classList.remove('active'); }
-  if (type === 'search') { useSearch = true; document.getElementById('toggleSearch').classList.add('active'); document.getElementById('toggleSearchOff').classList.remove('active'); }
+// ── FILTER ───────────────────────────────────────────────────────────
+function isSkipped(r){
+  const name=(r.name||'').toLowerCase();
+  const sk=parseKw(skipKw), ok=parseKw(onlyKw);
+  if(sk.length && sk.some(k=>name.includes(k))) return true;
+  if(ok.length && !ok.some(k=>name.includes(k))) return true;
+  return false;
 }
-function toggleSettingOff(type) {
-  if (type === 'desc') { useDesc = false; document.getElementById('toggleDescOff').classList.add('active'); document.getElementById('toggleDesc').classList.remove('active'); }
-  if (type === 'search') { useSearch = false; document.getElementById('toggleSearchOff').classList.add('active'); document.getElementById('toggleSearch').classList.remove('active'); }
-}
-
-// ─── VERRIJKEN ────────────────────────────────────────────────────────────────
-async function startVerrijken() {
-  const apiKey = getApiKey();
-  if (!apiKey.startsWith('sk-ant-')) { alert('Vul eerst een geldige Anthropic API key in.'); return; }
-  running = true; stopRequested = false;
-  document.getElementById('startBtn').style.display = 'none';
-  document.getElementById('stopBtn').style.display = 'inline-flex';
-
-  const btw = parseFloat(document.getElementById('btwPct').value) / 100 || 0.21;
-  const marge = parseFloat(document.getElementById('margePct').value) / 100 || 0.40;
-  const parallel = parseInt(document.getElementById('parallelCount').value) || 3;
-
-  const pending = products.filter(p => p.status === 'pending');
-  log(`▶ Starten: ${pending.length} producten, ${parallel} parallel`, 'ok');
-
-  // Process in batches
-  for (let i = 0; i < pending.length; i += parallel) {
-    if (stopRequested) break;
-    const batch = pending.slice(i, i + parallel);
-    await Promise.all(batch.map(p => enrichProduct(p, apiKey, btw, marge)));
-    updateStats();
-    updateProgress(products.filter(p=>p.status==='done'||p.status==='error').length, products.length);
-  }
-
-  running = false;
-  document.getElementById('stopBtn').style.display = 'none';
-  document.getElementById('startBtn').style.display = 'inline-flex';
-  document.getElementById('startBtn').textContent = '▶ Hervat';
-  document.getElementById('exportBtn').style.display = 'inline-flex';
-  const done = products.filter(p=>p.status==='done').length;
-  log(`✓ Klaar — ${done} producten verrijkt`, 'ok');
+function needsEnrichment(r){
+  if(isSkipped(r)) return false;
+  const hasDesc=r.description?.trim();
+  const hasShort=r.description_short?.trim();
+  const hasMeta=r.meta_description?.trim();
+  const hasB=hasDesc&&r.description.includes('<b>');
+  if(filterMode==='strict') return !hasDesc&&!hasShort;
+  if(filterMode==='desc')   return !hasDesc;
+  if(filterMode==='all')    return !hasDesc||!hasMeta||!hasB;
+  return !hasDesc&&!hasShort;
 }
 
-function stopVerrijken() {
-  stopRequested = true;
-  log('⏸ Stoppen na huidige batch...', 'warn');
-}
-
-async function enrichProduct(product, apiKey, btw, marge) {
-  product.status = 'processing';
-  renderProductCard(product);
-
-  try {
-    // Calculate prices — handle Dutch comma decimal separator
-    function parsePrice(v) {
-      let s = String(v || '').trim();
-      s = s.replace(/[€$£s]/g, '');
-      if (s.includes('.') && s.includes(',')) {
-        s = s.replace(/./g, '').replace(',', '.');
-      } else if (s.includes(',')) {
-        s = s.replace(',', '.');
-      }
-      s = s.replace(/[^0-9.]/g, '');
-      return parseFloat(s) || 0;
-    }
-    const inkoop = parsePrice(product.inkoopprijs);
-    if (inkoop > 0) {
-      product.prijsExcl = (inkoop / (1 - marge)).toFixed(2);
-      product.prijsIncl = (parseFloat(product.prijsExcl) * (1 + btw)).toFixed(2);
-      product.adviesIncl = product.adviesprijs ?
-        (parsePrice(product.adviesprijs) * (1 + btw)).toFixed(2) : '';
-    }
-
-    if (!useDesc && !useSearch) {
-      product.status = 'done';
-      renderProductCard(product);
-      return;
-    }
-
-    // Build prompt
-    const productInfo = `
-Artikelnummer: ${product.artikelnummer}
-Naam: ${product.naam}
-Merk: ${product.merk || 'onbekend'}
-Categorie: ${product.categorie || 'muziekinstrumenten'}
-Inkoopprijs: €${product.inkoopprijs}
-${product.adviesprijs ? `Adviesprijs: €${product.adviesprijs}` : ''}
-`.trim();
-
-    const tools = useSearch ? [{
-      type: "web_search_20250305",
-      name: "web_search"
-    }] : [];
-
-    const systemPrompt = `Je bent productcopywriter voor Schreeven Muziekinstrumenten (Nijmegen, 1933). Schrijf een korte Nederlandse webshop-omschrijving.${useSearch ? ' Zoek specs op indien nodig.' : ''}
-Structuur: 1) Wat is het (1 zin), 2) Functie/werking (2 zinnen), 3) Voordelen (3 bullets), 4) Onderhoudstip (1 zin). Max 120 woorden. Geen marketingclichés.`;
-
-    const body = {
-      model: 'claude-haiku-4-20250514',
-      max_tokens: 400,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: `Product: ${product.naam}${product.merk ? ' | Merk: ' + product.merk : ''}${product.categorie ? ' | Cat: ' + product.categorie : ''}${product.artikelnummer ? ' | Art: ' + product.artikelnummer : ''}` }],
+// ── FILE HANDLING ────────────────────────────────────────────────────
+function handleFile(file){
+  if(!file) return;
+  fileName=file.name;
+  $('fileLabel').textContent='✅  '+fileName;
+  $('fileLabel').style.color='#006633';
+  const tryDecode=(enc)=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      const text=ev.target.result;
+      if(enc==='utf-8'&&(text.match(/�/g)||[]).length>10){ tryDecode('latin1'); return; }
+      processFile(text,file);
     };
-    if (tools.length > 0) body.tools = tools;
+    r.readAsText(file,enc);
+  };
+  tryDecode('utf-8');
+}
 
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify(body)
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json();
-      throw new Error(err.error?.message || `HTTP ${resp.status}`);
-    }
-
-    const data = await resp.json();
-    const textBlocks = data.content.filter(b => b.type === 'text');
-    product.beschrijving = textBlocks.map(b => b.text).join('\n').trim();
-    product.status = 'done';
-    log(`✓ ${product.naam.substring(0,40)}`, 'ok');
-
-  } catch (err) {
-    product.status = 'error';
-    product.beschrijving = `Fout: ${err.message}`;
-    log(`✗ ${product.naam?.substring(0,30)} — ${err.message}`, 'err');
+function processFile(text,file){
+  const raw=parseCsv(text);
+  if(!raw.length){ showStatus('❌ Kon bestand niet lezen'); return; }
+  const normalized=normalizeRows(raw);
+  csvHeaders=Object.keys(raw[0]).map(k=>{
+    const MAP={'meta_description_short':'description_short','short_description':'description_short','Name':'name','naam':'name','Description':'description','beschrijving':'description'};
+    return MAP[k]||k;
+  });
+  allProducts=normalized;
+  const priority=normalized.filter(needsEnrichment);
+  priorityProducts=priority;
+  enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;previewIdx=null;
+  updateStats();
+  $('enrichCard').style.display='block';
+  $('herbereken-wrap').style.display='flex';
+  const saved=loadSession();
+  if(saved&&saved.fileName===file.name&&saved.enriched?.length>0){
+    $('saveBar').style.display='flex';
+    showStatus('✅ '+normalized.length.toLocaleString()+' producten geladen · '+priority.length.toLocaleString()+' te verrijken · 💾 Vorige sessie gevonden ('+saved.enriched.length+' producten)');
+  } else {
+    showStatus('✅ '+normalized.length.toLocaleString()+' producten geladen · '+priority.length.toLocaleString()+' te verrijken');
   }
-
-  renderProductCard(product);
+  updateCostEstimate();
 }
 
-// ─── RENDER ───────────────────────────────────────────────────────────────────
-function renderProducts() {
-  const container = document.getElementById('productsContainer');
-  container.innerHTML = '<div class="products-grid" id="productsGrid"></div>';
-  products.forEach(p => {
-    const el = document.createElement('div');
-    el.id = `card_${p.artikelnummer}`;
-    document.getElementById('productsGrid').appendChild(el);
-    renderProductCard(p);
+function resumeSession(){
+  const saved=loadSession();
+  if(!saved) return;
+  enriched=saved.enriched||[];
+  insufficient=saved.insufficient||[];
+  report=saved.report||[];
+  cursor=saved.cursor||0;
+  $('saveBar').style.display='none';
+  updateStats();
+  renderPreview();
+  addLog('💾 Sessie hersteld: '+enriched.length+' producten, verder vanaf batch '+(cursor+1),'save');
+}
+
+// ── UI HELPERS ───────────────────────────────────────────────────────
+function showStatus(msg){ const el=$('fileStatus'); el.style.display='block'; el.textContent=msg; }
+function getApiKey(){ return ($('apiKeyInput').value||'').trim(); }
+function onApiKeyInput(){ if(getApiKey().length>20) updateCostEstimate(); }
+
+function setFilter(mode){
+  filterMode=mode;
+  ['strict','desc','all'].forEach(m=>{
+    const el=$('filter'+m.charAt(0).toUpperCase()+m.slice(1));
+    el.classList.toggle('active',m===mode);
+    el.querySelector('div').style.color=m===mode?'#006633':'#444';
+    el.querySelector('div:last-child').style.color=m===mode?'#3aaa35':'#999';
   });
 }
 
-function renderProductCard(p) {
-  const el = document.getElementById(`card_${p.artikelnummer}`);
-  if (!el) return;
-
-  const statusLabels = { pending: 'Wacht', processing: 'Bezig...', done: 'Klaar', error: 'Fout' };
-  const statusClasses = { pending: 'status-pending', processing: 'status-processing', done: 'status-done', error: 'status-error' };
-
-  const pricesHtml = (p.prijsIncl || p.prijsExcl) ? `
-    <div class="card-prices">
-      ${p.inkoopprijs ? `<div class="price-item"><span class="plabel">Inkoop</span><span class="pval">€${p.inkoopprijs}</span></div>` : ''}
-      ${p.prijsExcl ? `<div class="price-item"><span class="plabel">Verkoop excl.</span><span class="pval">€${p.prijsExcl}</span></div>` : ''}
-      ${p.prijsIncl ? `<div class="price-item"><span class="plabel">Verkoop incl.</span><span class="pval">€${p.prijsIncl}</span></div>` : ''}
-      ${p.adviesIncl ? `<div class="price-item"><span class="plabel">Advies incl.</span><span class="pval">€${p.adviesIncl}</span></div>` : ''}
-    </div>` : '';
-
-  const descHtml = p.beschrijving ? `<div class="card-desc">${p.beschrijving}</div>` : '';
-  const searchHtml = p.status === 'processing' && useSearch ?
-    `<div class="search-indicator"><div class="dot-spin"></div> Zoekt online info...</div>` : '';
-
-  el.className = `product-card ${p.status}`;
-  el.innerHTML = `
-    <div class="card-top">
-      <div>
-        <div class="card-artnum">${p.artikelnummer || '—'}</div>
-        <div class="card-name">${p.naam || 'Onbekend product'}</div>
-        ${p.merk ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${p.merk}</div>` : ''}
-      </div>
-      <div>
-        <div class="card-status ${statusClasses[p.status]}">${statusLabels[p.status]}</div>
-        ${searchHtml}
-      </div>
-    </div>
-    ${pricesHtml}
-    ${descHtml}
-  `;
+function toggleSetting(key){
+  if(key==='genDesc'){
+    genDesc=!genDesc;
+    $('knobGenDesc').style.background=genDesc?'#006633':'#ccc';
+    $('ballGenDesc').style.left=genDesc?'19px':'3px';
+    $('toggleGenDesc').style.background=genDesc?'#edf7ed':'#f9f9f6';
+    $('toggleGenDesc').style.borderColor=genDesc?'#006633':'#ddd';
+    $('labelGenDesc').textContent=genDesc?'Aan — lange beschrijving krijgt zelfde structuur als short, maar uitgebreider':'Uit — alleen description_short wordt gevuld (standaard)';
+  }
+  if(key==='clearDesc'){
+    clearDesc=!clearDesc;
+    $('knobClearDesc').style.background=clearDesc?'#b45309':'#ccc';
+    $('ballClearDesc').style.left=clearDesc?'19px':'3px';
+    $('toggleClearDesc').style.background=clearDesc?'#fff8eb':'#f9f9f6';
+    $('toggleClearDesc').style.borderColor=clearDesc?'#b45309':'#ddd';
+    $('labelClearDesc').textContent=clearDesc?'Aan — huidige tekst wordt als broninfo gebruikt voor de short, daarna leeggemaakt':'Uit — bestaande description blijft staan';
+  }
 }
 
-function updateStats() {
-  const done = products.filter(p=>p.status==='done').length;
-  const errors = products.filter(p=>p.status==='error').length;
-  const pending = products.filter(p=>p.status==='pending').length;
-  document.getElementById('statTotal').textContent = products.length;
-  document.getElementById('statDone').textContent = done;
-  document.getElementById('statErrors').textContent = errors;
-  document.getElementById('statPending').textContent = pending;
+function updateKwPreviews(){
+  skipKw=$('skipKw').value;
+  onlyKw=$('onlyKw').value;
+  const sk=parseKw(skipKw),ok=parseKw(onlyKw);
+  const sp=$('skipKwPreview'),op=$('onlyKwPreview');
+  if(sk.length){ sp.style.display='block'; sp.textContent='⏭ Overslaan als naam bevat: '+sk.map(k=>'"'+k+'"').join(', '); } else sp.style.display='none';
+  if(ok.length){ op.style.display='block'; op.textContent='✅ Alleen verwerken als naam bevat: '+ok.map(k=>'"'+k+'"').join(', '); } else op.style.display='none';
 }
 
-function updateProgress(done, total) {
-  const pct = total > 0 ? Math.round(done/total*100) : 0;
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = `${done} / ${total} verrijkt (${pct}%)`;
+function herbereken(){
+  if(!allProducts.length) return;
+  skipKw=$('skipKw').value;
+  onlyKw=$('onlyKw').value;
+  priorityProducts=allProducts.filter(needsEnrichment);
+  enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;
+  updateStats();
+  $('herberekenStatus').textContent='Huidig resultaat: '+priorityProducts.length.toLocaleString()+' producten te verrijken (van '+allProducts.length.toLocaleString()+' totaal)';
+  updateCostEstimate();
+  addLog('🔄 Herberekend: '+priorityProducts.length+' producten te verrijken','info');
 }
 
-// ─── LOG ──────────────────────────────────────────────────────────────────────
-function log(msg, type='') {
-  const box = document.getElementById('logBox');
-  const line = document.createElement('div');
-  line.className = `log-line ${type}`;
-  const time = new Date().toLocaleTimeString('nl-NL', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  line.textContent = `[${time}] ${msg}`;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
+function updateStats(){
+  $('sTotaal').textContent=allProducts.length.toLocaleString();
+  $('sTe').textContent=priorityProducts.length.toLocaleString();
+  $('sKlaar').textContent=enriched.length.toLocaleString();
+  $('sRest').textContent=Math.max(0,priorityProducts.length-enriched.length).toLocaleString();
+  $('sOver').textContent=skippedCount.toLocaleString();
+  $('sOver').style.color=skippedCount>0?'#c0392b':'#bbb';
+  $('sGeen').textContent=insufficient.length.toLocaleString();
+  $('sGeen').style.color=insufficient.length>0?'#b45309':'#bbb';
+  if(enriched.length>0||priorityProducts.length>0) $('progressWrap').style.display='block';
+  const pct=priorityProducts.length>0?Math.min(100,Math.round(enriched.length/priorityProducts.length*100)):0;
+  $('progressFill').style.width=pct+'%';
+  $('progressLabel').textContent='Voortgang — '+pct+'% · batch '+cursor+'/'+Math.ceil(priorityProducts.length/BATCH_SIZE);
+  $('downloadBtn').style.display=enriched.length>0?'inline-block':'none';
+  $('reportBtn').style.display=report.length>0?'inline-block':'none';
+  $('insuffBtn').style.display=insufficient.length>0?'inline-block':'none';
+  if(insufficient.length>0) $('insuffBtn').textContent='⚠ '+insufficient.length+' zonder data';
 }
 
-// ─── EXPORT ───────────────────────────────────────────────────────────────────
-function exportCSV() {
-  const headers = [
-    'Artikelnummer', 'Naam', 'Merk', 'Barcode', 'Categorie',
-    'Inkoopprijs', 'Verkoopprijs excl. BTW', 'Verkoopprijs incl. BTW',
-    'Adviesprijs incl. BTW', 'BTW %',
-    'Korte omschrijving', 'Uitgebreide omschrijving'
-  ];
-
-  const btw = document.getElementById('btwPct').value;
-
-  const rows = products.map(p => [
-    p.artikelnummer, p.naam, p.merk || '', p.barcode || '', p.categorie || '',
-    p.inkoopprijs || '', p.prijsExcl || '', p.prijsIncl || '',
-    p.adviesIncl || '', btw,
-    p.naam || '',
-    (p.beschrijving || '').replace(/\n/g, ' ').replace(/;/g, ',')
-  ]);
-
-  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `vendit_verrijkt_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  log('✓ CSV geëxporteerd', 'ok');
+// ── BUDGET & KOSTENSCHATTING ─────────────────────────────────────────
+async function checkBudget(){
+  const key=getApiKey();
+  if(!key){ alert('Vul eerst een API key in'); return; }
+  $('budgetBtn').textContent='⏳ Laden...';
+  $('budgetBtn').disabled=true;
+  try {
+    // Haal usage op via Anthropic usage endpoint
+    const res = await fetch('https://api.anthropic.com/v1/usage', {
+      headers:{
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      }
+    });
+    const bar=$('budgetBar');
+    bar.style.display='flex';
+    if(res.ok){
+      const data=await res.json();
+      // Probeer ratelimit info te tonen
+      const remaining=res.headers.get('anthropic-ratelimit-tokens-remaining');
+      const resetAt=res.headers.get('anthropic-ratelimit-tokens-reset');
+      let statusHtml='<span class="budget-ok">✓ API key geldig</span>';
+      if(remaining) statusHtml+=' · <span style="color:#555">Tokens resterend: <strong>'+Number(remaining).toLocaleString()+'</strong></span>';
+      if(resetAt) statusHtml+=' · <span style="color:#999">Reset: '+new Date(resetAt).toLocaleTimeString('nl-NL')+'</span>';
+      $('budgetStatus').innerHTML=statusHtml;
+    } else if(res.status===401){
+      $('budgetStatus').innerHTML='<span class="budget-err">✗ Ongeldige API key</span>';
+    } else {
+      // Probeer een mini test-call
+      const testRes = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body: JSON.stringify({model:MODEL,max_tokens:5,messages:[{role:'user',content:'Hi'}]})
+      });
+      if(testRes.ok){
+        const rateLimitTokens = testRes.headers.get('anthropic-ratelimit-tokens-remaining');
+        $('budgetStatus').innerHTML='<span class="budget-ok">✓ API key werkt</span>'+(rateLimitTokens?' · Tokens resterend: <strong>'+Number(rateLimitTokens).toLocaleString()+'</strong>':'');
+      } else {
+        const err=await testRes.json();
+        $('budgetStatus').innerHTML='<span class="budget-err">✗ '+( err.error?.message||'HTTP '+testRes.status)+'</span>';
+      }
+    }
+  } catch(e){
+    $('budgetStatus').innerHTML='<span class="budget-err">✗ Fout: '+e.message+'</span>';
+  }
+  $('budgetBtn').textContent='💰 Check budget';
+  $('budgetBtn').disabled=false;
+  updateCostEstimate();
 }
 
-// ─── RESET ────────────────────────────────────────────────────────────────────
-function resetAll() {
-  if (!confirm('Alles resetten?')) return;
-  wb = null; rawRows = []; mappedRows = []; products = [];
-  document.getElementById('previewWrap').style.display = 'none';
-  document.getElementById('sheetPicker').style.display = 'none';
-  document.getElementById('mappingArea').innerHTML = '<div style="color:var(--muted);font-size:12px;">Laad eerst een bestand om kolommen te koppelen.</div>';
-  document.getElementById('mappingBtn').style.display = 'none';
-  document.getElementById('productsContainer').innerHTML = '';
-  document.getElementById('statsRow').style.display = 'none';
-  document.getElementById('progressWrap').style.display = 'none';
-  document.getElementById('logBox').style.display = 'none';
-  document.getElementById('logBox').innerHTML = '';
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('startBtn').textContent = '▶ Starten';
-  document.getElementById('exportBtn').style.display = 'none';
-  document.getElementById('resetBtn').style.display = 'none';
-  ['step1num','step2num','step3num','step4num'].forEach((id,i) => {
-    const el = document.getElementById(id);
-    el.className = 'step-num' + (i>0?' inactive':'');
+function updateCostEstimate(){
+  const n=priorityProducts.length;
+  if(!n) return;
+  const totalIn  = n * AVG_IN;
+  const totalOut = n * AVG_OUT;
+  const costUsd  = (totalIn/1e6)*COST_IN + (totalOut/1e6)*COST_OUT;
+  const costEur  = costUsd * 0.92;
+  const bar=$('budgetBar');
+  bar.style.display='flex';
+  $('budgetEstimate').innerHTML =
+    '📊 Schatting voor <strong>'+n.toLocaleString()+'</strong> producten: ' +
+    '<strong>~$'+costUsd.toFixed(2)+'</strong> (~€'+costEur.toFixed(2)+') ' +
+    '<span style="color:#999;font-size:11px">('+MODEL+' · ~'+Math.round(AVG_IN/1000)+'k in / ~'+Math.round(AVG_OUT/1000)+'k out per product)</span>';
+}
+
+// ── API CALL ─────────────────────────────────────────────────────────
+async function callApi(messages){
+  const key=getApiKey();
+  if(!key) throw new Error('Geen API key');
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:MODEL,max_tokens:MAX_TOKENS,system:SYSTEM_PROMPT,messages})
   });
+  if(!res.ok){ const e=await res.json(); throw new Error(e.error?.message||'HTTP '+res.status); }
+  const data=await res.json();
+  return (data.content?.[0]?.text||'').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
 }
+
+function buildProductContext(r){
+  const extras=[r['Kleur'],r['Maat'],r['Type']].filter(v=>v&&v.trim());
+  return extras.length?r.name+' ('+extras.join(', ')+')':r.name;
+}
+
+async function enrichSingle(product){
+  const short=stripHtml(product.description_short||'');
+  const existing=stripHtml(product.description||'');
+  const info=[short,existing].filter(Boolean).join(' | ').slice(0,200);
+  const ctx=buildProductContext(product);
+  const descInstr=genDesc?'Vul description in met dezelfde structuur als description_short, maar uitgebreider.':'Laat description leeg ("")';
+  const text=await callApi([{role:'user',content:
+    'Verrijk dit product voor schreeven.nl. Geef een JSON object terug (geen array):\n'+
+    '{"name":"...","description_short":"<p>...</p>...","description":"","meta_title":"...","meta_description":"...","meta_keywords":"..."}\n'+
+    descInstr+'\n\nProduct: "'+product.name+'"'+(ctx!==product.name?' [variant: '+ctx+']':'')+
+    (info?'\nBestaande info (ter inspiratie): "'+info+'"':'')+
+    '\n\nGeef ALLEEN het JSON object terug.'
+  }]);
+  return JSON.parse(text);
+}
+
+async function enrichBatch(batch){
+  const descInstr=genDesc?'Vul description in met dezelfde structuur als description_short, maar schrijf uitgebreidere alineas met meer context en diepgang. Niet kopiëren.':'Laat description leeg ("")';
+  const lines=batch.map((p,i)=>{
+    const short=stripHtml(p.description_short||'');
+    const existing=stripHtml(p.description||'');
+    const info=[short,existing].filter(Boolean).join(' | ').slice(0,400);
+    const ctx=buildProductContext(p);
+    return (i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [variant: '+ctx+']':'')+(info?' — bestaande info (ter inspiratie): "'+info+'"':'');
+  }).join('\n');
+  const prompt='Verrijk de volgende '+batch.length+' producten voor schreeven.nl. Geef een JSON array terug:\n'+
+    '[{"name":"(exacte naam)","description_short":"<p>...</p><b>[titel]</b><p>...</p><b>[titel]</b><p>...</p><b>[voordelen titel]</b><ul><li>...</li></ul><b>[onderhoud titel]</b><p>...</p>","description":"","meta_title":"...","meta_description":"...","meta_keywords":"..."}]\n'+
+    descInstr+'\n\n'+lines+'\n\nGeef ALLEEN de JSON array terug.';
+  const text=await callApi([{role:'user',content:prompt}]);
+
+  const process=results=>{
+    const valid=[],newInsuff=[];
+    results.forEach((en,i)=>{
+      const original=batch[i]||batch.find(b=>b.name===en.name)||{};
+      if(en&&en.insufficient){
+        insufficient.push({name:en.name||original.name||'?',merk:original['Merk']||'',type:original['Type']||'',reden:'Onvoldoende brondata'});
+        newInsuff.push(en.name||original.name);
+      } else if(en&&en.name){
+        report.push(buildReportEntry(original,en));
+        valid.push(en);
+      }
+    });
+    if(newInsuff.length) newInsuff.forEach(n=>addLog('⚠ Overgeslagen (geen data): '+n,'warn'));
+    return valid;
+  };
+
+  try { return process(JSON.parse(text)); }
+  catch {
+    const lastClose=text.lastIndexOf('},');
+    const repaired=lastClose>0?text.slice(0,lastClose+1)+']':null;
+    if(repaired){ try{ return process(JSON.parse(repaired)); }catch{} }
+    const results=[];
+    for(const p of batch){ try{ results.push(await enrichSingle(p)); }catch{} }
+    return process(results);
+  }
+}
+
+function buildReportEntry(original,en){
+  const HARDWARE=['chroom','chrome','goud','rosewood','walnut','maple','mahonie','spruce','sapele','aquila','nylgut'];
+  const bronText=stripHtml([original.description,original.description_short].join(' ')).toLowerCase();
+  const outText=stripHtml([en.description,en.description_short].join(' ')).toLowerCase();
+  const aangevuld=HARDWARE.filter(t=>outText.includes(t)&&!bronText.includes(t));
+  return {
+    name:en.name,
+    description_status:original.description?.trim()?'brondata':'AI aangevuld',
+    short_status:original.description_short?.trim()?'brondata':'AI aangevuld',
+    meta_desc_status:original.meta_description?.trim()?'brondata':'AI aangevuld',
+    meta_title_status:original.meta_title?.trim()?'brondata':'AI aangevuld',
+    meta_kw_status:original.meta_keywords?.trim()?'brondata':'AI aangevuld',
+    specs_aangevuld:aangevuld.join(', '),
+    aandacht:aangevuld.length?'⚠ Controleer specs':'',
+  };
+}
+
+// ── ENRICHMENT LOOP ──────────────────────────────────────────────────
+async function runEnrichment(){
+  if(!priorityProducts.length){ alert('Laad eerst een CSV bestand'); return; }
+  if(!getApiKey()){ alert('Vul een API key in'); return; }
+  if(running) return;
+  running=true; stopReq=false;
+  startTime=Date.now()-(cursor*BATCH_SIZE*3000);
+  $('startBtn').disabled=true;
+  $('pauseBtn').style.display='inline-block';
+  const total=Math.ceil(priorityProducts.length/BATCH_SIZE);
+  addLog('▶ Start verrijking vanaf batch '+(cursor+1)+' van '+total,'info');
+  try {
+    for(let b=cursor;b<total;b++){
+      if(stopReq){ addLog('⏸ Gepauzeerd na batch '+b,'warn'); cursor=b; break; }
+      // ETA
+      const elapsed=(Date.now()-startTime)/1000;
+      const done=b+1;
+      if(elapsed>10&&done>2){
+        const sPerBatch=elapsed/done;
+        const rem=(total-b)*sPerBatch;
+        if(isFinite(rem)&&rem>0){
+          const m=Math.floor(rem/60),s=Math.round(rem%60);
+          $('etaLabel').textContent='ETA ~'+m+'m '+s+'s';
+        }
+      }
+      const pct=Math.round((enriched.length/priorityProducts.length)*100);
+      showStatus('⚙ Batch '+(b+1)+'/'+total+' · '+enriched.length.toLocaleString()+'/'+priorityProducts.length.toLocaleString()+' · '+pct+'%');
+      let ok=false;
+      for(let attempt=1;attempt<=MAX_RETRIES;attempt++){
+        try {
+          const batch=priorityProducts.slice(b*BATCH_SIZE,(b+1)*BATCH_SIZE);
+          const results=await enrichBatch(batch);
+          enriched=[...enriched,...results];
+          cursor=b+1;
+          updateStats(); renderPreview();
+          if((b+1)%AUTOSAVE_EVERY===0){ saveSession(); addLog('💾 Auto-opgeslagen ('+enriched.length+' producten)','save'); }
+          ok=true; break;
+        } catch(err){
+          if(attempt<MAX_RETRIES){ addLog('⚠ Batch '+(b+1)+' poging '+attempt+' mislukt ('+err.message+') — opnieuw...','warn'); await new Promise(r=>setTimeout(r,2000*attempt)); }
+          else { addLog('⏭ Batch '+(b+1)+' overgeslagen na '+MAX_RETRIES+' pogingen: '+err.message,'error'); skippedCount+=BATCH_SIZE; cursor=b+1; }
+        }
+      }
+    }
+  } catch(err){ addLog('❌ Onverwachte fout: '+err.message,'error'); }
+  saveSession();
+  running=false; stopReq=false;
+  $('startBtn').disabled=false;
+  $('pauseBtn').style.display='none';
+  $('etaLabel').textContent='';
+  if(enriched.length>0){
+    showStatus('✅ Klaar! '+enriched.length.toLocaleString()+' producten verrijkt');
+    addLog('✅ Voltooid: '+enriched.length.toLocaleString()+' producten','success');
+  }
+  updateStats();
+}
+
+function stopProcessing(){ stopReq=true; addLog('⏸ Stoppen na huidige batch...','warn'); }
+
+// ── CSV EXPORT ───────────────────────────────────────────────────────
+const ALWAYS_QUOTE=new Set(['description','description_short','meta_title','meta_description','meta_keywords']);
+function toCsvRow(headers,row){
+  return headers.map(h=>{
+    const val=String(row[h]||'');
+    const esc=val.replace(/"/g,'""');
+    return ALWAYS_QUOTE.has(h)||esc.includes(';')||esc.includes('"')||esc.includes('\n')||esc.includes('\r')
+      ? '"'+esc+'"' : esc;
+  }).join(';');
+}
+
+function downloadCsv(){
+  // Build priority index map
+  const allRows=allProducts;
+  const priorityIndices=[];
+  allRows.forEach((row,idx)=>{ if(needsEnrichment(row)) priorityIndices.push(idx); });
+  const enrichedByName={};
+  enriched.forEach(e=>{ enrichedByName[normName(e.name)]=e; });
+  const outputRows=[];
+  allRows.forEach((row,idx)=>{
+    const pos=priorityIndices.indexOf(idx);
+    let en=pos!==-1?enriched[pos]:null;
+    if(!en) en=enrichedByName[normName(row.name)]||null;
+    if(!en) return;
+    const newDesc=clearDesc?'':(en.description||row.description||'');
+    outputRows.push({...row,
+      description:newDesc,
+      description_short:en.description_short||row.description_short||'',
+      meta_description:en.meta_description||row.meta_description||'',
+      meta_title:en.meta_title||row.meta_title||'',
+      meta_keywords:en.meta_keywords||row.meta_keywords||'',
+    });
+  });
+  const OUTPUT_COLS=['name','description','description_short','meta_title','meta_description','meta_keywords'];
+  const missingCols=OUTPUT_COLS.filter(c=>!csvHeaders.includes(c));
+  const headers=[...csvHeaders,...missingCols];
+  const csv=[headers.join(';'),...outputRows.map(r=>toCsvRow(headers,r))].join('\r\n');
+  triggerDownload('\uFEFF'+csv,'text/csv','schreeven-enriched-'+new Date().toISOString().slice(0,10)+'.csv');
+  addLog('✓ CSV geëxporteerd ('+outputRows.length+' producten)','success');
+}
+
+function downloadReport(){
+  if(!report.length) return;
+  const headers=['name','description_status','short_status','meta_desc_status','meta_title_status','meta_kw_status','specs_aangevuld','aandacht'];
+  const labels=['Productnaam','Description','Short description','Meta description','Meta title','Meta keywords','Aangevulde specs','Aandacht'];
+  const toRow=r=>headers.map(h=>{ const v=String(r[h]||''); return v.includes(';')||v.includes('"')?'"'+v.replace(/"/g,'""')+'"':v; }).join(';');
+  const withFlags=report.filter(r=>r.specs_aangevuld).length;
+  const allAI=report.filter(r=>r.description_status==='AI aangevuld').length;
+  const summary=[
+    'Verificatierapport Schreeven Enrichment — '+new Date().toLocaleString('nl-NL'),
+    'Totaal verrijkt: '+report.length,
+    'Volledig AI geschreven (geen brondata): '+allAI,
+    'Mogelijk onjuiste specs (aangevuld door AI): '+withFlags,
+    '',labels.join(';'),...report.map(toRow)
+  ].join('\r\n');
+  triggerDownload('\uFEFF'+summary,'text/csv','schreeven-rapport-'+new Date().toISOString().slice(0,10)+'.csv');
+}
+
+function downloadInsufficient(){
+  if(!insufficient.length) return;
+  const headers=['name','merk','type','reden'];
+  const labels=['Productnaam','Merk','Type','Reden'];
+  const rows=insufficient.map(r=>headers.map(h=>{ const v=String(r[h]||''); return v.includes(';')?'"'+v+'"':v; }).join(';'));
+  const csv=['Producten met onvoldoende data — '+new Date().toLocaleString('nl-NL'),'Totaal: '+insufficient.length,'',labels.join(';'),...rows].join('\r\n');
+  triggerDownload('\uFEFF'+csv,'text/csv','schreeven-onvoldoende-data-'+new Date().toISOString().slice(0,10)+'.csv');
+}
+
+function triggerDownload(content,mime,filename){
+  const blob=new Blob([content],{type:mime+';charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },100);
+}
+
+// ── PREVIEW ──────────────────────────────────────────────────────────
+function renderPreview(){
+  if(!enriched.length) return;
+  $('previewCard').style.display='block';
+  $('previewTitle').textContent='Stap 3 — Preview en controle ('+enriched.length.toLocaleString()+' producten)';
+  const list=$('previewList');
+  list.innerHTML='';
+  enriched.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='pitem'+(previewIdx===i?' active':'');
+    d.innerHTML='<div style="font-size:12px;font-weight:600;color:'+(previewIdx===i?'#006633':'#222')+';line-height:1.4;margin-bottom:2px">'+escHtml(p.name)+'</div><div style="font-size:11px;color:#888">'+escHtml(p.meta_title||'')+'</div>';
+    d.onclick=()=>{ previewIdx=i; renderPreview(); };
+    list.appendChild(d);
+  });
+  const detail=$('previewDetail');
+  if(previewIdx!==null&&enriched[previewIdx]){
+    const p=enriched[previewIdx];
+    const mtLen=(p.meta_title||'').length, mdLen=(p.meta_description||'').length;
+    detail.innerHTML=
+      '<span class="lbl">description_short</span>'+
+      '<div style="font-size:13px;color:#333;line-height:1.65;margin-bottom:13px">'+p.description_short+'</div>'+
+      '<span class="lbl">meta_title <span style="font-weight:400;color:'+(mtLen>60?'#c0392b':'#999');+'">'+'</span>'+mtLen+'/60</span>'+
+      '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_title||'')+'</div>'+
+      '<span class="lbl">meta_description <span style="font-weight:400;color:'+(mdLen>155?'#c0392b':'#999')+'">'+'</span>'+mdLen+'/155</span>'+
+      '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_description||'')+'</div>'+
+      '<span class="lbl" style="margin-bottom:6px">meta_keywords</span>'+
+      '<div style="margin-bottom:12px">'+(p.meta_keywords||'').split(',').map(k=>'<span class="kwtag">'+escHtml(k.trim())+'</span>').join('')+'</div>'+
+      '<span class="lbl">description (HTML)</span>'+
+      '<div style="font-size:11px;color:#555;background:#f5f5f0;padding:10px;border-radius:5px;max-height:130px;overflow-y:auto;line-height:1.75;border:1px solid #ddd;word-break:break-all;font-family:monospace">'+escHtml(p.description||'(leeg)')+'</div>';
+  }
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── INIT ─────────────────────────────────────────────────────────────
+const saved=loadSession();
+if(saved&&saved.enriched?.length>0){
+  // Laat saveBar zien na file upload
+}
+
 </script>
 </body>
 </html>
