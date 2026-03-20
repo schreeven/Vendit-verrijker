@@ -12,7 +12,7 @@
     --bg: #0e0e0e;
     --surface: #161616;
     --surface2: #1e1e1e;
-    --border: #2a2a2a;
+    --border: #2a2a2a;h
     --accent: #c8f542;
     --accent2: #42f5b0;
     --text: #f0f0f0;
@@ -915,35 +915,14 @@ ${product.adviesprijs ? `Adviesprijs: €${product.adviesprijs}` : ''}
       name: "web_search"
     }] : [];
 
-    const systemPrompt = `Je bent een productcopywriter voor Schreeven Muziekinstrumenten, een Nederlandse muziekwinkel in Nijmegen (sinds 1933). 
-Schrijf professionele Nederlandse productomschrijvingen voor de webshop.
-${useSearch ? 'Gebruik websearch om actuele productinfo, specs en marktprijzen op te zoeken.' : ''}
-
-Formaat (gebruik deze exacte structuur):
-**Wat is het?**
-[1-2 zinnen over wat het product is]
-
-**Wat doet het?**
-[2-3 zinnen over functie en werking]
-
-**Waarom kopen bij Schreeven?**
-[1-2 zinnen over service/voordeel]
-
-**Voordelen**
-• [voordeel 1]
-• [voordeel 2]
-• [voordeel 3]
-
-**Onderhoud**
-[1 zin onderhoudstip, of "Geen speciaal onderhoud vereist." als niet van toepassing]
-
-Schrijf vriendelijk, vakkundig en enthousiast. Geen marketingclichés. Max 200 woorden totaal.`;
+    const systemPrompt = `Je bent productcopywriter voor Schreeven Muziekinstrumenten (Nijmegen, 1933). Schrijf een korte Nederlandse webshop-omschrijving.${useSearch ? ' Zoek specs op indien nodig.' : ''}
+Structuur: 1) Wat is het (1 zin), 2) Functie/werking (2 zinnen), 3) Voordelen (3 bullets), 4) Onderhoudstip (1 zin). Max 120 woorden. Geen marketingclichés.`;
 
     const body = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
+      model: 'claude-haiku-4-20250514',
+      max_tokens: 400,
       system: systemPrompt,
-      messages: [{ role: 'user', content: `Schrijf een productomschrijving voor:\n\n${productInfo}` }],
+      messages: [{ role: 'user', content: `Product: ${product.naam}${product.merk ? ' | Merk: ' + product.merk : ''}${product.categorie ? ' | Cat: ' + product.categorie : ''}${product.artikelnummer ? ' | Art: ' + product.artikelnummer : ''}` }],
     };
     if (tools.length > 0) body.tools = tools;
 
