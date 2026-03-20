@@ -874,13 +874,24 @@ async function enrichProduct(product, apiKey, btw, marge) {
   renderProductCard(product);
 
   try {
-    // Calculate prices
-    const inkoop = parseFloat(String(product.inkoopprijs).replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+    // Calculate prices — handle Dutch comma decimal separator
+    function parsePrice(v) {
+      let s = String(v || '').trim();
+      s = s.replace(/[€$£s]/g, '');
+      if (s.includes('.') && s.includes(',')) {
+        s = s.replace(/./g, '').replace(',', '.');
+      } else if (s.includes(',')) {
+        s = s.replace(',', '.');
+      }
+      s = s.replace(/[^0-9.]/g, '');
+      return parseFloat(s) || 0;
+    }
+    const inkoop = parsePrice(product.inkoopprijs);
     if (inkoop > 0) {
       product.prijsExcl = (inkoop / (1 - marge)).toFixed(2);
       product.prijsIncl = (parseFloat(product.prijsExcl) * (1 + btw)).toFixed(2);
       product.adviesIncl = product.adviesprijs ?
-        (parseFloat(String(product.adviesprijs).replace(',','.').replace(/[^0-9.]/g,'')) * (1+btw)).toFixed(2) : '';
+        (parsePrice(product.adviesprijs) * (1 + btw)).toFixed(2) : '';
     }
 
     if (!useDesc && !useSearch) {
