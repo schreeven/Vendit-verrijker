@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendit Data Verrijker — Schreeven</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #c8f542;
+    --accent2: #42f5b0;
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4d4d;
+    --warning: #f5a623;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+
+  /* API KEY */
+  .api-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 28px;
+  }
+  .api-bar label {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .api-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+  }
+  .api-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .api-status.ok { background: rgba(200,245,66,0.1); color: var(--accent); }
+  .api-status.empty { background: rgba(255,77,77,0.1); color: var(--danger); }
+
+  /* SECTIONS */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+  }
+
+  .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-num.done { background: var(--accent2); }
+  .step-num.inactive { background: var(--border); color: var(--muted); }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .section-body { padding: 20px; }
+
+  /* UPLOAD */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,245,66,0.03);
+  }
+  .drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .drop-icon { font-size: 32px; margin-bottom: 12px; }
+  .drop-text { color: var(--muted); font-size: 12px; }
+  .drop-text strong { color: var(--text); }
+
+  /* SHEET PICKER */
+  .sheet-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .sheet-tab {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .sheet-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .sheet-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  /* TABLE PREVIEW */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th {
+    background: var(--surface2);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* MAPPING */
+  .mapping-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .map-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .map-label {
+    font-size: 11px;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: 110px;
+    flex-shrink: 0;
+  }
+  .map-arrow { color: var(--muted); font-size: 14px; }
+  select {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* SETTINGS */
+  .settings-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .setting-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .setting-item label { color: var(--muted); font-size: 12px; }
+  .setting-item input[type=number] {
+    width: 60px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    outline: none;
+  }
+  .setting-item input[type=number]:focus { border-color: var(--accent); }
+
+  .toggle-group {
+    display: flex;
+    gap: 6px;
+  }
+  .toggle-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* PRODUCT CARDS */
+  .products-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .product-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+  .product-card.processing { border-color: var(--warning); }
+  .product-card.done { border-color: var(--accent2); }
+  .product-card.error { border-color: var(--danger); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .card-artnum {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.3;
+    flex: 1;
+  }
+  .card-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .status-pending { background: rgba(102,102,102,0.15); color: var(--muted); }
+  .status-processing { background: rgba(245,166,35,0.15); color: var(--warning); }
+  .status-done { background: rgba(66,245,176,0.1); color: var(--accent2); }
+  .status-error { background: rgba(255,77,77,0.1); color: var(--danger); }
+
+  .card-desc {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #ccc;
+    white-space: pre-wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+
+  .card-prices {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .price-item { font-size: 12px; }
+  .price-item .plabel { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; display: block; }
+  .price-item .pval { color: var(--accent); font-weight: 500; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #d4f75a; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: rgba(255,77,77,0.1);
+    color: var(--danger);
+    border: 1px solid rgba(255,77,77,0.2);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 16px;
+  }
+
+  /* STATS */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 80px;
+  }
+  .stat-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--accent);
+  }
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+  /* LOG */
+  .log-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    max-height: 120px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+  .log-line.ok { color: var(--accent2); }
+  .log-line.warn { color: var(--warning); }
+  .log-line.err { color: var(--danger); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  .chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    background: rgba(200,245,66,0.08);
+    color: var(--accent);
+    border: 1px solid rgba(200,245,66,0.15);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .search-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--accent2);
+  }
+  .dot-spin {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vendit <span>Verrijker</span></div>
+  <div class="badge">Schreeven Muziekinstrumenten</div>
+</header>
+
+<main>
+
+  <!-- API KEY -->
+  <div class="api-bar">
+    <label>Anthropic API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="checkApiKey()" />
+    <div class="api-status empty" id="apiStatus">Geen sleutel</div>
+  </div>
+
+  <!-- STAP 1: UPLOAD -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num" id="step1num">1</div>
+      <div class="section-title">Bestand uploaden</div>
+    </div>
+    <div class="section-body">
+      <div class="drop-zone" id="dropZone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="loadFile(this.files[0])" />
+        <div class="drop-icon">📂</div>
+        <div class="drop-text"><strong>Sleep een bestand hierheen</strong> of klik om te bladeren<br>Excel (.xlsx, .xls) of CSV</div>
+      </div>
+      <div id="sheetPicker" style="display:none; margin-top:16px;">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Tabblad kiezen</div>
+        <div class="sheet-tabs" id="sheetTabs"></div>
+      </div>
+      <div id="previewWrap" style="display:none; margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:11px; color:var(--muted);">Voorbeeld (eerste 10 rijen)</span>
+          <span id="totalRows" style="font-size:11px; color:var(--accent);"></span>
+        </div>
+        <div class="table-wrap" id="previewTable"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAP 2: MAPPING -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num inactive" id="step2num">2</div>
+      <div class="section-title">Kolommen koppelen</div>
+    </div>
+    <div class="section-body">
+      <div id="mappingArea">
+        <div style="color:var(--muted); font-size:12px;">Laad eerst een bestand om kolommen te koppelen.</div>
+      </div>
+      <div id="mappingBtn" style="display:none;" class="btn-row">
+        <button class="btn btn-primary" onclick="applyMapping()">✓ Mapping bevestigen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAP 3: INSTELLINGEN -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num inactive" id="step3num">3</div>
+      <div class="section-title">Instellingen</div>
+    </div>
+    <div class="section-body">
+      <div class="settings-row">
+        <div class="setting-item">
+          <label>BTW %</label>
+          <input type="number" id="btwPct" value="21" min="0" max="100" />
+        </div>
+        <div class="setting-item">
+          <label>Marge %</label>
+          <input type="number" id="margePct" value="40" min="0" max="200" />
+        </div>
+        <div class="setting-item">
+          <label>Parallel</label>
+          <input type="number" id="parallelCount" value="3" min="1" max="6" />
+        </div>
+        <div class="setting-item">
+          <label>AI beschrijvingen</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="toggleDesc" onclick="toggleSetting('desc')">Aan</button>
+            <button class="toggle-btn" id="toggleDescOff" onclick="toggleSettingOff('desc')">Uit</button>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label>Websearch <span class="chip">nieuw</span></label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="toggleSearch" onclick="toggleSetting('search')">Aan</button>
+            <button class="toggle-btn" id="toggleSearchOff" onclick="toggleSettingOff('search')">Uit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAP 4: VERRIJKEN -->
+  <div class="section">
+    <div class="section-header">
+      <div class="step-num inactive" id="step4num">4</div>
+      <div class="section-title">Verrijken & exporteren</div>
+    </div>
+    <div class="section-body">
+      <div class="stats-row" id="statsRow" style="display:none;">
+        <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Totaal</div></div>
+        <div class="stat-box"><div class="stat-val" id="statDone">0</div><div class="stat-label">Klaar</div></div>
+        <div class="stat-box"><div class="stat-val" id="statErrors">0</div><div class="stat-label">Fouten</div></div>
+        <div class="stat-box"><div class="stat-val" id="statPending">0</div><div class="stat-label">Wacht</div></div>
+      </div>
+      <div id="progressWrap" style="display:none;">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:12px;" id="progressLabel">Klaar om te starten</div>
+      </div>
+      <div class="log-box" id="logBox" style="display:none;"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="startBtn" disabled onclick="startVerrijken()">▶ Starten</button>
+        <button class="btn btn-secondary" id="stopBtn" style="display:none;" onclick="stopVerrijken()">⏹ Stoppen</button>
+        <button class="btn btn-secondary" id="exportBtn" style="display:none;" onclick="exportCSV()">⬇ Exporteer Vendit CSV</button>
+        <button class="btn btn-danger" id="resetBtn" style="display:none;" onclick="resetAll()">↺ Reset</button>
+      </div>
+      <div id="productsContainer" style="margin-top:20px;"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let wb = null, rawRows = [], mappedRows = [], products = [];
+let running = false, stopRequested = false;
+let useDesc = true, useSearch = true;
+let colHeaders = [];
+
+const VENDIT_FIELDS = [
+  { key: 'artikelnummer', label: 'Artikelnummer', required: true },
+  { key: 'naam', label: 'Naam', required: true },
+  { key: 'merk', label: 'Merk', required: false },
+  { key: 'inkoopprijs', label: 'Inkoopprijs', required: false },
+  { key: 'adviesprijs', label: 'Adviesprijs (markt)', required: false },
+  { key: 'barcode', label: 'Barcode / EAN', required: false },
+  { key: 'categorie', label: 'Categorie', required: false },
+];
+
+// ─── API KEY ─────────────────────────────────────────────────────────────────
+function checkApiKey() {
+  const v = document.getElementById('apiKey').value.trim();
+  const el = document.getElementById('apiStatus');
+  if (v.startsWith('sk-ant-')) {
+    el.textContent = '✓ Sleutel ingesteld';
+    el.className = 'api-status ok';
+  } else {
+    el.textContent = 'Geen sleutel';
+    el.className = 'api-status empty';
+  }
+}
+
+function getApiKey() { return document.getElementById('apiKey').value.trim(); }
+
+// ─── FILE LOADING ─────────────────────────────────────────────────────────────
+function dragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function dragLeave(e) { document.getElementById('dropZone').classList.remove('drag-over'); }
+function dropFile(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+}
+
+function loadFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    wb = XLSX.read(data, { type: 'array' });
+    if (wb.SheetNames.length > 1) {
+      document.getElementById('sheetPicker').style.display = 'block';
+      const tabs = document.getElementById('sheetTabs');
+      tabs.innerHTML = wb.SheetNames.map((n, i) =>
+        `<div class="sheet-tab ${i===0?'active':''}" onclick="selectSheet('${n}', this)">${n}</div>`
+      ).join('');
+    }
+    loadSheet(wb.SheetNames[0]);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function selectSheet(name, el) {
+  document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadSheet(name);
+}
+
+function loadSheet(name) {
+  const ws = wb.Sheets[name];
+  const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  // Find header row (first row with 3+ non-empty cells)
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(json.length, 10); i++) {
+    const filled = json[i].filter(c => String(c).trim() !== '').length;
+    if (filled >= 3) { headerIdx = i; break; }
+  }
+  colHeaders = json[headerIdx].map(h => String(h).trim());
+  rawRows = json.slice(headerIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
+
+  document.getElementById('totalRows').textContent = `${rawRows.length} producten gevonden`;
+  showPreview(colHeaders, rawRows.slice(0, 10));
+  showMapping(colHeaders);
+  document.getElementById('previewWrap').style.display = 'block';
+  document.getElementById('step1num').classList.add('done');
+  document.getElementById('step2num').classList.remove('inactive');
+}
+
+function showPreview(headers, rows) {
+  const wrap = document.getElementById('previewTable');
+  const thead = `<thead><tr>${headers.map(h => `<th>${h||'—'}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${rows.map(r =>
+    `<tr>${headers.map((_, i) => `<td>${String(r[i]||'').substring(0,60)}</td>`).join('')}</tr>`
+  ).join('')}</tbody>`;
+  wrap.innerHTML = `<table>${thead}${tbody}</table>`;
+}
+
+// ─── MAPPING ──────────────────────────────────────────────────────────────────
+function showMapping(headers) {
+  const area = document.getElementById('mappingArea');
+  const opts = ['— overslaan —', ...headers].map(h => `<option value="${h}">${h}</option>`).join('');
+
+  const rows = VENDIT_FIELDS.map(f => {
+    // Auto-detect best match
+    const autoMatch = autoDetect(f.key, headers);
+    const selOpts = ['— overslaan —', ...headers].map(h =>
+      `<option value="${h}" ${h===autoMatch?'selected':''}>${h}</option>`
+    ).join('');
+    return `
+      <div class="map-row">
+        <div class="map-label">${f.label}${f.required?' *':''}</div>
+        <div class="map-arrow">→</div>
+        <select id="map_${f.key}">${selOpts}</select>
+      </div>`;
+  }).join('');
+
+  area.innerHTML = `<div class="mapping-grid">${rows}</div>`;
+  document.getElementById('mappingBtn').style.display = 'flex';
+}
+
+function autoDetect(fieldKey, headers) {
+  const patterns = {
+    artikelnummer: ['artikel', 'artnr', 'art.', 'sku', 'code', 'item'],
+    naam: ['naam', 'name', 'omschrijving', 'product', 'description', 'artikel omschrijving'],
+    merk: ['merk', 'brand', 'fabrikant', 'manufacturer'],
+    inkoopprijs: ['inkoop', 'cost', 'netto', 'purchase', 'prijs netto', 'net price'],
+    adviesprijs: ['advies', 'srp', 'msrp', 'retail', 'consumer', 'aanbevolen'],
+    barcode: ['ean', 'barcode', 'gtin', 'upc'],
+    categorie: ['categorie', 'category', 'groep', 'group', 'type'],
+  };
+  const pats = patterns[fieldKey] || [];
+  for (const h of headers) {
+    const hl = h.toLowerCase();
+    for (const p of pats) {
+      if (hl.includes(p)) return h;
+    }
+  }
+  return '— overslaan —';
+}
+
+function applyMapping() {
+  const mapping = {};
+  VENDIT_FIELDS.forEach(f => {
+    const sel = document.getElementById(`map_${f.key}`);
+    if (sel && sel.value !== '— overslaan —') mapping[f.key] = sel.value;
+  });
+
+  // Check required
+  const missingRequired = VENDIT_FIELDS.filter(f => f.required && !mapping[f.key]);
+  if (missingRequired.length > 0) {
+    alert(`Verplichte velden ontbreken: ${missingRequired.map(f=>f.label).join(', ')}`);
+    return;
+  }
+
+  // Build mapped rows
+  mappedRows = rawRows.map(row => {
+    const obj = {};
+    VENDIT_FIELDS.forEach(f => {
+      if (mapping[f.key]) {
+        const colIdx = colHeaders.indexOf(mapping[f.key]);
+        obj[f.key] = colIdx >= 0 ? String(row[colIdx] || '').trim() : '';
+      } else {
+        obj[f.key] = '';
+      }
+    });
+    return obj;
+  }).filter(r => r.artikelnummer || r.naam);
+
+  document.getElementById('step2num').classList.add('done');
+  document.getElementById('step3num').classList.remove('inactive');
+  document.getElementById('step4num').classList.remove('inactive');
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('statsRow').style.display = 'flex';
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('logBox').style.display = 'block';
+  document.getElementById('resetBtn').style.display = 'inline-flex';
+
+  // Init products
+  products = mappedRows.map(r => ({ ...r, status: 'pending', beschrijving: '', prijsExcl: '', prijsIncl: '' }));
+  renderProducts();
+  updateStats();
+  log(`✓ ${products.length} producten klaar voor verrijking`, 'ok');
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function toggleSetting(type) {
+  if (type === 'desc') { useDesc = true; document.getElementById('toggleDesc').classList.add('active'); document.getElementById('toggleDescOff').classList.remove('active'); }
+  if (type === 'search') { useSearch = true; document.getElementById('toggleSearch').classList.add('active'); document.getElementById('toggleSearchOff').classList.remove('active'); }
+}
+function toggleSettingOff(type) {
+  if (type === 'desc') { useDesc = false; document.getElementById('toggleDescOff').classList.add('active'); document.getElementById('toggleDesc').classList.remove('active'); }
+  if (type === 'search') { useSearch = false; document.getElementById('toggleSearchOff').classList.add('active'); document.getElementById('toggleSearch').classList.remove('active'); }
+}
+
+// ─── VERRIJKEN ────────────────────────────────────────────────────────────────
+async function startVerrijken() {
+  const apiKey = getApiKey();
+  if (!apiKey.startsWith('sk-ant-')) { alert('Vul eerst een geldige Anthropic API key in.'); return; }
+  running = true; stopRequested = false;
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-flex';
+
+  const btw = parseFloat(document.getElementById('btwPct').value) / 100 || 0.21;
+  const marge = parseFloat(document.getElementById('margePct').value) / 100 || 0.40;
+  const parallel = parseInt(document.getElementById('parallelCount').value) || 3;
+
+  const pending = products.filter(p => p.status === 'pending');
+  log(`▶ Starten: ${pending.length} producten, ${parallel} parallel`, 'ok');
+
+  // Process in batches
+  for (let i = 0; i < pending.length; i += parallel) {
+    if (stopRequested) break;
+    const batch = pending.slice(i, i + parallel);
+    await Promise.all(batch.map(p => enrichProduct(p, apiKey, btw, marge)));
+    updateStats();
+    updateProgress(products.filter(p=>p.status==='done'||p.status==='error').length, products.length);
+  }
+
+  running = false;
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('startBtn').style.display = 'inline-flex';
+  document.getElementById('startBtn').textContent = '▶ Hervat';
+  document.getElementById('exportBtn').style.display = 'inline-flex';
+  const done = products.filter(p=>p.status==='done').length;
+  log(`✓ Klaar — ${done} producten verrijkt`, 'ok');
+}
+
+function stopVerrijken() {
+  stopRequested = true;
+  log('⏸ Stoppen na huidige batch...', 'warn');
+}
+
+async function enrichProduct(product, apiKey, btw, marge) {
+  product.status = 'processing';
+  renderProductCard(product);
+
+  try {
+    // Calculate prices
+    const inkoop = parseFloat(String(product.inkoopprijs).replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+    if (inkoop > 0) {
+      product.prijsExcl = (inkoop / (1 - marge)).toFixed(2);
+      product.prijsIncl = (parseFloat(product.prijsExcl) * (1 + btw)).toFixed(2);
+      product.adviesIncl = product.adviesprijs ?
+        (parseFloat(String(product.adviesprijs).replace(',','.').replace(/[^0-9.]/g,'')) * (1+btw)).toFixed(2) : '';
+    }
+
+    if (!useDesc && !useSearch) {
+      product.status = 'done';
+      renderProductCard(product);
+      return;
+    }
+
+    // Build prompt
+    const productInfo = `
+Artikelnummer: ${product.artikelnummer}
+Naam: ${product.naam}
+Merk: ${product.merk || 'onbekend'}
+Categorie: ${product.categorie || 'muziekinstrumenten'}
+Inkoopprijs: €${product.inkoopprijs}
+${product.adviesprijs ? `Adviesprijs: €${product.adviesprijs}` : ''}
+`.trim();
+
+    const tools = useSearch ? [{
+      type: "web_search_20250305",
+      name: "web_search"
+    }] : [];
+
+    const systemPrompt = `Je bent een productcopywriter voor Schreeven Muziekinstrumenten, een Nederlandse muziekwinkel in Nijmegen (sinds 1933). 
+Schrijf professionele Nederlandse productomschrijvingen voor de webshop.
+${useSearch ? 'Gebruik websearch om actuele productinfo, specs en marktprijzen op te zoeken.' : ''}
+
+Formaat (gebruik deze exacte structuur):
+**Wat is het?**
+[1-2 zinnen over wat het product is]
+
+**Wat doet het?**
+[2-3 zinnen over functie en werking]
+
+**Waarom kopen bij Schreeven?**
+[1-2 zinnen over service/voordeel]
+
+**Voordelen**
+• [voordeel 1]
+• [voordeel 2]
+• [voordeel 3]
+
+**Onderhoud**
+[1 zin onderhoudstip, of "Geen speciaal onderhoud vereist." als niet van toepassing]
+
+Schrijf vriendelijk, vakkundig en enthousiast. Geen marketingclichés. Max 200 woorden totaal.`;
+
+    const body = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: `Schrijf een productomschrijving voor:\n\n${productInfo}` }],
+    };
+    if (tools.length > 0) body.tools = tools;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const textBlocks = data.content.filter(b => b.type === 'text');
+    product.beschrijving = textBlocks.map(b => b.text).join('\n').trim();
+    product.status = 'done';
+    log(`✓ ${product.naam.substring(0,40)}`, 'ok');
+
+  } catch (err) {
+    product.status = 'error';
+    product.beschrijving = `Fout: ${err.message}`;
+    log(`✗ ${product.naam?.substring(0,30)} — ${err.message}`, 'err');
+  }
+
+  renderProductCard(product);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderProducts() {
+  const container = document.getElementById('productsContainer');
+  container.innerHTML = '<div class="products-grid" id="productsGrid"></div>';
+  products.forEach(p => {
+    const el = document.createElement('div');
+    el.id = `card_${p.artikelnummer}`;
+    document.getElementById('productsGrid').appendChild(el);
+    renderProductCard(p);
+  });
+}
+
+function renderProductCard(p) {
+  const el = document.getElementById(`card_${p.artikelnummer}`);
+  if (!el) return;
+
+  const statusLabels = { pending: 'Wacht', processing: 'Bezig...', done: 'Klaar', error: 'Fout' };
+  const statusClasses = { pending: 'status-pending', processing: 'status-processing', done: 'status-done', error: 'status-error' };
+
+  const pricesHtml = (p.prijsIncl || p.prijsExcl) ? `
+    <div class="card-prices">
+      ${p.inkoopprijs ? `<div class="price-item"><span class="plabel">Inkoop</span><span class="pval">€${p.inkoopprijs}</span></div>` : ''}
+      ${p.prijsExcl ? `<div class="price-item"><span class="plabel">Verkoop excl.</span><span class="pval">€${p.prijsExcl}</span></div>` : ''}
+      ${p.prijsIncl ? `<div class="price-item"><span class="plabel">Verkoop incl.</span><span class="pval">€${p.prijsIncl}</span></div>` : ''}
+      ${p.adviesIncl ? `<div class="price-item"><span class="plabel">Advies incl.</span><span class="pval">€${p.adviesIncl}</span></div>` : ''}
+    </div>` : '';
+
+  const descHtml = p.beschrijving ? `<div class="card-desc">${p.beschrijving}</div>` : '';
+  const searchHtml = p.status === 'processing' && useSearch ?
+    `<div class="search-indicator"><div class="dot-spin"></div> Zoekt online info...</div>` : '';
+
+  el.className = `product-card ${p.status}`;
+  el.innerHTML = `
+    <div class="card-top">
+      <div>
+        <div class="card-artnum">${p.artikelnummer || '—'}</div>
+        <div class="card-name">${p.naam || 'Onbekend product'}</div>
+        ${p.merk ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${p.merk}</div>` : ''}
+      </div>
+      <div>
+        <div class="card-status ${statusClasses[p.status]}">${statusLabels[p.status]}</div>
+        ${searchHtml}
+      </div>
+    </div>
+    ${pricesHtml}
+    ${descHtml}
+  `;
+}
+
+function updateStats() {
+  const done = products.filter(p=>p.status==='done').length;
+  const errors = products.filter(p=>p.status==='error').length;
+  const pending = products.filter(p=>p.status==='pending').length;
+  document.getElementById('statTotal').textContent = products.length;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statErrors').textContent = errors;
+  document.getElementById('statPending').textContent = pending;
+}
+
+function updateProgress(done, total) {
+  const pct = total > 0 ? Math.round(done/total*100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total} verrijkt (${pct}%)`;
+}
+
+// ─── LOG ──────────────────────────────────────────────────────────────────────
+function log(msg, type='') {
+  const box = document.getElementById('logBox');
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  const time = new Date().toLocaleTimeString('nl-NL', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  line.textContent = `[${time}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = [
+    'Artikelnummer', 'Naam', 'Merk', 'Barcode', 'Categorie',
+    'Inkoopprijs', 'Verkoopprijs excl. BTW', 'Verkoopprijs incl. BTW',
+    'Adviesprijs incl. BTW', 'BTW %',
+    'Korte omschrijving', 'Uitgebreide omschrijving'
+  ];
+
+  const btw = document.getElementById('btwPct').value;
+
+  const rows = products.map(p => [
+    p.artikelnummer, p.naam, p.merk || '', p.barcode || '', p.categorie || '',
+    p.inkoopprijs || '', p.prijsExcl || '', p.prijsIncl || '',
+    p.adviesIncl || '', btw,
+    p.naam || '',
+    (p.beschrijving || '').replace(/\n/g, ' ').replace(/;/g, ',')
+  ]);
+
+  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vendit_verrijkt_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  log('✓ CSV geëxporteerd', 'ok');
+}
+
+// ─── RESET ────────────────────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('Alles resetten?')) return;
+  wb = null; rawRows = []; mappedRows = []; products = [];
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('sheetPicker').style.display = 'none';
+  document.getElementById('mappingArea').innerHTML = '<div style="color:var(--muted);font-size:12px;">Laad eerst een bestand om kolommen te koppelen.</div>';
+  document.getElementById('mappingBtn').style.display = 'none';
+  document.getElementById('productsContainer').innerHTML = '';
+  document.getElementById('statsRow').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('logBox').style.display = 'none';
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = '▶ Starten';
+  document.getElementById('exportBtn').style.display = 'none';
+  document.getElementById('resetBtn').style.display = 'none';
+  ['step1num','step2num','step3num','step4num'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'step-num' + (i>0?' inactive':'');
+  });
+}
+</script>
+</body>
+</html>
