@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
@@ -25,7 +26,7 @@ body{font-family:'Nunito','Avenir','Segoe UI',sans-serif;background:#f5f5f0;min-
 .pitem{background:#f9f9f6;border:1.5px solid #e0e0d8;border-radius:6px;padding:10px 13px;margin-bottom:6px;cursor:pointer;transition:all .15s}
 .pitem:hover{border-color:#006633;background:#f0f7f3}.pitem.active{border-color:#006633;background:#edf7ed}
 .logbox{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:5px;padding:10px 12px;max-height:170px;overflow-y:auto;font-size:11px;line-height:1.85;font-family:'Courier New',monospace}
-.log-info{color:#888}.log-success{color:#006633;font-weight:600}.log-warn{color:#b45309}.log-error{color:#c0392b;font-weight:600}.log-save{color:#2c5f8a}.log-web{color:#6d28d9;font-weight:600}
+.log-info{color:#888}.log-success{color:#006633;font-weight:600}.log-warn{color:#b45309}.log-error{color:#c0392b;font-weight:600}.log-save{color:#2c5f8a}.log-web{color:#6d28d9;font-weight:600}.log-throttle{color:#b45309;font-weight:600}
 .kwtag{background:#edf7ed;border:1px solid #a8d5a2;border-radius:4px;padding:3px 8px;font-size:11px;color:#006633;display:inline-block;margin:2px;font-weight:500}
 .toggle-wrap{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:7px;cursor:pointer;transition:all .15s;border:1.5px solid #ddd}
 .toggle-knob{width:36px;height:20px;border-radius:10px;background:#ccc;position:relative;transition:background .2s;flex-shrink:0}
@@ -58,12 +59,14 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
 .collapsible-header:hover{background:#f0f7f3;border-color:#006633}
 .collapsible-content{display:none;margin-top:8px}
 .collapsible-content.open{display:block}
+.throttle-banner{display:none;background:#fff8eb;border:1.5px solid #fde68a;border-radius:7px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#b45309;font-weight:600;align-items:center;gap:8px}
 </style>
 </head>
 <body>
 <div id="app" style="max-width:1000px;margin:0 auto">
 
   <!-- HEADER -->
+
   <div style="margin-bottom:24px;border-bottom:3px solid #006633;padding-bottom:18px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
       <div style="width:38px;height:38px;border-radius:6px;overflow:hidden;flex-shrink:0;display:flex;flex-direction:column;border:1px solid #e0e0d8">
@@ -79,8 +82,10 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
   </div>
 
   <!-- API KEY + BUDGET -->
+
   <div class="api-input-wrap">
     <label style="color:#006633;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap">API Key</label>
+    <a href="https://console.anthropic.com/settings/keys" target="_blank" style="font-size:10px;color:#2c5f8a;text-decoration:none;white-space:nowrap;opacity:.7" title="Ophalen of aanmaken">🔑 console.anthropic.com</a>
     <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="flex:1;border:none;outline:none;font-size:13px;font-family:'Nunito',sans-serif;background:transparent" oninput="onApiKeyInput()">
     <button class="btn btn-blue" onclick="checkBudget()" id="budgetBtn" style="white-space:nowrap;padding:7px 14px;font-size:12px">💰 Check budget</button>
   </div>
@@ -91,6 +96,7 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
   </div>
 
   <!-- ROUTING UITLEG -->
+
   <div class="card">
     <span class="lbl">Routing — 3-laags model strategie</span>
     <div class="routing-grid">
@@ -98,7 +104,7 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <span class="badge badge-haiku">LAAG 1</span>
           <span style="font-size:12px;font-weight:700;color:#065f46">Haiku</span>
-          <span style="font-size:10px;color:#6ee7b7;margin-left:auto">$0,25/$1,25</span>
+          <span style="font-size:10px;color:#6ee7b7;margin-left:auto">$0,80/$4,00</span>
         </div>
         <div style="font-size:11px;color:#047857;line-height:1.5">Schrijft alleen op basis van wat er in de CSV staat. Geen aannames. Onvoldoende data → Laag 2.</div>
       </div>
@@ -120,17 +126,26 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
       </div>
     </div>
 
-    <!-- Web search toggle -->
-    <div id="toggleWebSearch" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:0" onclick="toggleSetting('webSearch')">
-      <div class="toggle-knob" id="knobWebSearch"><div class="toggle-knob-ball" id="ballWebSearch"></div></div>
-      <div>
-        <div style="font-size:12px;font-weight:700;color:#555">Laag 3 — Web search inschakelen</div>
-        <div id="labelWebSearch" style="font-size:11px;color:#999;margin-top:1px">Uit — producten zonder voldoende data worden als "insufficient" gemarkeerd</div>
-      </div>
-    </div>
+```
+<!-- Throttle info -->
+<div style="background:#f0f7f3;border:1px solid #a8d5a2;border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#047857">
+  ⏱ <strong>Rate limit bescherming actief</strong> — Automatische vertraging tussen batches (2s) + exponential backoff bij 429-fouten. Bij aanhoudende throttling wordt de wachttijd automatisch verlengd.
+</div>
+
+<!-- Web search toggle -->
+<div id="toggleWebSearch" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:0" onclick="toggleSetting('webSearch')">
+  <div class="toggle-knob" id="knobWebSearch"><div class="toggle-knob-ball" id="ballWebSearch"></div></div>
+  <div>
+    <div style="font-size:12px;font-weight:700;color:#555">Laag 3 — Web search inschakelen</div>
+    <div id="labelWebSearch" style="font-size:11px;color:#999;margin-top:1px">Uit — producten zonder voldoende data worden als "insufficient" gemarkeerd</div>
+  </div>
+</div>
+```
+
   </div>
 
   <!-- FILTER -->
+
   <div class="card">
     <span class="lbl">Filter — welke producten verrijken?</span>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
@@ -148,38 +163,42 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
       </div>
     </div>
 
-    <!-- Toggles -->
-    <div id="toggleGenDesc" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:8px" onclick="toggleSetting('genDesc')">
-      <div class="toggle-knob" id="knobGenDesc"><div class="toggle-knob-ball" id="ballGenDesc"></div></div>
-      <div>
-        <div style="font-size:12px;font-weight:700;color:#555">Ook <em>description</em> (lange beschrijving) vullen</div>
-        <div id="labelGenDesc" style="font-size:11px;color:#999;margin-top:1px">Uit — alleen description_short wordt gevuld (standaard)</div>
-      </div>
-    </div>
-    <div id="toggleClearDesc" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:14px" onclick="toggleSetting('clearDesc')">
-      <div class="toggle-knob" id="knobClearDesc"><div class="toggle-knob-ball" id="ballClearDesc"></div></div>
-      <div>
-        <div style="font-size:12px;font-weight:700;color:#555">Bestaande <em>description</em> leegmaken</div>
-        <div id="labelClearDesc" style="font-size:11px;color:#999;margin-top:1px">Uit — bestaande description blijft staan</div>
-      </div>
-    </div>
+```
+<!-- Toggles -->
+<div id="toggleGenDesc" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:8px" onclick="toggleSetting('genDesc')">
+  <div class="toggle-knob" id="knobGenDesc"><div class="toggle-knob-ball" id="ballGenDesc"></div></div>
+  <div>
+    <div style="font-size:12px;font-weight:700;color:#555">Ook <em>description</em> (lange beschrijving) vullen</div>
+    <div id="labelGenDesc" style="font-size:11px;color:#999;margin-top:1px">Uit — alleen description_short wordt gevuld (standaard)</div>
+  </div>
+</div>
+<div id="toggleClearDesc" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:14px" onclick="toggleSetting('clearDesc')">
+  <div class="toggle-knob" id="knobClearDesc"><div class="toggle-knob-ball" id="ballClearDesc"></div></div>
+  <div>
+    <div style="font-size:12px;font-weight:700;color:#555">Bestaande <em>description</em> leegmaken</div>
+    <div id="labelClearDesc" style="font-size:11px;color:#999;margin-top:1px">Uit — bestaande description blijft staan</div>
+  </div>
+</div>
 
-    <!-- Skip / Only keywords -->
-    <span class="lbl" style="margin-bottom:6px">Overslaan als naam bevat <span style="color:#aaa;font-weight:500">(optioneel)</span></span>
-    <input type="text" id="skipKw" placeholder="bijv. Fender, Sela, Pioneer" style="margin-bottom:8px" oninput="updateKwPreviews()">
-    <div id="skipKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#b45309;background:#fffbeb;padding:5px 10px;border-radius:4px;border:1px solid #fde68a"></div>
+<!-- Skip / Only keywords -->
+<span class="lbl" style="margin-bottom:6px">Overslaan als naam bevat <span style="color:#aaa;font-weight:500">(optioneel)</span></span>
+<input type="text" id="skipKw" placeholder="bijv. Fender, Sela, Pioneer" style="margin-bottom:8px" oninput="updateKwPreviews()">
+<div id="skipKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#b45309;background:#fffbeb;padding:5px 10px;border-radius:4px;border:1px solid #fde68a"></div>
 
-    <span class="lbl" style="margin-bottom:6px">Alleen verwerken als naam bevat <span style="color:#aaa;font-weight:500">(optioneel)</span></span>
-    <input type="text" id="onlyKw" placeholder="bijv. DeoxIT, Yamaha, snare" style="margin-bottom:8px" oninput="updateKwPreviews()">
-    <div id="onlyKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#006633;background:#edf7ed;padding:5px 10px;border-radius:4px;border:1px solid #a8d5a2"></div>
+<span class="lbl" style="margin-bottom:6px">Alleen verwerken als naam bevat <span style="color:#aaa;font-weight:500">(optioneel)</span></span>
+<input type="text" id="onlyKw" placeholder="bijv. DeoxIT, Yamaha, snare" style="margin-bottom:8px" oninput="updateKwPreviews()">
+<div id="onlyKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#006633;background:#edf7ed;padding:5px 10px;border-radius:4px;border:1px solid #a8d5a2"></div>
 
-    <div id="herbereken-wrap" style="display:none;margin-top:6px;align-items:center;gap:12px;padding:12px 14px;background:#f0f7f3;border:1.5px solid #a8d5a2;border-radius:7px">
-      <button class="btn btn-green" onclick="herbereken()" style="padding:8px 18px;font-size:13px">🔄 Herbereken filter</button>
-      <div id="herberekenStatus" style="font-size:12px;color:#555"></div>
-    </div>
+<div id="herbereken-wrap" style="display:none;margin-top:6px;align-items:center;gap:12px;padding:12px 14px;background:#f0f7f3;border:1.5px solid #a8d5a2;border-radius:7px">
+  <button class="btn btn-green" onclick="herbereken()" style="padding:8px 18px;font-size:13px">🔄 Herbereken filter</button>
+  <div id="herberekenStatus" style="font-size:12px;color:#555"></div>
+</div>
+```
+
   </div>
 
   <!-- SYSTEM PROMPT (configureerbaar) -->
+
   <div class="card">
     <div class="collapsible-header" onclick="toggleCollapsible('promptSection')">
       <div>
@@ -200,6 +219,7 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
   </div>
 
   <!-- UPLOAD -->
+
   <div class="card">
     <span class="lbl">Stap 1 — CSV uploaden</span>
     <div class="upzone" onclick="document.getElementById('fileInput').click()">
@@ -216,72 +236,108 @@ textarea{resize:vertical;line-height:1.6;font-size:12px}
     </div>
   </div>
 
+  <!-- KOLOM MAPPING -->
+
+  <div class="card" id="mappingCard" style="display:none">
+    <span class="lbl">Stap 1b — Kolommen koppelen</span>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#b45309">
+      ⚠ De tool herkent dit niet als een standaard PrestaShop CSV. Koppel hieronder welke kolom overeenkomt met elk verwacht veld. Velden leeg laten = niet gebruiken.
+    </div>
+    <div id="mappingGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="applyMapping()">✓ Koppeling toepassen</button>
+      <button class="btn btn-gray" onclick="applyMapping(true)" style="font-size:12px">Overslaan (auto-detectie)</button>
+      <span id="mappingStatus" style="font-size:12px;color:#555"></span>
+    </div>
+  </div>
+
   <!-- VERRIJKEN -->
+
   <div class="card" id="enrichCard" style="display:none">
     <span class="lbl">Stap 2 — Verrijken</span>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px" id="statsGrid">
-      <div class="sbox"><div id="sTotaal" style="font-size:20px;font-weight:600;color:#555">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Totaal CSV</div></div>
-      <div class="sbox"><div id="sTe" style="font-size:20px;font-weight:600;color:#006633">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Te verrijken</div></div>
-      <div class="sbox"><div id="sKlaar" style="font-size:20px;font-weight:600;color:#006633">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Verrijkt</div></div>
-      <div class="sbox"><div id="sRest" style="font-size:20px;font-weight:600;color:#888">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Resterend</div></div>
-      <div class="sbox"><div id="sOver" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Overgeslagen</div></div>
-      <div class="sbox"><div id="sGeen" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Geen data</div></div>
-    </div>
 
-    <!-- Kosten per laag -->
-    <div id="costTracker" style="display:none;background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:11px 14px;margin-bottom:14px;font-size:12px">
-      <div style="font-weight:700;color:#555;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Kosten deze run</div>
-      <div class="cost-row"><span><span class="badge badge-haiku">HAIKU</span> <span id="costHaikuCount" style="color:#065f46">0</span> producten</span><span id="costHaikuAmt" style="color:#065f46;font-weight:600">$0.000</span></div>
-      <div class="cost-row"><span><span class="badge badge-sonnet">SONNET</span> <span id="costSonnetCount" style="color:#1e40af">0</span> producten</span><span id="costSonnetAmt" style="color:#1e40af;font-weight:600">$0.000</span></div>
-      <div class="cost-row"><span><span class="badge badge-web">WEB</span> <span id="costWebCount" style="color:#5b21b6">0</span> producten</span><span id="costWebAmt" style="color:#5b21b6;font-weight:600">$0.000</span></div>
-      <div style="border-top:1.5px solid #ddd;margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-weight:700"><span style="color:#333">Totaal</span><span id="costTotal" style="color:#006633">$0.000</span></div>
-    </div>
+```
+<!-- Throttle banner -->
+<div id="throttleBanner" class="throttle-banner">
+  <span>⏳</span>
+  <span id="throttleMsg">Rate limit bereikt — wachten voor volgende batch...</span>
+</div>
 
-    <div id="progressWrap" style="display:none">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:5px;font-weight:500">
-        <span id="progressLabel">0%</span>
-        <span id="etaLabel" style="color:#006633;font-weight:600"></span>
-      </div>
-      <div class="pbar"><div class="pfill" id="progressFill" style="width:0%"></div></div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="actionBtns">
-      <button class="btn btn-green" id="startBtn" onclick="runEnrichment()">▶ Start</button>
-      <button class="btn btn-red" id="pauseBtn" style="display:none" onclick="stopProcessing()">⏸ Pauzeren</button>
-      <button class="btn btn-green" id="downloadBtn" style="display:none" onclick="downloadCsv()">⬇ Download CSV</button>
-      <button class="btn btn-blue" id="reportBtn" style="display:none" onclick="downloadReport()">📋 Download rapport</button>
-      <button class="btn btn-orange" id="insuffBtn" style="display:none" onclick="downloadInsufficient()">⚠ Geen data</button>
-    </div>
-    <div class="logbox" id="logBox" style="display:none"></div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px" id="statsGrid">
+  <div class="sbox"><div id="sTotaal" style="font-size:20px;font-weight:600;color:#555">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Totaal CSV</div></div>
+  <div class="sbox"><div id="sTe" style="font-size:20px;font-weight:600;color:#006633">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Te verrijken</div></div>
+  <div class="sbox"><div id="sKlaar" style="font-size:20px;font-weight:600;color:#006633">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Verrijkt</div></div>
+  <div class="sbox"><div id="sRest" style="font-size:20px;font-weight:600;color:#888">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Resterend</div></div>
+  <div class="sbox"><div id="sOver" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Overgeslagen</div></div>
+  <div class="sbox"><div id="sGeen" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Geen data</div></div>
+</div>
+
+<!-- Kosten per laag -->
+<div id="costTracker" style="display:none;background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:11px 14px;margin-bottom:14px;font-size:12px">
+  <div style="font-weight:700;color:#555;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Kosten deze run</div>
+  <div class="cost-row"><span><span class="badge badge-haiku">HAIKU</span> <span id="costHaikuCount" style="color:#065f46">0</span> producten</span><span id="costHaikuAmt" style="color:#065f46;font-weight:600">$0.000</span></div>
+  <div class="cost-row"><span><span class="badge badge-sonnet">SONNET</span> <span id="costSonnetCount" style="color:#1e40af">0</span> producten</span><span id="costSonnetAmt" style="color:#1e40af;font-weight:600">$0.000</span></div>
+  <div class="cost-row"><span><span class="badge badge-web">WEB</span> <span id="costWebCount" style="color:#5b21b6">0</span> producten</span><span id="costWebAmt" style="color:#5b21b6;font-weight:600">$0.000</span></div>
+  <div style="border-top:1.5px solid #ddd;margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-weight:700"><span style="color:#333">Totaal</span><span id="costTotal" style="color:#006633">$0.000</span></div>
+</div>
+
+<div id="progressWrap" style="display:none">
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:5px;font-weight:500">
+    <span id="progressLabel">0%</span>
+    <span id="etaLabel" style="color:#006633;font-weight:600"></span>
+  </div>
+  <div class="pbar"><div class="pfill" id="progressFill" style="width:0%"></div></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center" id="actionBtns">
+  <!-- Run controls -->
+  <button class="btn btn-green" id="startBtn" onclick="runEnrichment()">▶ Start</button>
+  <button class="btn btn-red" id="pauseBtn" style="display:none" onclick="pauseProcessing()">⏸ Pauzeer</button>
+  <button class="btn btn-green" id="resumeBtn" style="display:none" onclick="runEnrichment()">▶ Hervat</button>
+  <button class="btn btn-orange" id="stopResetBtn" style="display:none" onclick="stopAndReset()">⏹ Stop & opnieuw</button>
+  <div style="width:1px;height:28px;background:#ddd;margin:0 4px"></div>
+  <!-- Downloads -->
+  <button class="btn btn-green" id="downloadBtn" style="display:none" onclick="downloadCsv()">⬇ Download CSV</button>
+  <button class="btn btn-blue" id="reportBtn" style="display:none" onclick="downloadReport()">📋 Rapport</button>
+  <button class="btn btn-orange" id="insuffBtn" style="display:none" onclick="downloadInsufficient()">⚠ Geen data</button>
+  <div style="width:1px;height:28px;background:#ddd;margin:0 4px"></div>
+  <!-- Reset -->
+  <button class="btn btn-gray" id="resetAllBtn" onclick="resetAll()" style="font-size:12px">🔄 Reset alles</button>
+</div>
+<div class="logbox" id="logBox" style="display:none"></div>
+```
+
   </div>
 
   <!-- PREVIEW -->
+
   <div class="card" id="previewCard" style="display:none">
     <span class="lbl" id="previewTitle">Stap 3 — Preview</span>
     <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:16px">
       <div style="max-height:460px;overflow-y:auto" id="previewList"></div>
-      <div id="previewDetail" style="color:#ccc;font-size:13px;padding-top:80px;text-align:center;line-height:3">← Selecteer een product</div>
+      <div id="previewDetail" style="color:#ccc;font-size:13px;padding-top:80px;text-align:center;line-height:3;min-height:200px">← Selecteer een product</div>
     </div>
   </div>
 
 </div>
 
 <script>
-// ── CONSTANTEN ──────────────────────────────────────────────────────
-const BATCH_SIZE     = 3;
-const MAX_RETRIES    = 3;
-const AUTOSAVE_EVERY = 10;
-const SAVE_KEY       = 'schreeven_enriched_v3';
-const MODEL_HAIKU    = 'claude-haiku-4-5-20251001';
-const MODEL_SONNET   = 'claude-sonnet-4-5';
-const MAX_TOKENS     = 4000;
+const BATCH_SIZE      = 3;
+const MAX_RETRIES     = 4;
+const AUTOSAVE_EVERY  = 10;
+const SAVE_KEY        = 'schreeven_enriched_v3';
+const MODEL_HAIKU     = 'claude-haiku-4-5-20251001';
+const MODEL_SONNET    = 'claude-sonnet-4-5-20251001';
+const MAX_TOKENS      = 4000;
+
+// Minimale vertraging tussen batches (ms) — voorkomt rate limit hits
+const BATCH_DELAY_MS  = 2000;
 
 // Kosten per 1M tokens (USD)
 const COST = {
-  haiku:  { in: 0.80,  out: 4.00  },   // Haiku 4.5
-  sonnet: { in: 3.00,  out: 15.00 },   // Sonnet 4.5
-  web:    { in: 3.00,  out: 15.00 },   // Sonnet + web search overhead
+  haiku:  { in: 0.80,  out: 4.00  },
+  sonnet: { in: 3.00,  out: 15.00 },
+  web:    { in: 3.00,  out: 15.00 },
 };
-// Gem tokens per product
 const AVG = { in: 800, out: 600 };
 
 const DEFAULT_SYSTEM_PROMPT = `Je bent een professionele SEO-tekstschrijver gespecialiseerd in muziekinstrumenten, audioapparatuur en professionele gear. Je schrijft unieke, menselijke en SEO-geoptimaliseerde teksten voor de webshop van Schreeven Muziekinstrumenten in Nijmegen.
@@ -295,18 +351,32 @@ TAAL & STIJL:
 - "Limited" blijft altijd in het Engels
 - Gebruik "signature model" — NIET "handtekeningmodel"
 
-ANTI-HALLUCINATIE REGEL — ABSOLUUT VERPLICHT:
-Schrijf ALLEEN op basis van wat er letterlijk in de aangeleverde productdata staat.
-Verzin NOOIT specs, materialen, afmetingen, kleuren of kenmerken die niet expliciet in de data staan.
-Gebruik NOOIT "bovenblad" tenzij het materiaal expliciet in de data vermeld staat.
-Als er onvoldoende brondata is voor een feitelijk correcte tekst: geef {"name":"(exacte naam)","insufficient":true} terug.
-Liever geen tekst dan onjuiste tekst.
+DATABRONNEN — TWEE NIVEAUS:
+
+NIVEAU 1 — Brondata aanwezig (description, description_short, of extra kolommen zoals Merk/Type/Maat/Kleur):
+- Schrijf ALLEEN op basis van wat er letterlijk in de aangeleverde productdata staat
+- Verzin NOOIT specs, materialen, afmetingen, kleuren of kenmerken die niet expliciet in de data staan
+- Gebruik NOOIT materiaalnamen (bovenblad, chroom, mahonie, etc.) tenzij expliciet vermeld in de data
+
+NIVEAU 2 — Alleen productnaam, geen verdere brondata:
+Bekende A-merken waarbij je op basis van algemene productkennis mag schrijven:
+Pioneer DJ, Pioneer (controllers, mixers, spelers), Decksaver, Yamaha, Fender, Roland, BOSS, Sela, Meinl, Denon DJ, Allen & Heath, Technics, Shure, Native Instruments, Serato, Rane, Reloop, Numark, Audio-Technica, Ortofon, Stanton
+
+Voorbeelden van herkenbare Pioneer DJ producten waarbij je gewoon schrijft:
+DDJ-REV1, DDJ-REV5, DDJ-REV7, DDJ-FLX4, DDJ-FLX6, DDJ-FLX10, DDJ-400, DDJ-1000,
+XDJ-RX3, XDJ-XZ, CDJ-2000NXS2, CDJ-3000, DJM-900NXS2, DJM-750MK2, DJM-S9, DJM-S11,
+PLX-500, PLX-1000, HDJ-X5, HDJ-X7, HDJ-X10
+
+Regel: als de productnaam een herkenbaar merk + modelnummer bevat dat past bij bovenstaande merken/reeksen -> schrijf op basis van wat algemeen bekend is over dit type product. Geen fantasiespecificaties, wel functionele beschrijving.
+
+Pioneer Spares onderdelen met intern artikelnummer (DNK-xxxx, DAC-xxxx, DBH-xxxx, DSX-xxxx, DWX-xxxx) -> geef altijd {"name":"(exacte naam)","insufficient":true} terug. Technische onderdeelspecs zijn niet betrouwbaar te raden.
+Onbekend merk of niet te plaatsen product -> geef {"name":"(exacte naam)","insufficient":true} terug
 
 STRUCTUUR — ALTIJD DEZE VOLGORDE:
 1. description_short — schrijf volledig in HTML:
-<p>[Wat IS het product — 1 zin: merk, type, doel. Alleen wat in de data staat.]</p>
+<p>[Wat IS het product — 1 zin: merk, type, doel.]</p>
 <b>[Actieve eigen titel: wat het doet]</b>
-<p>[Wat doet het — functioneel voordeel, gebaseerd op de data]</p>
+<p>[Wat doet het — functioneel voordeel]</p>
 <b>[Actieve eigen titel: waarom dit kopen]</b>
 <p>[Waarom kopen — voor wie, welk probleem lost het op]</p>
 <b>[Actieve eigen titel: voordelen]</b>
@@ -328,7 +398,7 @@ EXTRA REGELS:
 - Productnaam NOOIT wijzigen
 - SEO gericht op Nederland
 
-OUTPUT: Geef ALLEEN een JSON array terug, geen uitleg, geen markdown backticks.`;
+OUTPUT: Geef ALLEEN een JSON array terug, geen uitleg, geen markdown backticks.`
 
 // ── STATE ────────────────────────────────────────────────────────────
 let allProducts      = [];
@@ -351,6 +421,10 @@ let fileName         = '';
 let startTime        = null;
 let previewIdx       = null;
 
+// Rate limit tracking
+let consecutiveRateLimitHits = 0;
+let lastBatchTime = 0;
+
 // Kosten tracking
 let costs = { haiku: { count: 0, usd: 0 }, sonnet: { count: 0, usd: 0 }, web: { count: 0, usd: 0 } };
 
@@ -360,6 +434,7 @@ function parseKw(s){ return (s||'').split(',').map(k=>k.trim().toLowerCase()).fi
 function normName(s){ return (s||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
 function $(id){ return document.getElementById(id); }
 function getSystemPrompt(){ return ($('systemPromptInput').value||'').trim()||DEFAULT_SYSTEM_PROMPT; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 function addLog(msg, type='info'){
   const box = $('logBox');
@@ -370,8 +445,15 @@ function addLog(msg, type='info'){
   const t = new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   d.textContent = '['+t+'] '+msg;
   box.insertBefore(d, box.firstChild);
-  while(box.children.length > 80) box.removeChild(box.lastChild);
+  while(box.children.length > 100) box.removeChild(box.lastChild);
 }
+
+function showThrottle(msg){
+  const b=$('throttleBanner');
+  b.style.display='flex';
+  $('throttleMsg').textContent=msg;
+}
+function hideThrottle(){ $('throttleBanner').style.display='none'; }
 
 function saveSession(){
   try { window._schreevenSave = JSON.stringify({fileName,enriched,cursor,insufficient,report,costs}); } catch{}
@@ -443,19 +525,128 @@ function needsEnrichment(r){
   return !hasDesc&&!hasShort;
 }
 
-// Bepaal hoeveel bruikbare brondata een product heeft (0-10 score)
-function dataSufficiencyScore(r){
-  let score = 0;
-  const short = stripHtml(r.description_short||'');
-  const desc  = stripHtml(r.description||'');
-  const info  = (short+' '+desc).trim();
-  if(info.length > 30)  score += 3;
-  if(info.length > 100) score += 2;
-  if(info.length > 250) score += 2;
-  if(r['Merk']?.trim())  score += 1;
-  if(r['Type']?.trim())  score += 1;
-  if(r['Maat']?.trim())  score += 1;
-  return score; // 0-10
+
+// ── KOLOM MAPPING STATE ───────────────────────────────────────────────
+let rawCsvRows    = [];   // ongemap-te rijen direct uit CSV
+let rawCsvHeaders = [];   // originele kolomnamen
+let columnMapping = {};   // { doelVeld: bronKolom }
+
+// De velden die de tool nodig heeft
+const TOOL_FIELDS = [
+  { key: 'name',              label: 'Productnaam',          required: true  },
+  { key: 'description',       label: 'Lange beschrijving',   required: false },
+  { key: 'description_short', label: 'Korte beschrijving',   required: false },
+  { key: 'meta_title',        label: 'Meta titel',           required: false },
+  { key: 'meta_description',  label: 'Meta omschrijving',    required: false },
+  { key: 'meta_keywords',     label: 'Meta keywords',        required: false },
+  { key: 'link_rewrite',      label: 'URL slug',             required: false },
+  // Extra broninfo-velden (voor context aan Claude)
+  { key: 'Merk',              label: 'Merk',                 required: false },
+  { key: 'Type',              label: 'Type / model',         required: false },
+  { key: 'Maat',              label: 'Maat',                 required: false },
+  { key: 'Kleur',             label: 'Kleur',                required: false },
+  { key: 'Soort',             label: 'Soort / categorie',    required: false },
+];
+
+// Automatische kolom-detectie op basis van bekende namen
+const AUTO_MAP = {
+  // naam
+  'name':              ['name','naam','productnaam','omschrijving','product naam','title'],
+  'description':       ['description','beschrijving','lange beschrijving','long description'],
+  'description_short': ['description_short','short_description','korte beschrijving','meta_description_short'],
+  'meta_title':        ['meta_title','meta title','metatitle','seo titel'],
+  'meta_description':  ['meta_description','meta omschrijving','meta description'],
+  'meta_keywords':     ['meta_keywords','meta keywords','keywords','zoekwoorden'],
+  'link_rewrite':      ['link_rewrite','url','slug','url slug'],
+  'Merk':              ['merk','brand','fabrikant','manufacturer'],
+  'Type':              ['type','model','type/model'],
+  'Maat':              ['maat','size','afmeting'],
+  'Kleur':             ['kleur','color','colour'],
+  'Soort':             ['soort','categorie','category','soort/categorie'],
+};
+
+function detectCsvType(headers) {
+  const lc = headers.map(h => h.toLowerCase().trim());
+  // PrestaShop heeft altijd 'name' en 'description'
+  const isPrestaShop = lc.includes('name') && (lc.includes('description') || lc.includes('description_short'));
+  // Calimex/Vendit heeft 'omschrijving' of 'productnummer'
+  const isCalimex = lc.includes('omschrijving') || lc.includes('productnummer');
+  return { isPrestaShop, isCalimex };
+}
+
+function buildAutoMapping(headers) {
+  const lc = headers.map(h => h.toLowerCase().trim());
+  const mapping = {};
+  for (const [field, aliases] of Object.entries(AUTO_MAP)) {
+    // Exacte header match (case-insensitive)
+    const idx = lc.findIndex(h => aliases.includes(h));
+    if (idx !== -1) mapping[field] = headers[idx];
+  }
+  return mapping;
+}
+
+function showMappingUI(headers, autoMapping) {
+  const grid = $('mappingGrid');
+  grid.innerHTML = '';
+  TOOL_FIELDS.forEach(field => {
+    const currentVal = autoMapping[field.key] || '';
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#f9f9f6;border:1.5px solid '+(currentVal?'#a8d5a2':'#ddd')+';border-radius:7px;padding:10px 12px';
+    div.innerHTML =
+      '<div style="font-size:11px;font-weight:700;color:#333;margin-bottom:5px">' +
+        escHtml(field.label) +
+        (field.required ? ' <span style="color:#c0392b">*</span>' : '') +
+        '<span style="font-size:10px;font-weight:400;color:#999;margin-left:4px">-> '+escHtml(field.key)+'</span>' +
+      '</div>' +
+      '<select id="map_'+field.key+'" style="width:100%;background:#fff;border:1px solid #ddd;border-radius:4px;padding:5px 8px;font-size:12px;color:#333" data-field="'+field.key+'" onchange="onMappingChange(this)">' +
+        '<option value="">(niet koppelen)</option>' +
+        headers.map(h => '<option value="'+escHtml(h)+'"'+(h===currentVal?' selected':'')+'>'+escHtml(h)+'</option>').join('') +
+      '</select>';
+    grid.appendChild(div);
+  });
+  $('mappingCard').style.display = 'block';
+}
+
+function onMappingChange(sel) {
+  const val = sel.value;
+  const parent = sel.closest('div');
+  parent.style.borderColor = val ? '#a8d5a2' : '#ddd';
+}
+
+function applyMapping(skipToAuto) {
+  let mapping = {};
+  if (skipToAuto) {
+    mapping = buildAutoMapping(rawCsvHeaders);
+  } else {
+    TOOL_FIELDS.forEach(f => {
+      const sel = $('map_'+f.key);
+      if (sel && sel.value) mapping[f.key] = sel.value;
+    });
+  }
+
+  if (!mapping['name']) {
+    $('mappingStatus').textContent = '⚠ Koppel minimaal het veld "Productnaam"';
+    $('mappingStatus').style.color = '#c0392b';
+    return;
+  }
+
+  columnMapping = mapping;
+  $('mappingCard').style.display = 'none';
+
+  // Zet rijen om via mapping
+  const mapped = rawCsvRows.map(row => {
+    const out = {};
+    for (const [field, srcCol] of Object.entries(mapping)) {
+      out[field] = row[srcCol] || '';
+    }
+    // Kopieer ook niet-gemapte kolommen mee (voor export)
+    for (const [k, v] of Object.entries(row)) {
+      if (!out[k]) out[k] = v;
+    }
+    return out;
+  });
+
+  finishProcessFile(mapped);
 }
 
 // ── FILE HANDLING ────────────────────────────────────────────────────
@@ -479,21 +670,60 @@ function handleFile(file){
 function processFile(text,file){
   const raw=parseCsv(text);
   if(!raw.length){ showStatus('❌ Kon bestand niet lezen'); return; }
-  const normalized=normalizeRows(raw);
-  csvHeaders=Object.keys(raw[0]).map(k=>{
-    const MAP={'meta_description_short':'description_short','short_description':'description_short','Name':'name','naam':'name','Description':'description','beschrijving':'description'};
-    return MAP[k]||k;
-  });
+
+  // Reset volledige UI staat voor nieuwe file
+  allProducts=[];priorityProducts=[];enriched=[];insufficient=[];report=[];
+  cursor=0;skippedCount=0;previewIdx=null;
+  costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
+  consecutiveRateLimitHits=0;
+  $('enrichCard').style.display='none';
+  $('previewCard').style.display='none';
+  $('mappingCard').style.display='none';
+  $('saveBar').style.display='none';
+  $('logBox').style.display='none';
+  $('logBox').innerHTML='';
+  $('costTracker').style.display='none';
+  $('progressWrap').style.display='none';
+  $('herbereken-wrap').style.display='none';
+  $('downloadBtn').style.display='none';
+  $('reportBtn').style.display='none';
+  $('insuffBtn').style.display='none';
+  updateStats();
+
+  rawCsvRows    = raw;
+  rawCsvHeaders = Object.keys(raw[0]);
+
+  const { isPrestaShop, isCalimex } = detectCsvType(rawCsvHeaders);
+  const autoMapping = buildAutoMapping(rawCsvHeaders);
+
+  if(isPrestaShop){
+    // Standaard PrestaShop — direct doorgaan met auto-normalize
+    const normalized = normalizeRows(raw);
+    csvHeaders = rawCsvHeaders.map(k=>{
+      const MAP={'meta_description_short':'description_short','short_description':'description_short','Name':'name','naam':'name','Description':'description','beschrijving':'description'};
+      return MAP[k]||k;
+    });
+    finishProcessFile(normalized);
+  } else {
+    // Calimex/Vendit of onbekend formaat — toon mapping UI
+    showMappingUI(rawCsvHeaders, autoMapping);
+    showStatus('📋 '+raw.length.toLocaleString()+' rijen geladen · koppel de kolommen hieronder');
+  }
+}
+
+function finishProcessFile(normalized){
+  csvHeaders = [...new Set(normalized.flatMap(r => Object.keys(r)))];
   allProducts=normalized;
   const priority=normalized.filter(needsEnrichment);
   priorityProducts=priority;
   enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;previewIdx=null;
   costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
+  consecutiveRateLimitHits=0;
   updateStats();
   $('enrichCard').style.display='block';
   $('herbereken-wrap').style.display='flex';
   const saved=loadSession();
-  if(saved&&saved.fileName===file.name&&saved.enriched?.length>0){
+  if(saved&&saved.fileName===fileName&&saved.enriched?.length>0){
     $('saveBar').style.display='flex';
     showStatus('✅ '+normalized.length.toLocaleString()+' producten geladen · '+priority.length.toLocaleString()+' te verrijken · 💾 Vorige sessie gevonden ('+saved.enriched.length+' producten)');
   } else {
@@ -518,7 +748,13 @@ function resumeSession(){
 // ── UI HELPERS ───────────────────────────────────────────────────────
 function showStatus(msg){ const el=$('fileStatus'); el.style.display='block'; el.textContent=msg; }
 function getApiKey(){ return ($('apiKeyInput').value||'').trim(); }
-function onApiKeyInput(){ if(getApiKey().length>20) updateCostEstimate(); }
+function onApiKeyInput(){
+  const key=getApiKey();
+  if(key.length>20){
+    sessionStorage.setItem('schreeven_apikey', key);
+    updateCostEstimate();
+  }
+}
 
 function setFilter(mode){
   filterMode=mode;
@@ -553,7 +789,7 @@ function toggleSetting(key){
     $('ballWebSearch').style.left=useWebSearch?'19px':'3px';
     $('toggleWebSearch').style.background=useWebSearch?'#f5f3ff':'#f9f9f6';
     $('toggleWebSearch').style.borderColor=useWebSearch?'#6d28d9':'#ddd';
-    $('labelWebSearch').textContent=useWebSearch?'Aan — Sonnet zoekt officiële productpagina voor producten zonder brondata (bron wordt gelogd)':'Uit — producten zonder voldoende data worden als "insufficient" gemarkeerd';
+    $('labelWebSearch').textContent=useWebSearch?'Aan — Sonnet zoekt officiele productpagina voor producten zonder brondata (bron wordt gelogd)':'Uit — producten zonder voldoende data worden als "insufficient" gemarkeerd';
     updateCostEstimate();
   }
 }
@@ -591,6 +827,7 @@ function herbereken(){
   priorityProducts=allProducts.filter(needsEnrichment);
   enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;
   costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
+  consecutiveRateLimitHits=0;
   updateStats();
   $('herberekenStatus').textContent='Huidig resultaat: '+priorityProducts.length.toLocaleString()+' producten te verrijken (van '+allProducts.length.toLocaleString()+' totaal)';
   updateCostEstimate();
@@ -610,10 +847,7 @@ function updateStats(){
   const pct=priorityProducts.length>0?Math.min(100,Math.round(enriched.length/priorityProducts.length*100)):0;
   $('progressFill').style.width=pct+'%';
   $('progressLabel').textContent='Voortgang — '+pct+'% · batch '+cursor+'/'+Math.ceil(priorityProducts.length/BATCH_SIZE);
-  $('downloadBtn').style.display=enriched.length>0?'inline-block':'none';
-  $('reportBtn').style.display=report.length>0?'inline-block':'none';
-  $('insuffBtn').style.display=insufficient.length>0?'inline-block':'none';
-  if(insufficient.length>0) $('insuffBtn').textContent='⚠ '+insufficient.length+' zonder data';
+  // Download knoppen worden beheerd door setBtnState
 }
 
 function updateCostDisplay(){
@@ -652,13 +886,20 @@ async function checkBudget(){
     bar.style.display='flex';
     if(testRes.ok){
       const rateLimitTokens = testRes.headers.get('anthropic-ratelimit-tokens-remaining');
+      const tierHeader = testRes.headers.get('anthropic-ratelimit-requests-limit');
       $('budgetStatus').innerHTML='<span class="budget-ok">✓ API key geldig</span>'+(rateLimitTokens?' · Tokens resterend: <strong>'+Number(rateLimitTokens).toLocaleString()+'</strong>':'');
+      if(tierHeader) $('budgetStatus').innerHTML += ' · Req. limit: '+tierHeader;
     } else {
-      const err=await testRes.json();
-      $('budgetStatus').innerHTML='<span class="budget-err">✗ '+(err.error?.message||'HTTP '+testRes.status)+'</span>';
+      let errMsg = 'HTTP '+testRes.status;
+      try { const err=await testRes.json(); errMsg = err.error?.message||errMsg; } catch{}
+      if(testRes.status===401) errMsg = 'Ongeldige API key — controleer of je de juiste key hebt geplakt';
+      if(testRes.status===403) errMsg = 'Geen toegang — controleer je account op console.anthropic.com';
+      if(errMsg.includes('credit')) errMsg = 'Tegoed op — laad bij op console.anthropic.com -> Billing';
+      $('budgetStatus').innerHTML='<span class="budget-err">✗ '+errMsg+'</span>';
     }
   } catch(e){
-    $('budgetStatus').innerHTML='<span class="budget-err">✗ Fout: '+e.message+'</span>';
+    const msg = e.message.includes('Failed to fetch') ? 'Verbindingsfout — controleer je internetverbinding' : e.message;
+    $('budgetStatus').innerHTML='<span class="budget-err">✗ '+msg+'</span>';
   }
   $('budgetBtn').textContent='💰 Check budget';
   $('budgetBtn').disabled=false;
@@ -668,11 +909,9 @@ async function checkBudget(){
 function updateCostEstimate(){
   const n=priorityProducts.length;
   if(!n) return;
-  // Schatting: 70% Haiku, 20% Sonnet, 10% web (als web aan)
   const nHaiku  = Math.round(n*0.70);
   const nSonnet = Math.round(n*0.20);
   const nWeb    = useWebSearch ? Math.round(n*0.10) : 0;
-  const nInsuff = n - nHaiku - nSonnet - nWeb;
   const costH = nHaiku  * (AVG.in/1e6*COST.haiku.in  + AVG.out/1e6*COST.haiku.out);
   const costS = nSonnet * (AVG.in/1e6*COST.sonnet.in + AVG.out/1e6*COST.sonnet.out);
   const costW = nWeb    * (AVG.in/1e6*COST.web.in    + AVG.out/1e6*COST.web.out) * 1.5;
@@ -687,24 +926,74 @@ function updateCostEstimate(){
     ' = <strong>~$'+totalUsd.toFixed(2)+'</strong> (~€'+totalEur.toFixed(2)+')';
 }
 
-// ── API CALLS ─────────────────────────────────────────────────────────
+// ── API CALL MET RATE LIMIT BACKOFF ──────────────────────────────────
 async function callApi(messages, model, useSearch=false){
   const key=getApiKey();
   if(!key) throw new Error('Geen API key');
+
   const body={model,max_tokens:MAX_TOKENS,system:getSystemPrompt(),messages};
   if(useSearch){
     body.tools=[{type:'web_search_20250305',name:'web_search'}];
   }
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify(body)
-  });
-  if(!res.ok){ const e=await res.json(); throw new Error(e.error?.message||'HTTP '+res.status); }
-  const data=await res.json();
-  // Extraheer tekst uit content blocks (kan meerdere blocks bevatten bij tool use)
-  const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-  return text;
+
+  let attempt=0;
+  const maxAttempts=5;
+
+  while(attempt < maxAttempts){
+    attempt++;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify(body)
+    });
+
+    if(res.status === 429){
+      // Rate limit hit — lees retry-after header of gebruik exponential backoff
+      const retryAfter = res.headers.get('retry-after');
+      let waitMs = retryAfter ? (parseFloat(retryAfter)*1000) : (10000 * attempt);
+      waitMs = Math.min(waitMs, 60000); // max 60s wachten
+      consecutiveRateLimitHits++;
+      const waitSec = Math.ceil(waitMs/1000);
+      addLog(`⏳ Rate limit (429) — wacht ${waitSec}s voor poging ${attempt}/${maxAttempts}`, 'throttle');
+      showThrottle(`Rate limit bereikt — wacht ${waitSec} seconden (poging ${attempt}/${maxAttempts})...`);
+      await sleep(waitMs);
+      hideThrottle();
+      continue;
+    }
+
+    if(!res.ok){
+      const e=await res.json().catch(()=>({error:{message:'HTTP '+res.status}}));
+      const errMsg = e.error?.message||'HTTP '+res.status;
+      const errType = e.error?.type||'';
+      // Overloaded of tijdelijke server fout — retry met backoff
+      if(res.status===529 || res.status===500 || res.status===503 || errType==='overloaded_error'){
+        const waitMs = 8000 * attempt;
+        addLog(`⏳ Server overloaded — wacht ${Math.ceil(waitMs/1000)}s (poging ${attempt}/${maxAttempts})`, 'warn');
+        showThrottle(`Server overloaded — wacht ${Math.ceil(waitMs/1000)}s...`);
+        await sleep(waitMs);
+        hideThrottle();
+        continue;
+      }
+      throw new Error(errMsg);
+    }
+
+    // Succes
+    consecutiveRateLimitHits = 0;
+    const data=await res.json();
+    // Valideer response formaat
+    if(!data.content || !Array.isArray(data.content)){
+      if(attempt < maxAttempts){
+        addLog(`⏳ Ongeldige response — opnieuw proberen (poging ${attempt}/${maxAttempts})`, 'warn');
+        await sleep(3000 * attempt);
+        continue;
+      }
+      throw new Error('Invalid response format');
+    }
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    return text;
+  }
+
+  throw new Error(`Rate limit: max pogingen (${maxAttempts}) bereikt`);
 }
 
 function buildProductContext(r){
@@ -719,7 +1008,6 @@ function buildBronInfo(r){
 }
 
 // ── ROUTING LOGICA ────────────────────────────────────────────────────
-// Laag 1: Haiku — alleen op basis van brondata, geen aanvulling
 async function tryHaiku(batch){
   const descInstr=genDesc?'Vul description in (zelfde structuur als short, maar uitgebreider).':'Laat description leeg ("")';
   const lines=batch.map((p,i)=>{
@@ -731,11 +1019,10 @@ async function tryHaiku(batch){
     'Verrijk de volgende '+batch.length+' producten. Schrijf UITSLUITEND op basis van de meegeleverde brondata.\n'+
     'Als een product onvoldoende brondata heeft (alleen een naam, geen specs/beschrijving): geef {"name":"(naam)","insufficient":true} terug.\n'+
     descInstr+'\n\n'+lines+'\n\n'+
-    'Geef ALLEEN een JSON array terug.';
+    'Geef ALLEEN een JSON array terug. De array moet precies '+batch.length+' items bevatten, in dezelfde volgorde als de input.';
   return await callApi([{role:'user',content:prompt}], MODEL_HAIKU);
 }
 
-// Laag 2: Sonnet — voor producten die Haiku niet kon verwerken
 async function trySonnet(batch){
   const descInstr=genDesc?'Vul description in (zelfde structuur als short, maar uitgebreider).':'Laat description leeg ("")';
   const lines=batch.map((p,i)=>{
@@ -746,17 +1033,16 @@ async function trySonnet(batch){
   const prompt=
     'Verrijk de volgende '+batch.length+' producten voor schreeven.nl.\n'+
     'Schrijf alleen op basis van de meegeleverde brondata. Geen aannames, geen verzinsels.\n'+
-    'Onvoldoende data → {"name":"(naam)","insufficient":true}\n'+
-    descInstr+'\n\n'+lines+'\n\nGeef ALLEEN een JSON array terug.';
+    'Onvoldoende data -> {"name":"(naam)","insufficient":true}\n'+
+    descInstr+'\n\n'+lines+'\n\nGeef ALLEEN een JSON array terug. De array moet precies '+batch.length+' items bevatten, in dezelfde volgorde als de input.';
   return await callApi([{role:'user',content:prompt}], MODEL_SONNET);
 }
 
-// Laag 3: Sonnet + web search — voor producten die ook Sonnet niet kon verwerken
 async function trySonnetWeb(product){
   const descInstr=genDesc?'Vul description in (zelfde structuur als short, maar uitgebreider).':'Laat description leeg ("")';
   const prompt=
-    'Zoek de officiële productpagina op voor: "'+product.name+'" (merk: '+(product['Merk']||'onbekend')+').\n'+
-    'Gebruik alleen officiële merkwebsites of zeer betrouwbare bronnen (geen forums, geen kleine winkels).\n'+
+    'Zoek de officiele productpagina op voor: "'+product.name+'" (merk: '+(product['Merk']||'onbekend')+').\n'+
+    'Gebruik alleen officiele merkwebsites of zeer betrouwbare bronnen (geen forums, geen kleine winkels).\n'+
     'Schrijf op basis van wat je vindt een SEO-tekst voor schreeven.nl.\n'+
     'Als je geen betrouwbare bron vindt: geef {"name":"'+product.name+'","insufficient":true,"reden":"geen betrouwbare bron gevonden"} terug.\n'+
     'Vermeld in het JSON object ook de gevonden bron als: "bron":"https://...".\n'+
@@ -765,82 +1051,121 @@ async function trySonnetWeb(product){
   return await callApi([{role:'user',content:prompt}], MODEL_SONNET, true);
 }
 
+// ── FATALE FOUT DETECTIE ──────────────────────────────────────────────
+function isFatalError(msg){
+  return msg.includes('credit balance') ||
+         msg.includes('billing') ||
+         msg.includes('invalid x-api-key') ||
+         msg.includes('authentication');
+}
+
 // ── BATCH VERWERKING ──────────────────────────────────────────────────
 async function processBatch(batch){
+  // Veiligheidscheck: filter undefined producten uit batch
+  const safeBatch = batch.filter(p => p && p.name);
+  if(!safeBatch.length) return [];
+
   // Stap 1: probeer Haiku
-  let haikuText;
+  let haikuText = null;
+  let haikuFatalError = false;
   try {
-    haikuText = await tryHaiku(batch);
+    haikuText = await tryHaiku(safeBatch);
   } catch(e){
-    addLog('⚠ Haiku fout, fallback naar Sonnet: '+e.message,'warn');
-    haikuText = null;
+    if(isFatalError(e.message)){
+      // Fatale fout (credit op, ongeldige key) — stop direct
+      addLog('❌ Fatale fout: '+e.message.slice(0,80),'error');
+      stopReq = true;
+      throw e; // Propageer zodat de loop stopt
+    }
+    addLog('⚠ Haiku fout, fallback naar Sonnet: '+e.message.slice(0,80),'warn');
+    haikuFatalError = false;
   }
 
   let haikuResults = [];
   if(haikuText){
     try { haikuResults = JSON.parse(haikuText); } catch{
       const repaired = tryRepairJson(haikuText);
-      if(repaired) haikuResults = repaired;
+      if(repaired) haikuResults = Array.isArray(repaired) ? repaired : [repaired];
     }
   }
+  if(!Array.isArray(haikuResults)) haikuResults = [];
 
-  // Splits: sufficient (Haiku kon verwerken) vs insufficient (voor Sonnet/web)
+  // Splits: sufficient vs needsSonnet — match op positie
   const sufficient = [];
   const needsSonnet = [];
 
-  haikuResults.forEach((r,i)=>{
-    const original = batch[i]||batch.find(b=>b.name===r.name)||{};
-    if(r.insufficient){
+  safeBatch.forEach((original, i) => {
+    const r = haikuResults[i];
+    if(!r){
+      needsSonnet.push({product: original, haikuResult: null});
+    } else if(r.insufficient){
       needsSonnet.push({product: original, haikuResult: r});
-    } else if(r.name){
-      r._layer = 'haiku';
-      r._bron  = 'CSV-data';
-      sufficient.push({enriched: r, original});
+    } else if(r.name || r.description_short || r.meta_title){
+      const enrichedItem = {...r};
+      enrichedItem._layer = 'haiku';
+      enrichedItem._bron  = 'CSV-data';
+      if(!enrichedItem.name) enrichedItem.name = original.name;
+      sufficient.push({enriched: enrichedItem, original});
+    } else {
+      needsSonnet.push({product: original, haikuResult: r});
     }
   });
 
-  // Als Haiku niets teruggaf of minder dan batch, voeg ontbrekende toe aan needsSonnet
-  if(haikuResults.length < batch.length){
-    batch.forEach((p,i)=>{
-      const alreadyHandled = sufficient.some(s=>normName(s.enriched.name)===normName(p.name)) ||
-                             needsSonnet.some(n=>normName(n.product.name)===normName(p.name));
-      if(!alreadyHandled) needsSonnet.push({product: p, haikuResult: null});
-    });
-  }
-
-  trackCost('haiku', sufficient.length + needsSonnet.length);
+  trackCost('haiku', safeBatch.length);
 
   // Stap 2: Sonnet voor insufficient producten
   let sonnetOk = [];
   let stillNeedsWeb = [];
 
   if(needsSonnet.length > 0){
-    const sonnetBatch = needsSonnet.map(n=>n.product);
-    let sonnetText;
-    try {
-      sonnetText = await trySonnet(sonnetBatch);
-    } catch(e){
-      addLog('⚠ Sonnet fout: '+e.message,'warn');
-      sonnetText = null;
-    }
-    let sonnetResults = [];
-    if(sonnetText){
-      try { sonnetResults = JSON.parse(sonnetText); } catch{
-        const r = tryRepairJson(sonnetText);
-        if(r) sonnetResults = r;
+    // Veiligheidscheck: filter undefined producten
+    const sonnetItems = needsSonnet.filter(n => n.product && n.product.name);
+    const sonnetBatch = sonnetItems.map(n => n.product);
+
+    if(sonnetBatch.length > 0){
+      await sleep(1000);
+
+      let sonnetText = null;
+      try {
+        sonnetText = await trySonnet(sonnetBatch);
+      } catch(e){
+        if(isFatalError(e.message)){
+          addLog('❌ Fatale fout: '+e.message.slice(0,80),'error');
+          stopReq = true;
+          throw e;
+        }
+        addLog('⚠ Sonnet fout: '+e.message.slice(0,80),'warn');
       }
-    }
-    sonnetResults.forEach((r,i)=>{
-      const original = sonnetBatch[i]||{};
-      if(r.insufficient){
-        stillNeedsWeb.push({product: original, reason: r.reden||'onvoldoende brondata'});
-      } else if(r.name){
-        r._layer = 'sonnet';
-        r._bron  = 'CSV-data (Sonnet)';
-        sonnetOk.push({enriched: r, original});
+
+      let sonnetResults = [];
+      if(sonnetText){
+        try { sonnetResults = JSON.parse(sonnetText); } catch{
+          const r = tryRepairJson(sonnetText);
+          if(r) sonnetResults = Array.isArray(r) ? r : [r];
+        }
       }
-    });
-    trackCost('sonnet', sonnetResults.length);
+      if(!Array.isArray(sonnetResults)) sonnetResults = [];
+
+      sonnetItems.forEach((item, i) => {
+        const original = item.product;
+        const r = sonnetResults[i];
+        if(!r){
+          stillNeedsWeb.push({product: original, reason: 'geen resultaat van Sonnet'});
+        } else if(r.insufficient){
+          stillNeedsWeb.push({product: original, reason: r.reden||'onvoldoende brondata'});
+        } else if(r.name || r.description_short || r.meta_title){
+          const enrichedItem = {...r};
+          enrichedItem._layer = 'sonnet';
+          enrichedItem._bron  = 'CSV-data (Sonnet)';
+          if(!enrichedItem.name) enrichedItem.name = original.name;
+          sonnetOk.push({enriched: enrichedItem, original});
+        } else {
+          stillNeedsWeb.push({product: original, reason: 'leeg resultaat van Sonnet'});
+        }
+      });
+
+      trackCost('sonnet', sonnetBatch.length);
+    }
   }
 
   // Stap 3: Web search voor resterende insufficient producten
@@ -848,27 +1173,40 @@ async function processBatch(batch){
   let finalInsuff = [];
 
   for(const item of stillNeedsWeb){
+    // Veiligheidscheck: sla over als product undefined is
+    if(!item || !item.product || !item.product.name){
+      addLog('⚠ Product overgeslagen (ontbrekende data)','warn');
+      continue;
+    }
     if(!useWebSearch){
-      finalInsuff.push({name:item.product.name, merk:item.product['Merk']||'', type:item.product['Type']||'', reden: item.reason, layer:'—'});
+      finalInsuff.push({name: item.product.name, merk: item.product['Merk']||'', type: item.product['Type']||'', reden: item.reason||'onvoldoende data', layer:'—'});
       continue;
     }
     try {
+      await sleep(1500);
       const webText = await trySonnetWeb(item.product);
       let webResult;
       try { webResult = JSON.parse(webText); } catch { webResult = null; }
-      if(webResult && !webResult.insufficient && webResult.name){
+      if(webResult && !webResult.insufficient && (webResult.name || webResult.description_short)){
         webResult._layer = 'web';
         webResult._bron  = webResult.bron||'web search';
+        if(!webResult.name) webResult.name = item.product.name;
         webOk.push({enriched: webResult, original: item.product});
-        addLog('🌐 Web gevonden voor: '+item.product.name+' → '+webResult._bron,'web');
+        addLog('🌐 Web gevonden voor: '+item.product.name+' -> '+webResult._bron,'web');
         trackCost('web', 1);
       } else {
-        finalInsuff.push({name:item.product.name, merk:item.product['Merk']||'', type:item.product['Type']||'', reden: webResult?.reden||'geen betrouwbare bron gevonden', layer:'web geprobeerd'});
+        finalInsuff.push({name: item.product.name, merk: item.product['Merk']||'', type: item.product['Type']||'', reden: webResult?.reden||'geen betrouwbare bron gevonden', layer:'web geprobeerd'});
         addLog('⚠ Web: geen bron voor '+item.product.name,'warn');
         trackCost('web', 1);
       }
     } catch(e){
-      finalInsuff.push({name:item.product.name, merk:item.product['Merk']||'', type:item.product['Type']||'', reden:'web search fout: '+e.message, layer:'web fout'});
+      if(isFatalError(e.message)){
+        addLog('❌ Fatale fout tijdens web search: '+e.message.slice(0,80),'error');
+        stopReq = true;
+        finalInsuff.push({name: item.product.name, merk: item.product['Merk']||'', type: item.product['Type']||'', reden: 'gestopt: '+e.message.slice(0,60), layer:'web fout'});
+        break; // Stop web search loop
+      }
+      finalInsuff.push({name: item.product.name, merk: item.product['Merk']||'', type: item.product['Type']||'', reden: 'web search fout: '+e.message.slice(0,60), layer:'web fout'});
     }
   }
 
@@ -891,9 +1229,19 @@ async function processBatch(batch){
 
 function tryRepairJson(text){
   try {
+    // Probeer eerst direct
+    return JSON.parse(text);
+  } catch{}
+  try {
+    // Probeer te repareren door laatste incomplete object te verwijderen
     const lastClose=text.lastIndexOf('},');
     const repaired=lastClose>0?text.slice(0,lastClose+1)+']':null;
     if(repaired) return JSON.parse(repaired);
+  } catch{}
+  try {
+    // Probeer array te extraheren
+    const match = text.match(/\[[\s\S]*\]/);
+    if(match) return JSON.parse(match[0]);
   } catch{}
   return null;
 }
@@ -918,18 +1266,44 @@ function buildReportEntry(original, en){
 // ── ENRICHMENT LOOP ──────────────────────────────────────────────────
 async function runEnrichment(){
   if(!priorityProducts.length){ alert('Laad eerst een CSV bestand'); return; }
-  if(!getApiKey()){ alert('Vul een API key in'); return; }
+  if(!getApiKey()){
+    $('apiKeyInput').style.border='2px solid #c0392b';
+    $('apiKeyInput').placeholder='⚠ Vul hier je API key in (sk-ant-...)';
+    $('apiKeyInput').focus();
+    $('apiKeyInput').scrollIntoView({behavior:'smooth',block:'center'});
+    addLog('❌ Geen API key ingevuld — vul je key in bovenaan de pagina','error');
+    return;
+  }
+  $('apiKeyInput').style.border='';
   if(running) return;
   running=true; stopReq=false;
   startTime=Date.now()-(cursor*BATCH_SIZE*4000);
-  $('startBtn').disabled=true;
-  $('pauseBtn').style.display='inline-block';
+  setBtnState('running');
   $('costTracker').style.display='block';
+  consecutiveRateLimitHits=0;
   const total=Math.ceil(priorityProducts.length/BATCH_SIZE);
   addLog('▶ Start verrijking vanaf batch '+(cursor+1)+' van '+total+(useWebSearch?' [web search aan]':''),'info');
+
   try {
     for(let b=cursor;b<total;b++){
-      if(stopReq){ addLog('⏸ Gepauzeerd na batch '+b,'warn'); cursor=b; break; }
+      if(stopReq){ addLog('⏸ Gepauzeerd na batch '+b,'warn'); cursor=b; setBtnState('paused'); break; }
+
+      // Verplichte vertraging tussen batches — voorkomt rate limit
+      const now = Date.now();
+      const sinceLastBatch = now - lastBatchTime;
+      // Verhoog delay als we recentelijk rate limit hits hadden
+      const dynamicDelay = consecutiveRateLimitHits > 0
+        ? BATCH_DELAY_MS * (1 + consecutiveRateLimitHits)
+        : BATCH_DELAY_MS;
+      if(lastBatchTime > 0 && sinceLastBatch < dynamicDelay){
+        const waitMs = dynamicDelay - sinceLastBatch;
+        if(waitMs > 500){
+          showThrottle(`Throttling — wacht ${Math.ceil(waitMs/1000)}s voor volgende batch...`);
+          await sleep(waitMs);
+          hideThrottle();
+        }
+      }
+
       // ETA
       const elapsed=(Date.now()-startTime)/1000;
       const done=b+1;
@@ -941,62 +1315,174 @@ async function runEnrichment(){
           $('etaLabel').textContent='ETA ~'+m+'m '+s+'s';
         }
       }
-      const pct=Math.round((enriched.length/priorityProducts.length)*100);
+
+      const pct=priorityProducts.length>0?Math.round((enriched.length/priorityProducts.length)*100):0;
       showStatus('⚙ Batch '+(b+1)+'/'+total+' · '+enriched.length.toLocaleString()+'/'+priorityProducts.length.toLocaleString()+' · '+pct+'%');
-      let ok=false;
+
+      let batchOk=false;
       for(let attempt=1;attempt<=MAX_RETRIES;attempt++){
         try {
           const batch=priorityProducts.slice(b*BATCH_SIZE,(b+1)*BATCH_SIZE);
+          lastBatchTime = Date.now();
           const results=await processBatch(batch);
           enriched=[...enriched,...results];
           cursor=b+1;
           updateStats(); updateCostDisplay(); renderPreview();
           if((b+1)%AUTOSAVE_EVERY===0){ saveSession(); addLog('💾 Auto-opgeslagen ('+enriched.length+' producten)','save'); }
-          ok=true; break;
+          batchOk=true;
+          break;
         } catch(err){
-          if(attempt<MAX_RETRIES){ addLog('⚠ Batch '+(b+1)+' poging '+attempt+' mislukt ('+err.message+') — opnieuw...','warn'); await new Promise(r=>setTimeout(r,2000*attempt)); }
-          else { addLog('⏭ Batch '+(b+1)+' overgeslagen na '+MAX_RETRIES+' pogingen: '+err.message,'error'); skippedCount+=BATCH_SIZE; cursor=b+1; }
+          const isRateLimit = err.message.includes('rate limit') || err.message.includes('429');
+          if(attempt<MAX_RETRIES){
+            const waitS = isRateLimit ? 15*attempt : 2*attempt;
+            addLog('⚠ Batch '+(b+1)+' poging '+attempt+' mislukt ('+err.message.slice(0,60)+'...) — wacht '+waitS+'s','warn');
+            if(isRateLimit) showThrottle('Rate limit — wacht '+waitS+'s...');
+            await sleep(waitS*1000);
+            hideThrottle();
+          } else {
+            addLog('⏭ Batch '+(b+1)+' overgeslagen na '+MAX_RETRIES+' pogingen: '+err.message.slice(0,80),'error');
+            skippedCount+=BATCH_SIZE;
+            cursor=b+1;
+          }
         }
       }
     }
   } catch(err){ addLog('❌ Onverwachte fout: '+err.message,'error'); }
+
   saveSession();
+  hideThrottle();
   running=false; stopReq=false;
-  $('startBtn').disabled=false;
-  $('pauseBtn').style.display='none';
   $('etaLabel').textContent='';
+
   if(enriched.length>0){
     const totalCost=(costs.haiku.usd+costs.sonnet.usd+costs.web.usd).toFixed(3);
     showStatus('✅ Klaar! '+enriched.length.toLocaleString()+' producten verrijkt · Kosten: $'+totalCost);
     addLog('✅ Voltooid: '+enriched.length.toLocaleString()+' producten · $'+totalCost,'success');
+    setBtnState('done');
+  } else {
+    setBtnState('paused');
   }
   updateStats();
 }
 
-function stopProcessing(){ stopReq=true; addLog('⏸ Stoppen na huidige batch...','warn'); }
+function pauseProcessing(){
+  stopReq=true;
+  addLog('⏸ Pauzeren na huidige batch...','warn');
+}
+
+function stopAndReset(){
+  if(running){
+    // Eerst stoppen, dan pas resetten na bevestiging
+    if(!confirm('Huidige run stoppen én alle verrijkte data wissen? De geladen CSV blijft beschikbaar.')) return;
+    stopReq=true;
+  } else {
+    if(!confirm('Alle verrijkte data wissen en opnieuw beginnen? De geladen CSV blijft beschikbaar.')) return;
+  }
+  // Reset run state maar behoud geladen file
+  enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;previewIdx=null;
+  costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
+  consecutiveRateLimitHits=0;
+  window._schreevenSave=null;
+  // Herfilter op basis van huidige instellingen
+  priorityProducts=allProducts.filter(needsEnrichment);
+  updateStats(); updateCostDisplay();
+  // Reset UI
+  $('previewCard').style.display='none';
+  $('logBox').innerHTML=''; $('logBox').style.display='none';
+  $('progressFill').style.width='0%';
+  $('etaLabel').textContent='';
+  $('costTracker').style.display='none';
+  hideThrottle();
+  setBtnState('idle');
+  showStatus('🔄 Reset — '+priorityProducts.length.toLocaleString()+' producten klaar om te verrijken');
+  addLog('🔄 Run gereset — klaar om opnieuw te starten','info');
+}
+
+function resetAll(){
+  if(!confirm('Alles resetten? Geladen file, verrijkte data en sessie worden gewist.')) return;
+  allProducts=[];priorityProducts=[];enriched=[];insufficient=[];report=[];
+  cursor=0;skippedCount=0;previewIdx=null;fileName='';csvHeaders=[];
+  rawCsvRows=[];rawCsvHeaders=[];columnMapping={};
+  costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
+  consecutiveRateLimitHits=0;
+  window._schreevenSave=null;
+  // Reset UI volledig
+  $('enrichCard').style.display='none';
+  $('previewCard').style.display='none';
+  $('mappingCard').style.display='none';
+  $('saveBar').style.display='none';
+  $('logBox').innerHTML=''; $('logBox').style.display='none';
+  $('fileLabel').textContent='Klik om CSV te uploaden';
+  $('fileLabel').style.color='#555';
+  $('fileInput').value='';
+  $('fileStatus').style.display='none';
+  $('herbereken-wrap').style.display='none';
+  $('budgetBar').style.display='none';
+  $('skipKw').value=''; $('onlyKw').value='';
+  $('skipKwPreview').style.display='none';
+  $('onlyKwPreview').style.display='none';
+  hideThrottle();
+  setBtnState('idle');
+  addLog('🔄 Alles gereset','info');
+}
+
+// Centrale knopstatus beheerder
+function setBtnState(state){
+  // state: 'idle' | 'running' | 'paused' | 'done'
+  const s=$('startBtn'), p=$('pauseBtn'), res=$('resumeBtn'), sr=$('stopResetBtn');
+  const dl=$('downloadBtn'), rp=$('reportBtn'), ins=$('insuffBtn');
+  if(state==='idle'){
+    s.style.display='inline-block'; s.disabled=false;
+    p.style.display='none';
+    res.style.display='none';
+    sr.style.display='none';
+  } else if(state==='running'){
+    s.style.display='none';
+    p.style.display='inline-block';
+    res.style.display='none';
+    sr.style.display='none';
+  } else if(state==='paused'){
+    s.style.display='none';
+    p.style.display='none';
+    res.style.display='inline-block';
+    sr.style.display='inline-block';
+  } else if(state==='done'){
+    s.style.display='none';
+    p.style.display='none';
+    res.style.display='none';
+    sr.style.display='inline-block';
+  }
+  dl.style.display=enriched.length>0?'inline-block':'none';
+  rp.style.display=report.length>0?'inline-block':'none';
+  ins.style.display=insufficient.length>0?'inline-block':'none';
+  if(insufficient.length>0) ins.textContent='⚠ '+insufficient.length+' zonder data';
+}
 
 // ── CSV EXPORT ───────────────────────────────────────────────────────
 const ALWAYS_QUOTE=new Set(['description','description_short','meta_title','meta_description','meta_keywords']);
+// Kolommen die als tekst geforceerd moeten worden (voorkomt wetenschappelijke notatie bij EAN/barcodes)
+const FORCE_TEXT=new Set(['ean','ean13','barcode','upc','isbn','gtin','id_product','id','reference','supplier_reference']);
 function toCsvRow(headers,row){
   return headers.map(h=>{
     const val=String(row[h]||'');
     const esc=val.replace(/"/g,'""');
-    return ALWAYS_QUOTE.has(h)||esc.includes(';')||esc.includes('"')||esc.includes('\n')||esc.includes('\r')
+    const hl=h.toLowerCase();
+    // Forceer tekst voor EAN/barcode velden én voor pure getallen langer dan 10 cijfers
+    const isNumericLong = /^\d{10,}$/.test(val.trim());
+    const isForceText   = FORCE_TEXT.has(hl) || isNumericLong;
+    return ALWAYS_QUOTE.has(h)||isForceText||esc.includes(';')||esc.includes('"')||esc.includes('\n')||esc.includes('\r')
       ? '"'+esc+'"' : esc;
   }).join(';');
 }
 
 function downloadCsv(){
-  const allRows=allProducts;
-  const priorityIndices=[];
-  allRows.forEach((row,idx)=>{ if(needsEnrichment(row)) priorityIndices.push(idx); });
   const enrichedByName={};
   enriched.forEach(e=>{ enrichedByName[normName(e.name)]=e; });
+
+  // Bouw output: alleen verrijkte producten
   const outputRows=[];
-  allRows.forEach((row,idx)=>{
-    const pos=priorityIndices.indexOf(idx);
-    let en=pos!==-1?enriched[pos]:null;
-    if(!en) en=enrichedByName[normName(row.name)]||null;
+  allProducts.forEach((row)=>{
+    const en = enrichedByName[normName(row.name)];
     if(!en) return;
     const newDesc=clearDesc?'':(en.description||row.description||'');
     outputRows.push({...row,
@@ -1007,12 +1493,13 @@ function downloadCsv(){
       meta_keywords:en.meta_keywords||row.meta_keywords||'',
     });
   });
+
   const OUTPUT_COLS=['name','description','description_short','meta_title','meta_description','meta_keywords'];
   const missingCols=OUTPUT_COLS.filter(c=>!csvHeaders.includes(c));
   const headers=[...csvHeaders,...missingCols];
   const csv=[headers.join(';'),...outputRows.map(r=>toCsvRow(headers,r))].join('\r\n');
   triggerDownload('\uFEFF'+csv,'text/csv','schreeven-enriched-'+new Date().toISOString().slice(0,10)+'.csv');
-  addLog('✓ CSV geëxporteerd ('+outputRows.length+' producten)','success');
+  addLog('✓ CSV geexporteerd ('+outputRows.length+' producten)','success');
 }
 
 function downloadReport(){
@@ -1069,6 +1556,11 @@ function renderPreview(){
     list.appendChild(d);
   });
   const detail=$('previewDetail');
+  // Reset stijl voor content-weergave
+  detail.style.textAlign='left';
+  detail.style.color='#333';
+  detail.style.paddingTop='4px';
+  detail.style.lineHeight='1.5';
   if(previewIdx!==null&&enriched[previewIdx]){
     const p=enriched[previewIdx];
     const mtLen=(p.meta_title||'').length, mdLen=(p.meta_description||'').length;
@@ -1076,25 +1568,40 @@ function renderPreview(){
     const bronInfo=p._bron?`<span style="font-size:11px;color:#999;margin-left:6px">bron: ${escHtml(p._bron)}</span>`:'';
     detail.innerHTML=
       '<div style="display:flex;align-items:center;margin-bottom:10px">'+layerBadge+bronInfo+'</div>'+
+
       '<span class="lbl">description_short</span>'+
-      '<div style="font-size:13px;color:#333;line-height:1.65;margin-bottom:13px">'+p.description_short+'</div>'+
+      '<div style="font-size:12px;color:#333;line-height:1.7;margin-bottom:13px;white-space:pre-wrap;background:#f9f9f6;padding:10px;border-radius:5px;border:1px solid #e0e0d8">'+escHtml(p.description_short||'(leeg)')+'</div>'+
+
+      '<span class="lbl">description</span>'+
+      '<div style="font-size:12px;color:#333;line-height:1.7;margin-bottom:13px;white-space:pre-wrap;background:#f9f9f6;padding:10px;border-radius:5px;border:1px solid #e0e0d8;max-height:220px;overflow-y:auto">'+escHtml(p.description||'(leeg)')+'</div>'+
+
       '<span class="lbl">meta_title <span style="font-weight:400;color:'+(mtLen>60?'#c0392b':'#999')+'">'+mtLen+'/60</span></span>'+
       '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_title||'')+'</div>'+
+
       '<span class="lbl">meta_description <span style="font-weight:400;color:'+(mdLen>155?'#c0392b':'#999')+'">'+mdLen+'/155</span></span>'+
       '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_description||'')+'</div>'+
+
       '<span class="lbl" style="margin-bottom:6px">meta_keywords</span>'+
-      '<div style="margin-bottom:12px">'+(p.meta_keywords||'').split(',').map(k=>'<span class="kwtag">'+escHtml(k.trim())+'</span>').join('')+'</div>'+
-      '<span class="lbl">description (HTML)</span>'+
-      '<div style="font-size:11px;color:#555;background:#f5f5f0;padding:10px;border-radius:5px;max-height:130px;overflow-y:auto;line-height:1.75;border:1px solid #ddd;word-break:break-all;font-family:monospace">'+escHtml(p.description||'(leeg)')+'</div>';
+      '<div style="margin-bottom:4px">'+(p.meta_keywords||'').split(',').map(k=>'<span class="kwtag">'+escHtml(k.trim())+'</span>').join('')+'</div>'
   }
 }
 
-function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s){
+  const amp='&'+'amp;', lt='&'+'lt;', gt='&'+'gt;', quot='&'+'quot;';
+  return String(s||'').replace(/&/g,amp).replace(/</g,lt).replace(/>/g,gt).replace(/"/g,quot);
+}
 
 // ── INIT ─────────────────────────────────────────────────────────────
 $('systemPromptInput').value=DEFAULT_SYSTEM_PROMPT;
 $('systemPromptInput').addEventListener('input', updatePromptCharCount);
 updatePromptCharCount();
+// Herstel API key na refresh
+const savedKey = sessionStorage.getItem('schreeven_apikey');
+if(savedKey){ $('apiKeyInput').value = savedKey; updateCostEstimate(); }
+
+
+
 </script>
+
 </body>
 </html>
