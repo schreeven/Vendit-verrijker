@@ -14,6 +14,7 @@ body{font-family:'Nunito','Avenir','Segoe UI',sans-serif;background:#f5f5f0;min-
 .btn-blue{background:#2c5f8a;color:#fff}.btn-blue:hover{background:#3474a7}
 .btn-orange{background:#b45309;color:#fff}.btn-orange:hover{background:#d4620a}
 .btn-gray{background:#e5e7eb;color:#555}.btn-gray:hover{background:#d1d5db}
+.btn-purple{background:#6d28d9;color:#fff}.btn-purple:hover{background:#7c3aed}
 .card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .lbl{color:#006633;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;display:block}
 .sbox{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:13px 15px}
@@ -24,15 +25,16 @@ body{font-family:'Nunito','Avenir','Segoe UI',sans-serif;background:#f5f5f0;min-
 .pitem{background:#f9f9f6;border:1.5px solid #e0e0d8;border-radius:6px;padding:10px 13px;margin-bottom:6px;cursor:pointer;transition:all .15s}
 .pitem:hover{border-color:#006633;background:#f0f7f3}.pitem.active{border-color:#006633;background:#edf7ed}
 .logbox{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:5px;padding:10px 12px;max-height:170px;overflow-y:auto;font-size:11px;line-height:1.85;font-family:'Courier New',monospace}
-.log-info{color:#888}.log-success{color:#006633;font-weight:600}.log-warn{color:#b45309}.log-error{color:#c0392b;font-weight:600}.log-save{color:#2c5f8a}
+.log-info{color:#888}.log-success{color:#006633;font-weight:600}.log-warn{color:#b45309}.log-error{color:#c0392b;font-weight:600}.log-save{color:#2c5f8a}.log-web{color:#6d28d9;font-weight:600}
 .kwtag{background:#edf7ed;border:1px solid #a8d5a2;border-radius:4px;padding:3px 8px;font-size:11px;color:#006633;display:inline-block;margin:2px;font-weight:500}
 .toggle-wrap{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:7px;cursor:pointer;transition:all .15s;border:1.5px solid #ddd}
 .toggle-knob{width:36px;height:20px;border-radius:10px;background:#ccc;position:relative;transition:background .2s;flex-shrink:0}
 .toggle-knob-ball{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .filter-btn{background:#f9f9f6;border:1.5px solid #ddd;border-radius:7px;padding:11px 13px;cursor:pointer;transition:all .15s;text-align:left}
 .filter-btn.active{background:#edf7ed;border-color:#006633}
-input[type=text]{width:100%;background:#f9f9f6;border:1.5px solid #ddd;border-radius:5px;padding:9px 13px;color:#1a1a1a;font-family:'Nunito','Avenir',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
-input[type=text]:focus{border-color:#006633}
+input[type=text],textarea{width:100%;background:#f9f9f6;border:1.5px solid #ddd;border-radius:5px;padding:9px 13px;color:#1a1a1a;font-family:'Nunito','Avenir',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
+input[type=text]:focus,textarea:focus{border-color:#006633}
+textarea{resize:vertical;line-height:1.6;font-size:12px}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:#f0f0eb}
 ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
@@ -40,6 +42,22 @@ input[type=text]:focus{border-color:#006633}
 .budget-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;background:#f0f7f3;border:1px solid #a8d5a2;border-radius:8px;margin-bottom:14px;font-size:12px}
 .budget-ok{color:#006633;font-weight:700}.budget-warn{color:#b45309;font-weight:700}.budget-err{color:#c0392b;font-weight:700}
 .api-input-wrap{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px 16px;margin-bottom:14px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:.04em}
+.badge-haiku{background:#d1fae5;color:#065f46}
+.badge-sonnet{background:#dbeafe;color:#1e40af}
+.badge-web{background:#ede9fe;color:#5b21b6}
+.badge-insuff{background:#fee2e2;color:#991b1b}
+.routing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.routing-card{border-radius:8px;padding:12px 14px;border:1.5px solid}
+.routing-card.haiku{background:#f0fdf4;border-color:#86efac}
+.routing-card.sonnet{background:#eff6ff;border-color:#93c5fd}
+.routing-card.web{background:#f5f3ff;border-color:#c4b5fd}
+.cost-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid #f0f0eb}
+.cost-row:last-child{border-bottom:none}
+.collapsible-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 14px;background:#f9f9f6;border:1.5px solid #ddd;border-radius:7px;transition:all .15s}
+.collapsible-header:hover{background:#f0f7f3;border-color:#006633}
+.collapsible-content{display:none;margin-top:8px}
+.collapsible-content.open{display:block}
 </style>
 </head>
 <body>
@@ -57,7 +75,7 @@ input[type=text]:focus{border-color:#006633}
         <h1 style="font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:-.02em">Product Enrichment Tool</h1>
       </div>
     </div>
-    <p style="color:#888;font-size:12px">AI-gestuurde SEO-tekstverrijking · Auto-retry · Auto-save · Budget check · PrestaShop CSV-export</p>
+    <p style="color:#888;font-size:12px">AI-gestuurde SEO-tekstverrijking · 3-laags routing · Anti-hallucinatie · Auto-save · PrestaShop CSV-export</p>
   </div>
 
   <!-- API KEY + BUDGET -->
@@ -70,6 +88,46 @@ input[type=text]:focus{border-color:#006633}
     <span id="budgetStatus">—</span>
     <span style="color:#999">|</span>
     <span id="budgetEstimate" style="color:#555"></span>
+  </div>
+
+  <!-- ROUTING UITLEG -->
+  <div class="card">
+    <span class="lbl">Routing — 3-laags model strategie</span>
+    <div class="routing-grid">
+      <div class="routing-card haiku">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span class="badge badge-haiku">LAAG 1</span>
+          <span style="font-size:12px;font-weight:700;color:#065f46">Haiku</span>
+          <span style="font-size:10px;color:#6ee7b7;margin-left:auto">$0,25/$1,25</span>
+        </div>
+        <div style="font-size:11px;color:#047857;line-height:1.5">Schrijft alleen op basis van wat er in de CSV staat. Geen aannames. Onvoldoende data → Laag 2.</div>
+      </div>
+      <div class="routing-card sonnet">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span class="badge badge-sonnet">LAAG 2</span>
+          <span style="font-size:12px;font-weight:700;color:#1e40af">Sonnet</span>
+          <span style="font-size:10px;color:#93c5fd;margin-left:auto">$3/$15</span>
+        </div>
+        <div style="font-size:11px;color:#1d4ed8;line-height:1.5">Alleen voor producten die Haiku niet kon verwerken. Rijkere verwerking van bestaande brondata.</div>
+      </div>
+      <div class="routing-card web">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span class="badge badge-web">LAAG 3</span>
+          <span style="font-size:12px;font-weight:700;color:#5b21b6">Web search</span>
+          <span style="font-size:10px;color:#c4b5fd;margin-left:auto">toggle</span>
+        </div>
+        <div style="font-size:11px;color:#6d28d9;line-height:1.5">Optioneel. Sonnet zoekt officiële productpagina. Bron wordt gelogd in rapport.</div>
+      </div>
+    </div>
+
+    <!-- Web search toggle -->
+    <div id="toggleWebSearch" class="toggle-wrap" style="background:#f9f9f6;margin-bottom:0" onclick="toggleSetting('webSearch')">
+      <div class="toggle-knob" id="knobWebSearch"><div class="toggle-knob-ball" id="ballWebSearch"></div></div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#555">Laag 3 — Web search inschakelen</div>
+        <div id="labelWebSearch" style="font-size:11px;color:#999;margin-top:1px">Uit — producten zonder voldoende data worden als "insufficient" gemarkeerd</div>
+      </div>
+    </div>
   </div>
 
   <!-- FILTER -->
@@ -121,6 +179,26 @@ input[type=text]:focus{border-color:#006633}
     </div>
   </div>
 
+  <!-- SYSTEM PROMPT (configureerbaar) -->
+  <div class="card">
+    <div class="collapsible-header" onclick="toggleCollapsible('promptSection')">
+      <div>
+        <span class="lbl" style="margin-bottom:2px">System prompt — configureerbaar</span>
+        <div style="font-size:11px;color:#999">Pas de schrijfstijl en instructies aan per run of per klant</div>
+      </div>
+      <span id="promptChevron" style="font-size:16px;color:#999;transition:transform .2s">▼</span>
+    </div>
+    <div id="promptSection" class="collapsible-content">
+      <div style="margin-top:12px">
+        <textarea id="systemPromptInput" rows="14" style="font-family:'Courier New',monospace;font-size:11px;line-height:1.7"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button class="btn btn-gray" onclick="resetSystemPrompt()" style="padding:6px 14px;font-size:12px">↺ Standaard herstellen</button>
+          <span id="promptCharCount" style="font-size:11px;color:#999"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- UPLOAD -->
   <div class="card">
     <span class="lbl">Stap 1 — CSV uploaden</span>
@@ -149,6 +227,16 @@ input[type=text]:focus{border-color:#006633}
       <div class="sbox"><div id="sOver" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Overgeslagen</div></div>
       <div class="sbox"><div id="sGeen" style="font-size:20px;font-weight:600;color:#bbb">0</div><div style="font-size:10px;color:#999;margin-top:3px;font-weight:500">Geen data</div></div>
     </div>
+
+    <!-- Kosten per laag -->
+    <div id="costTracker" style="display:none;background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:11px 14px;margin-bottom:14px;font-size:12px">
+      <div style="font-weight:700;color:#555;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Kosten deze run</div>
+      <div class="cost-row"><span><span class="badge badge-haiku">HAIKU</span> <span id="costHaikuCount" style="color:#065f46">0</span> producten</span><span id="costHaikuAmt" style="color:#065f46;font-weight:600">$0.000</span></div>
+      <div class="cost-row"><span><span class="badge badge-sonnet">SONNET</span> <span id="costSonnetCount" style="color:#1e40af">0</span> producten</span><span id="costSonnetAmt" style="color:#1e40af;font-weight:600">$0.000</span></div>
+      <div class="cost-row"><span><span class="badge badge-web">WEB</span> <span id="costWebCount" style="color:#5b21b6">0</span> producten</span><span id="costWebAmt" style="color:#5b21b6;font-weight:600">$0.000</span></div>
+      <div style="border-top:1.5px solid #ddd;margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-weight:700"><span style="color:#333">Totaal</span><span id="costTotal" style="color:#006633">$0.000</span></div>
+    </div>
+
     <div id="progressWrap" style="display:none">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:5px;font-weight:500">
         <span id="progressLabel">0%</span>
@@ -179,20 +267,24 @@ input[type=text]:focus{border-color:#006633}
 
 <script>
 // ── CONSTANTEN ──────────────────────────────────────────────────────
-const BATCH_SIZE    = 3;
-const MAX_RETRIES   = 3;
+const BATCH_SIZE     = 3;
+const MAX_RETRIES    = 3;
 const AUTOSAVE_EVERY = 10;
-const SAVE_KEY      = 'schreeven_enriched_v2';
-const MODEL         = 'claude-sonnet-4-5';
-const MAX_TOKENS    = 4000;
-// Kosten per 1M tokens (USD, Sonnet 4)
-const COST_IN  = 3.0;
-const COST_OUT = 15.0;
-// Gem tokens per product: ~800 input, ~600 output
-const AVG_IN   = 800;
-const AVG_OUT  = 600;
+const SAVE_KEY       = 'schreeven_enriched_v3';
+const MODEL_HAIKU    = 'claude-haiku-4-5-20251001';
+const MODEL_SONNET   = 'claude-sonnet-4-5';
+const MAX_TOKENS     = 4000;
 
-const SYSTEM_PROMPT = `Je bent een professionele SEO-tekstschrijver gespecialiseerd in muziekinstrumenten, audioapparatuur en professionele gear. Je schrijft unieke, menselijke en SEO-geoptimaliseerde teksten voor de webshop van Schreeven Muziekinstrumenten in Nijmegen.
+// Kosten per 1M tokens (USD)
+const COST = {
+  haiku:  { in: 0.80,  out: 4.00  },   // Haiku 4.5
+  sonnet: { in: 3.00,  out: 15.00 },   // Sonnet 4.5
+  web:    { in: 3.00,  out: 15.00 },   // Sonnet + web search overhead
+};
+// Gem tokens per product
+const AVG = { in: 800, out: 600 };
+
+const DEFAULT_SYSTEM_PROMPT = `Je bent een professionele SEO-tekstschrijver gespecialiseerd in muziekinstrumenten, audioapparatuur en professionele gear. Je schrijft unieke, menselijke en SEO-geoptimaliseerde teksten voor de webshop van Schreeven Muziekinstrumenten in Nijmegen.
 
 TAAL & STIJL:
 - Professioneel maar toegankelijk
@@ -202,40 +294,34 @@ TAAL & STIJL:
 - Engelse muziektermen mogen blijven staan (MIDI, pickup, preamp, fader, DAW, modeling, sequencer, polyphony, etc.)
 - "Limited" blijft altijd in het Engels
 - Gebruik "signature model" — NIET "handtekeningmodel"
-- Toon aanpassen aan productcategorie
 
-BELANGRIJKE REGEL: Bestaande tekst uit de data is ALLEEN ter inspiratie voor productkennis. De output moet altijd volledig nieuw geschreven worden in onderstaand format. Neem NOOIT de oude opmaak over.
-
-KRITIEKE DATAREGEL — VERPLICHT:
-Als een product ONVOLDOENDE brondata heeft om feitelijk correcte teksten te schrijven (alleen een naam, geen specs, geen beschrijving, geen materialen, geen kenmerken), geef dan terug:
-{"name": "(exacte naam)", "insufficient": true}
-NOOIT aannames doen over specs, materialen of kenmerken die niet in de data staan.
+ANTI-HALLUCINATIE REGEL — ABSOLUUT VERPLICHT:
+Schrijf ALLEEN op basis van wat er letterlijk in de aangeleverde productdata staat.
+Verzin NOOIT specs, materialen, afmetingen, kleuren of kenmerken die niet expliciet in de data staan.
+Gebruik NOOIT "bovenblad" tenzij het materiaal expliciet in de data vermeld staat.
+Als er onvoldoende brondata is voor een feitelijk correcte tekst: geef {"name":"(exacte naam)","insufficient":true} terug.
+Liever geen tekst dan onjuiste tekst.
 
 STRUCTUUR — ALTIJD DEZE VOLGORDE:
-1. description_short — schrijf volledig in HTML, ALTIJD deze exacte volgorde:
-<p>[Wat IS het product — 1 zin: merk, type, materiaal, doel]</p>
+1. description_short — schrijf volledig in HTML:
+<p>[Wat IS het product — 1 zin: merk, type, doel. Alleen wat in de data staat.]</p>
 <b>[Actieve eigen titel: wat het doet]</b>
-<p>[Wat doet het — functioneel voordeel]</p>
+<p>[Wat doet het — functioneel voordeel, gebaseerd op de data]</p>
 <b>[Actieve eigen titel: waarom dit kopen]</b>
 <p>[Waarom kopen — voor wie, welk probleem lost het op]</p>
 <b>[Actieve eigen titel: voordelen]</b>
 <ul><li>voordeel</li><li>voordeel</li><li>voordeel</li><li>voordeel</li><li>voordeel</li></ul>
 <b>[Actieve eigen titel: onderhoud/advies]</b>
 <p>[Onderhoud, gebruik, tips]</p>
-
 REGELS: gebruik <b> voor titels — NOOIT <h3>. Voordelen ALLEEN als <ul><li>.
 
-2. description — ALLEEN invullen als expliciet gevraagd. Zelfde structuur maar uitgebreider. NIET kopiëren.
+2. description — ALLEEN invullen als expliciet gevraagd. Zelfde structuur maar uitgebreider.
 
-3. meta_title: Max 60 tekens. Bevat productnaam + hoofdkeyword. Eindigt NIET op "| Schreeven".
+3. meta_title: Max 60 tekens. Bevat productnaam + hoofdkeyword.
 
-4. meta_description: Max 155 tekens. Uitnodigend en informatief. Lichte call-to-action. SEO gericht op Nederland.
+4. meta_description: Max 155 tekens. Uitnodigend. Lichte call-to-action. SEO gericht op Nederland.
 
 5. meta_keywords: 8-12 relevante Nederlandse zoekwoorden. Kommagescheiden, lowercase.
-
-TERMINOLOGIE — VERPLICHT:
-- Gebruik bij snaarinstrumenten ALTIJD "bovenblad" — NOOIT "toplaag"
-- Noem NOOIT specifieke hardware-details tenzij EXPLICIET in de meegeleverde productdata
 
 EXTRA REGELS:
 - Geen externe links, geen bronvermeldingen, geen concurrenten
@@ -245,30 +331,35 @@ EXTRA REGELS:
 OUTPUT: Geef ALLEEN een JSON array terug, geen uitleg, geen markdown backticks.`;
 
 // ── STATE ────────────────────────────────────────────────────────────
-let allProducts    = [];
+let allProducts      = [];
 let priorityProducts = [];
-let enriched       = [];
-let insufficient   = [];
-let report         = [];
-let filterMode     = 'strict';
-let genDesc        = false;
-let clearDesc      = false;
-let skipKw         = '';
-let onlyKw         = '';
-let running        = false;
-let stopReq        = false;
-let cursor         = 0;
-let skippedCount   = 0;
-let csvHeaders     = [];
-let fileName       = '';
-let startTime      = null;
-let previewIdx     = null;
+let enriched         = [];
+let insufficient     = [];
+let report           = [];
+let filterMode       = 'strict';
+let genDesc          = false;
+let clearDesc        = false;
+let useWebSearch     = false;
+let skipKw           = '';
+let onlyKw           = '';
+let running          = false;
+let stopReq          = false;
+let cursor           = 0;
+let skippedCount     = 0;
+let csvHeaders       = [];
+let fileName         = '';
+let startTime        = null;
+let previewIdx       = null;
+
+// Kosten tracking
+let costs = { haiku: { count: 0, usd: 0 }, sonnet: { count: 0, usd: 0 }, web: { count: 0, usd: 0 } };
 
 // ── HELPERS ──────────────────────────────────────────────────────────
 function stripHtml(html){ return (html||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim(); }
 function parseKw(s){ return (s||'').split(',').map(k=>k.trim().toLowerCase()).filter(Boolean); }
 function normName(s){ return (s||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
 function $(id){ return document.getElementById(id); }
+function getSystemPrompt(){ return ($('systemPromptInput').value||'').trim()||DEFAULT_SYSTEM_PROMPT; }
 
 function addLog(msg, type='info'){
   const box = $('logBox');
@@ -279,11 +370,11 @@ function addLog(msg, type='info'){
   const t = new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   d.textContent = '['+t+'] '+msg;
   box.insertBefore(d, box.firstChild);
-  while(box.children.length > 60) box.removeChild(box.lastChild);
+  while(box.children.length > 80) box.removeChild(box.lastChild);
 }
 
 function saveSession(){
-  try { window._schreevenSave = JSON.stringify({fileName,enriched,cursor,insufficient,report}); } catch{}
+  try { window._schreevenSave = JSON.stringify({fileName,enriched,cursor,insufficient,report,costs}); } catch{}
 }
 function loadSession(){
   try { const r=window._schreevenSave; return r?JSON.parse(r):null; } catch{ return null; }
@@ -345,12 +436,26 @@ function needsEnrichment(r){
   if(isSkipped(r)) return false;
   const hasDesc=r.description?.trim();
   const hasShort=r.description_short?.trim();
-  const hasMeta=r.meta_description?.trim();
   const hasB=hasDesc&&r.description.includes('<b>');
   if(filterMode==='strict') return !hasDesc&&!hasShort;
   if(filterMode==='desc')   return !hasDesc;
-  if(filterMode==='all')    return !hasDesc||!hasMeta||!hasB;
+  if(filterMode==='all')    return !hasDesc||!hasShort||!hasB;
   return !hasDesc&&!hasShort;
+}
+
+// Bepaal hoeveel bruikbare brondata een product heeft (0-10 score)
+function dataSufficiencyScore(r){
+  let score = 0;
+  const short = stripHtml(r.description_short||'');
+  const desc  = stripHtml(r.description||'');
+  const info  = (short+' '+desc).trim();
+  if(info.length > 30)  score += 3;
+  if(info.length > 100) score += 2;
+  if(info.length > 250) score += 2;
+  if(r['Merk']?.trim())  score += 1;
+  if(r['Type']?.trim())  score += 1;
+  if(r['Maat']?.trim())  score += 1;
+  return score; // 0-10
 }
 
 // ── FILE HANDLING ────────────────────────────────────────────────────
@@ -363,7 +468,7 @@ function handleFile(file){
     const r=new FileReader();
     r.onload=ev=>{
       const text=ev.target.result;
-      if(enc==='utf-8'&&(text.match(/�/g)||[]).length>10){ tryDecode('latin1'); return; }
+      if(enc==='utf-8'&&(text.match(/\uFFFD/g)||[]).length>10){ tryDecode('latin1'); return; }
       processFile(text,file);
     };
     r.readAsText(file,enc);
@@ -383,6 +488,7 @@ function processFile(text,file){
   const priority=normalized.filter(needsEnrichment);
   priorityProducts=priority;
   enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;previewIdx=null;
+  costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
   updateStats();
   $('enrichCard').style.display='block';
   $('herbereken-wrap').style.display='flex';
@@ -403,9 +509,9 @@ function resumeSession(){
   insufficient=saved.insufficient||[];
   report=saved.report||[];
   cursor=saved.cursor||0;
+  costs=saved.costs||{haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
   $('saveBar').style.display='none';
-  updateStats();
-  renderPreview();
+  updateStats(); updateCostDisplay(); renderPreview();
   addLog('💾 Sessie hersteld: '+enriched.length+' producten, verder vanaf batch '+(cursor+1),'save');
 }
 
@@ -441,6 +547,32 @@ function toggleSetting(key){
     $('toggleClearDesc').style.borderColor=clearDesc?'#b45309':'#ddd';
     $('labelClearDesc').textContent=clearDesc?'Aan — huidige tekst wordt als broninfo gebruikt voor de short, daarna leeggemaakt':'Uit — bestaande description blijft staan';
   }
+  if(key==='webSearch'){
+    useWebSearch=!useWebSearch;
+    $('knobWebSearch').style.background=useWebSearch?'#6d28d9':'#ccc';
+    $('ballWebSearch').style.left=useWebSearch?'19px':'3px';
+    $('toggleWebSearch').style.background=useWebSearch?'#f5f3ff':'#f9f9f6';
+    $('toggleWebSearch').style.borderColor=useWebSearch?'#6d28d9':'#ddd';
+    $('labelWebSearch').textContent=useWebSearch?'Aan — Sonnet zoekt officiële productpagina voor producten zonder brondata (bron wordt gelogd)':'Uit — producten zonder voldoende data worden als "insufficient" gemarkeerd';
+    updateCostEstimate();
+  }
+}
+
+function toggleCollapsible(id){
+  const el=$(id);
+  const chevron=$('promptChevron');
+  el.classList.toggle('open');
+  chevron.style.transform=el.classList.contains('open')?'rotate(180deg)':'rotate(0deg)';
+}
+
+function resetSystemPrompt(){
+  $('systemPromptInput').value=DEFAULT_SYSTEM_PROMPT;
+  updatePromptCharCount();
+}
+
+function updatePromptCharCount(){
+  const len=($('systemPromptInput').value||'').length;
+  $('promptCharCount').textContent=len.toLocaleString()+' tekens · ~'+Math.round(len/4)+' tokens';
 }
 
 function updateKwPreviews(){
@@ -458,6 +590,7 @@ function herbereken(){
   onlyKw=$('onlyKw').value;
   priorityProducts=allProducts.filter(needsEnrichment);
   enriched=[];insufficient=[];report=[];cursor=0;skippedCount=0;
+  costs={haiku:{count:0,usd:0},sonnet:{count:0,usd:0},web:{count:0,usd:0}};
   updateStats();
   $('herberekenStatus').textContent='Huidig resultaat: '+priorityProducts.length.toLocaleString()+' producten te verrijken (van '+allProducts.length.toLocaleString()+' totaal)';
   updateCostEstimate();
@@ -483,6 +616,26 @@ function updateStats(){
   if(insufficient.length>0) $('insuffBtn').textContent='⚠ '+insufficient.length+' zonder data';
 }
 
+function updateCostDisplay(){
+  $('costTracker').style.display='block';
+  $('costHaikuCount').textContent=costs.haiku.count;
+  $('costHaikuAmt').textContent='$'+costs.haiku.usd.toFixed(3);
+  $('costSonnetCount').textContent=costs.sonnet.count;
+  $('costSonnetAmt').textContent='$'+costs.sonnet.usd.toFixed(3);
+  $('costWebCount').textContent=costs.web.count;
+  $('costWebAmt').textContent='$'+costs.web.usd.toFixed(3);
+  const total=costs.haiku.usd+costs.sonnet.usd+costs.web.usd;
+  $('costTotal').textContent='$'+total.toFixed(3);
+}
+
+function trackCost(layer, count){
+  const r=COST[layer];
+  const usd=count*(AVG.in/1e6*r.in + AVG.out/1e6*r.out);
+  costs[layer].count+=count;
+  costs[layer].usd+=usd;
+  updateCostDisplay();
+}
+
 // ── BUDGET & KOSTENSCHATTING ─────────────────────────────────────────
 async function checkBudget(){
   const key=getApiKey();
@@ -490,41 +643,19 @@ async function checkBudget(){
   $('budgetBtn').textContent='⏳ Laden...';
   $('budgetBtn').disabled=true;
   try {
-    // Haal usage op via Anthropic usage endpoint
-    const res = await fetch('https://api.anthropic.com/v1/usage', {
-      headers:{
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      }
+    const testRes = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:MODEL_HAIKU,max_tokens:5,messages:[{role:'user',content:'Hi'}]})
     });
     const bar=$('budgetBar');
     bar.style.display='flex';
-    if(res.ok){
-      const data=await res.json();
-      // Probeer ratelimit info te tonen
-      const remaining=res.headers.get('anthropic-ratelimit-tokens-remaining');
-      const resetAt=res.headers.get('anthropic-ratelimit-tokens-reset');
-      let statusHtml='<span class="budget-ok">✓ API key geldig</span>';
-      if(remaining) statusHtml+=' · <span style="color:#555">Tokens resterend: <strong>'+Number(remaining).toLocaleString()+'</strong></span>';
-      if(resetAt) statusHtml+=' · <span style="color:#999">Reset: '+new Date(resetAt).toLocaleTimeString('nl-NL')+'</span>';
-      $('budgetStatus').innerHTML=statusHtml;
-    } else if(res.status===401){
-      $('budgetStatus').innerHTML='<span class="budget-err">✗ Ongeldige API key</span>';
+    if(testRes.ok){
+      const rateLimitTokens = testRes.headers.get('anthropic-ratelimit-tokens-remaining');
+      $('budgetStatus').innerHTML='<span class="budget-ok">✓ API key geldig</span>'+(rateLimitTokens?' · Tokens resterend: <strong>'+Number(rateLimitTokens).toLocaleString()+'</strong>':'');
     } else {
-      // Probeer een mini test-call
-      const testRes = await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({model:MODEL,max_tokens:5,messages:[{role:'user',content:'Hi'}]})
-      });
-      if(testRes.ok){
-        const rateLimitTokens = testRes.headers.get('anthropic-ratelimit-tokens-remaining');
-        $('budgetStatus').innerHTML='<span class="budget-ok">✓ API key werkt</span>'+(rateLimitTokens?' · Tokens resterend: <strong>'+Number(rateLimitTokens).toLocaleString()+'</strong>':'');
-      } else {
-        const err=await testRes.json();
-        $('budgetStatus').innerHTML='<span class="budget-err">✗ '+( err.error?.message||'HTTP '+testRes.status)+'</span>';
-      }
+      const err=await testRes.json();
+      $('budgetStatus').innerHTML='<span class="budget-err">✗ '+(err.error?.message||'HTTP '+testRes.status)+'</span>';
     }
   } catch(e){
     $('budgetStatus').innerHTML='<span class="budget-err">✗ Fout: '+e.message+'</span>';
@@ -537,108 +668,250 @@ async function checkBudget(){
 function updateCostEstimate(){
   const n=priorityProducts.length;
   if(!n) return;
-  const totalIn  = n * AVG_IN;
-  const totalOut = n * AVG_OUT;
-  const costUsd  = (totalIn/1e6)*COST_IN + (totalOut/1e6)*COST_OUT;
-  const costEur  = costUsd * 0.92;
+  // Schatting: 70% Haiku, 20% Sonnet, 10% web (als web aan)
+  const nHaiku  = Math.round(n*0.70);
+  const nSonnet = Math.round(n*0.20);
+  const nWeb    = useWebSearch ? Math.round(n*0.10) : 0;
+  const nInsuff = n - nHaiku - nSonnet - nWeb;
+  const costH = nHaiku  * (AVG.in/1e6*COST.haiku.in  + AVG.out/1e6*COST.haiku.out);
+  const costS = nSonnet * (AVG.in/1e6*COST.sonnet.in + AVG.out/1e6*COST.sonnet.out);
+  const costW = nWeb    * (AVG.in/1e6*COST.web.in    + AVG.out/1e6*COST.web.out) * 1.5;
+  const totalUsd = costH+costS+costW;
+  const totalEur = totalUsd*0.92;
   const bar=$('budgetBar');
   bar.style.display='flex';
-  $('budgetEstimate').innerHTML =
-    '📊 Schatting voor <strong>'+n.toLocaleString()+'</strong> producten: ' +
-    '<strong>~$'+costUsd.toFixed(2)+'</strong> (~€'+costEur.toFixed(2)+') ' +
-    '<span style="color:#999;font-size:11px">('+MODEL+' · ~'+Math.round(AVG_IN/1000)+'k in / ~'+Math.round(AVG_OUT/1000)+'k out per product)</span>';
+  $('budgetEstimate').innerHTML=
+    '📊 Schatting <strong>'+n.toLocaleString()+'</strong> producten: '+
+    '<span style="color:#065f46">~'+nHaiku+' Haiku</span> + '+
+    '<span style="color:#1e40af">~'+nSonnet+' Sonnet</span>'+(nWeb?' + <span style="color:#5b21b6">~'+nWeb+' web</span>':'')+
+    ' = <strong>~$'+totalUsd.toFixed(2)+'</strong> (~€'+totalEur.toFixed(2)+')';
 }
 
-// ── API CALL ─────────────────────────────────────────────────────────
-async function callApi(messages){
+// ── API CALLS ─────────────────────────────────────────────────────────
+async function callApi(messages, model, useSearch=false){
   const key=getApiKey();
   if(!key) throw new Error('Geen API key');
+  const body={model,max_tokens:MAX_TOKENS,system:getSystemPrompt(),messages};
+  if(useSearch){
+    body.tools=[{type:'web_search_20250305',name:'web_search'}];
+  }
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:MODEL,max_tokens:MAX_TOKENS,system:SYSTEM_PROMPT,messages})
+    body:JSON.stringify(body)
   });
   if(!res.ok){ const e=await res.json(); throw new Error(e.error?.message||'HTTP '+res.status); }
   const data=await res.json();
-  return (data.content?.[0]?.text||'').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+  // Extraheer tekst uit content blocks (kan meerdere blocks bevatten bij tool use)
+  const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+  return text;
 }
 
 function buildProductContext(r){
-  const extras=[r['Kleur'],r['Maat'],r['Type']].filter(v=>v&&v.trim());
+  const extras=[r['Merk'],r['Type'],r['Maat'],r['Kleur'],r['Soort']].filter(v=>v&&v.trim());
   return extras.length?r.name+' ('+extras.join(', ')+')':r.name;
 }
 
-async function enrichSingle(product){
-  const short=stripHtml(product.description_short||'');
-  const existing=stripHtml(product.description||'');
-  const info=[short,existing].filter(Boolean).join(' | ').slice(0,200);
-  const ctx=buildProductContext(product);
-  const descInstr=genDesc?'Vul description in met dezelfde structuur als description_short, maar uitgebreider.':'Laat description leeg ("")';
-  const text=await callApi([{role:'user',content:
-    'Verrijk dit product voor schreeven.nl. Geef een JSON object terug (geen array):\n'+
-    '{"name":"...","description_short":"<p>...</p>...","description":"","meta_title":"...","meta_description":"...","meta_keywords":"..."}\n'+
-    descInstr+'\n\nProduct: "'+product.name+'"'+(ctx!==product.name?' [variant: '+ctx+']':'')+
-    (info?'\nBestaande info (ter inspiratie): "'+info+'"':'')+
-    '\n\nGeef ALLEEN het JSON object terug.'
-  }]);
-  return JSON.parse(text);
+function buildBronInfo(r){
+  const short=stripHtml(r.description_short||'');
+  const existing=stripHtml(r.description||'');
+  return [short,existing].filter(Boolean).join(' | ').slice(0,400);
 }
 
-async function enrichBatch(batch){
-  const descInstr=genDesc?'Vul description in met dezelfde structuur als description_short, maar schrijf uitgebreidere alineas met meer context en diepgang. Niet kopiëren.':'Laat description leeg ("")';
+// ── ROUTING LOGICA ────────────────────────────────────────────────────
+// Laag 1: Haiku — alleen op basis van brondata, geen aanvulling
+async function tryHaiku(batch){
+  const descInstr=genDesc?'Vul description in (zelfde structuur als short, maar uitgebreider).':'Laat description leeg ("")';
   const lines=batch.map((p,i)=>{
-    const short=stripHtml(p.description_short||'');
-    const existing=stripHtml(p.description||'');
-    const info=[short,existing].filter(Boolean).join(' | ').slice(0,400);
+    const info=buildBronInfo(p);
     const ctx=buildProductContext(p);
-    return (i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [variant: '+ctx+']':'')+(info?' — bestaande info (ter inspiratie): "'+info+'"':'');
+    return (i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [context: '+ctx+']':'')+(info?' — brondata: "'+info+'"':' — GEEN BRONDATA');
   }).join('\n');
-  const prompt='Verrijk de volgende '+batch.length+' producten voor schreeven.nl. Geef een JSON array terug:\n'+
-    '[{"name":"(exacte naam)","description_short":"<p>...</p><b>[titel]</b><p>...</p><b>[titel]</b><p>...</p><b>[voordelen titel]</b><ul><li>...</li></ul><b>[onderhoud titel]</b><p>...</p>","description":"","meta_title":"...","meta_description":"...","meta_keywords":"..."}]\n'+
-    descInstr+'\n\n'+lines+'\n\nGeef ALLEEN de JSON array terug.';
-  const text=await callApi([{role:'user',content:prompt}]);
+  const prompt=
+    'Verrijk de volgende '+batch.length+' producten. Schrijf UITSLUITEND op basis van de meegeleverde brondata.\n'+
+    'Als een product onvoldoende brondata heeft (alleen een naam, geen specs/beschrijving): geef {"name":"(naam)","insufficient":true} terug.\n'+
+    descInstr+'\n\n'+lines+'\n\n'+
+    'Geef ALLEEN een JSON array terug.';
+  return await callApi([{role:'user',content:prompt}], MODEL_HAIKU);
+}
 
-  const process=results=>{
-    const valid=[],newInsuff=[];
-    results.forEach((en,i)=>{
-      const original=batch[i]||batch.find(b=>b.name===en.name)||{};
-      if(en&&en.insufficient){
-        insufficient.push({name:en.name||original.name||'?',merk:original['Merk']||'',type:original['Type']||'',reden:'Onvoldoende brondata'});
-        newInsuff.push(en.name||original.name);
-      } else if(en&&en.name){
-        report.push(buildReportEntry(original,en));
-        valid.push(en);
+// Laag 2: Sonnet — voor producten die Haiku niet kon verwerken
+async function trySonnet(batch){
+  const descInstr=genDesc?'Vul description in (zelfde structuur als short, maar uitgebreider).':'Laat description leeg ("")';
+  const lines=batch.map((p,i)=>{
+    const info=buildBronInfo(p);
+    const ctx=buildProductContext(p);
+    return (i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [context: '+ctx+']':'')+(info?' — brondata: "'+info+'"':'');
+  }).join('\n');
+  const prompt=
+    'Verrijk de volgende '+batch.length+' producten voor schreeven.nl.\n'+
+    'Schrijf alleen op basis van de meegeleverde brondata. Geen aannames, geen verzinsels.\n'+
+    'Onvoldoende data → {"name":"(naam)","insufficient":true}\n'+
+    descInstr+'\n\n'+lines+'\n\nGeef ALLEEN een JSON array terug.';
+  return await callApi([{role:'user',content:prompt}], MODEL_SONNET);
+}
+
+// Laag 3: Sonnet + web search — voor producten die ook Sonnet niet kon verwerken
+async function trySonnetWeb(product){
+  const descInstr=genDesc?'Vul description in (zelfde structuur als short, maar uitgebreider).':'Laat description leeg ("")';
+  const prompt=
+    'Zoek de officiële productpagina op voor: "'+product.name+'" (merk: '+(product['Merk']||'onbekend')+').\n'+
+    'Gebruik alleen officiële merkwebsites of zeer betrouwbare bronnen (geen forums, geen kleine winkels).\n'+
+    'Schrijf op basis van wat je vindt een SEO-tekst voor schreeven.nl.\n'+
+    'Als je geen betrouwbare bron vindt: geef {"name":"'+product.name+'","insufficient":true,"reden":"geen betrouwbare bron gevonden"} terug.\n'+
+    'Vermeld in het JSON object ook de gevonden bron als: "bron":"https://...".\n'+
+    descInstr+'\n\n'+
+    'Geef een JSON object terug (geen array).';
+  return await callApi([{role:'user',content:prompt}], MODEL_SONNET, true);
+}
+
+// ── BATCH VERWERKING ──────────────────────────────────────────────────
+async function processBatch(batch){
+  // Stap 1: probeer Haiku
+  let haikuText;
+  try {
+    haikuText = await tryHaiku(batch);
+  } catch(e){
+    addLog('⚠ Haiku fout, fallback naar Sonnet: '+e.message,'warn');
+    haikuText = null;
+  }
+
+  let haikuResults = [];
+  if(haikuText){
+    try { haikuResults = JSON.parse(haikuText); } catch{
+      const repaired = tryRepairJson(haikuText);
+      if(repaired) haikuResults = repaired;
+    }
+  }
+
+  // Splits: sufficient (Haiku kon verwerken) vs insufficient (voor Sonnet/web)
+  const sufficient = [];
+  const needsSonnet = [];
+
+  haikuResults.forEach((r,i)=>{
+    const original = batch[i]||batch.find(b=>b.name===r.name)||{};
+    if(r.insufficient){
+      needsSonnet.push({product: original, haikuResult: r});
+    } else if(r.name){
+      r._layer = 'haiku';
+      r._bron  = 'CSV-data';
+      sufficient.push({enriched: r, original});
+    }
+  });
+
+  // Als Haiku niets teruggaf of minder dan batch, voeg ontbrekende toe aan needsSonnet
+  if(haikuResults.length < batch.length){
+    batch.forEach((p,i)=>{
+      const alreadyHandled = sufficient.some(s=>normName(s.enriched.name)===normName(p.name)) ||
+                             needsSonnet.some(n=>normName(n.product.name)===normName(p.name));
+      if(!alreadyHandled) needsSonnet.push({product: p, haikuResult: null});
+    });
+  }
+
+  trackCost('haiku', sufficient.length + needsSonnet.length);
+
+  // Stap 2: Sonnet voor insufficient producten
+  let sonnetOk = [];
+  let stillNeedsWeb = [];
+
+  if(needsSonnet.length > 0){
+    const sonnetBatch = needsSonnet.map(n=>n.product);
+    let sonnetText;
+    try {
+      sonnetText = await trySonnet(sonnetBatch);
+    } catch(e){
+      addLog('⚠ Sonnet fout: '+e.message,'warn');
+      sonnetText = null;
+    }
+    let sonnetResults = [];
+    if(sonnetText){
+      try { sonnetResults = JSON.parse(sonnetText); } catch{
+        const r = tryRepairJson(sonnetText);
+        if(r) sonnetResults = r;
+      }
+    }
+    sonnetResults.forEach((r,i)=>{
+      const original = sonnetBatch[i]||{};
+      if(r.insufficient){
+        stillNeedsWeb.push({product: original, reason: r.reden||'onvoldoende brondata'});
+      } else if(r.name){
+        r._layer = 'sonnet';
+        r._bron  = 'CSV-data (Sonnet)';
+        sonnetOk.push({enriched: r, original});
       }
     });
-    if(newInsuff.length) newInsuff.forEach(n=>addLog('⚠ Overgeslagen (geen data): '+n,'warn'));
-    return valid;
-  };
-
-  try { return process(JSON.parse(text)); }
-  catch {
-    const lastClose=text.lastIndexOf('},');
-    const repaired=lastClose>0?text.slice(0,lastClose+1)+']':null;
-    if(repaired){ try{ return process(JSON.parse(repaired)); }catch{} }
-    const results=[];
-    for(const p of batch){ try{ results.push(await enrichSingle(p)); }catch{} }
-    return process(results);
+    trackCost('sonnet', sonnetResults.length);
   }
+
+  // Stap 3: Web search voor resterende insufficient producten
+  let webOk = [];
+  let finalInsuff = [];
+
+  for(const item of stillNeedsWeb){
+    if(!useWebSearch){
+      finalInsuff.push({name:item.product.name, merk:item.product['Merk']||'', type:item.product['Type']||'', reden: item.reason, layer:'—'});
+      continue;
+    }
+    try {
+      const webText = await trySonnetWeb(item.product);
+      let webResult;
+      try { webResult = JSON.parse(webText); } catch { webResult = null; }
+      if(webResult && !webResult.insufficient && webResult.name){
+        webResult._layer = 'web';
+        webResult._bron  = webResult.bron||'web search';
+        webOk.push({enriched: webResult, original: item.product});
+        addLog('🌐 Web gevonden voor: '+item.product.name+' → '+webResult._bron,'web');
+        trackCost('web', 1);
+      } else {
+        finalInsuff.push({name:item.product.name, merk:item.product['Merk']||'', type:item.product['Type']||'', reden: webResult?.reden||'geen betrouwbare bron gevonden', layer:'web geprobeerd'});
+        addLog('⚠ Web: geen bron voor '+item.product.name,'warn');
+        trackCost('web', 1);
+      }
+    } catch(e){
+      finalInsuff.push({name:item.product.name, merk:item.product['Merk']||'', type:item.product['Type']||'', reden:'web search fout: '+e.message, layer:'web fout'});
+    }
+  }
+
+  // Verwerk resultaten
+  const allResults = [...sufficient, ...sonnetOk, ...webOk];
+  const newEnriched = [];
+
+  allResults.forEach(({enriched: en, original})=>{
+    report.push(buildReportEntry(original, en));
+    newEnriched.push(en);
+  });
+
+  finalInsuff.forEach(item=>{
+    insufficient.push(item);
+    addLog('⚠ Geen data: '+item.name+' ('+item.reden+')','warn');
+  });
+
+  return newEnriched;
 }
 
-function buildReportEntry(original,en){
+function tryRepairJson(text){
+  try {
+    const lastClose=text.lastIndexOf('},');
+    const repaired=lastClose>0?text.slice(0,lastClose+1)+']':null;
+    if(repaired) return JSON.parse(repaired);
+  } catch{}
+  return null;
+}
+
+function buildReportEntry(original, en){
   const HARDWARE=['chroom','chrome','goud','rosewood','walnut','maple','mahonie','spruce','sapele','aquila','nylgut'];
   const bronText=stripHtml([original.description,original.description_short].join(' ')).toLowerCase();
   const outText=stripHtml([en.description,en.description_short].join(' ')).toLowerCase();
   const aangevuld=HARDWARE.filter(t=>outText.includes(t)&&!bronText.includes(t));
   return {
-    name:en.name,
-    description_status:original.description?.trim()?'brondata':'AI aangevuld',
-    short_status:original.description_short?.trim()?'brondata':'AI aangevuld',
-    meta_desc_status:original.meta_description?.trim()?'brondata':'AI aangevuld',
-    meta_title_status:original.meta_title?.trim()?'brondata':'AI aangevuld',
-    meta_kw_status:original.meta_keywords?.trim()?'brondata':'AI aangevuld',
-    specs_aangevuld:aangevuld.join(', '),
-    aandacht:aangevuld.length?'⚠ Controleer specs':'',
+    name: en.name,
+    layer: en._layer||'?',
+    bron:  en._bron||'?',
+    description_status: original.description?.trim()?'brondata':'AI aangevuld',
+    short_status: original.description_short?.trim()?'brondata':'AI aangevuld',
+    meta_desc_status: original.meta_description?.trim()?'brondata':'AI aangevuld',
+    specs_aangevuld: aangevuld.join(', '),
+    aandacht: aangevuld.length?'⚠ Controleer specs':'',
   };
 }
 
@@ -648,11 +921,12 @@ async function runEnrichment(){
   if(!getApiKey()){ alert('Vul een API key in'); return; }
   if(running) return;
   running=true; stopReq=false;
-  startTime=Date.now()-(cursor*BATCH_SIZE*3000);
+  startTime=Date.now()-(cursor*BATCH_SIZE*4000);
   $('startBtn').disabled=true;
   $('pauseBtn').style.display='inline-block';
+  $('costTracker').style.display='block';
   const total=Math.ceil(priorityProducts.length/BATCH_SIZE);
-  addLog('▶ Start verrijking vanaf batch '+(cursor+1)+' van '+total,'info');
+  addLog('▶ Start verrijking vanaf batch '+(cursor+1)+' van '+total+(useWebSearch?' [web search aan]':''),'info');
   try {
     for(let b=cursor;b<total;b++){
       if(stopReq){ addLog('⏸ Gepauzeerd na batch '+b,'warn'); cursor=b; break; }
@@ -673,10 +947,10 @@ async function runEnrichment(){
       for(let attempt=1;attempt<=MAX_RETRIES;attempt++){
         try {
           const batch=priorityProducts.slice(b*BATCH_SIZE,(b+1)*BATCH_SIZE);
-          const results=await enrichBatch(batch);
+          const results=await processBatch(batch);
           enriched=[...enriched,...results];
           cursor=b+1;
-          updateStats(); renderPreview();
+          updateStats(); updateCostDisplay(); renderPreview();
           if((b+1)%AUTOSAVE_EVERY===0){ saveSession(); addLog('💾 Auto-opgeslagen ('+enriched.length+' producten)','save'); }
           ok=true; break;
         } catch(err){
@@ -692,8 +966,9 @@ async function runEnrichment(){
   $('pauseBtn').style.display='none';
   $('etaLabel').textContent='';
   if(enriched.length>0){
-    showStatus('✅ Klaar! '+enriched.length.toLocaleString()+' producten verrijkt');
-    addLog('✅ Voltooid: '+enriched.length.toLocaleString()+' producten','success');
+    const totalCost=(costs.haiku.usd+costs.sonnet.usd+costs.web.usd).toFixed(3);
+    showStatus('✅ Klaar! '+enriched.length.toLocaleString()+' producten verrijkt · Kosten: $'+totalCost);
+    addLog('✅ Voltooid: '+enriched.length.toLocaleString()+' producten · $'+totalCost,'success');
   }
   updateStats();
 }
@@ -712,7 +987,6 @@ function toCsvRow(headers,row){
 }
 
 function downloadCsv(){
-  // Build priority index map
   const allRows=allProducts;
   const priorityIndices=[];
   allRows.forEach((row,idx)=>{ if(needsEnrichment(row)) priorityIndices.push(idx); });
@@ -743,15 +1017,18 @@ function downloadCsv(){
 
 function downloadReport(){
   if(!report.length) return;
-  const headers=['name','description_status','short_status','meta_desc_status','meta_title_status','meta_kw_status','specs_aangevuld','aandacht'];
-  const labels=['Productnaam','Description','Short description','Meta description','Meta title','Meta keywords','Aangevulde specs','Aandacht'];
+  const headers=['name','layer','bron','description_status','short_status','meta_desc_status','specs_aangevuld','aandacht'];
+  const labels=['Productnaam','Model','Bron','Description','Short description','Meta description','Aangevulde specs','Aandacht'];
   const toRow=r=>headers.map(h=>{ const v=String(r[h]||''); return v.includes(';')||v.includes('"')?'"'+v.replace(/"/g,'""')+'"':v; }).join(';');
   const withFlags=report.filter(r=>r.specs_aangevuld).length;
-  const allAI=report.filter(r=>r.description_status==='AI aangevuld').length;
+  const byLayer = {haiku:0,sonnet:0,web:0};
+  report.forEach(r=>{ if(byLayer[r.layer]!==undefined) byLayer[r.layer]++; });
+  const totalCost=(costs.haiku.usd+costs.sonnet.usd+costs.web.usd).toFixed(3);
   const summary=[
     'Verificatierapport Schreeven Enrichment — '+new Date().toLocaleString('nl-NL'),
     'Totaal verrijkt: '+report.length,
-    'Volledig AI geschreven (geen brondata): '+allAI,
+    'Via Haiku: '+byLayer.haiku+' · Sonnet: '+byLayer.sonnet+' · Web search: '+byLayer.web,
+    'Totale kosten: $'+totalCost,
     'Mogelijk onjuiste specs (aangevuld door AI): '+withFlags,
     '',labels.join(';'),...report.map(toRow)
   ].join('\r\n');
@@ -760,8 +1037,8 @@ function downloadReport(){
 
 function downloadInsufficient(){
   if(!insufficient.length) return;
-  const headers=['name','merk','type','reden'];
-  const labels=['Productnaam','Merk','Type','Reden'];
+  const headers=['name','merk','type','reden','layer'];
+  const labels=['Productnaam','Merk','Type','Reden','Geprobeerd via'];
   const rows=insufficient.map(r=>headers.map(h=>{ const v=String(r[h]||''); return v.includes(';')?'"'+v+'"':v; }).join(';'));
   const csv=['Producten met onvoldoende data — '+new Date().toLocaleString('nl-NL'),'Totaal: '+insufficient.length,'',labels.join(';'),...rows].join('\r\n');
   triggerDownload('\uFEFF'+csv,'text/csv','schreeven-onvoldoende-data-'+new Date().toISOString().slice(0,10)+'.csv');
@@ -786,7 +1063,8 @@ function renderPreview(){
   enriched.forEach((p,i)=>{
     const d=document.createElement('div');
     d.className='pitem'+(previewIdx===i?' active':'');
-    d.innerHTML='<div style="font-size:12px;font-weight:600;color:'+(previewIdx===i?'#006633':'#222')+';line-height:1.4;margin-bottom:2px">'+escHtml(p.name)+'</div><div style="font-size:11px;color:#888">'+escHtml(p.meta_title||'')+'</div>';
+    const layerBadge = p._layer ? `<span class="badge badge-${p._layer}" style="margin-left:4px">${p._layer}</span>` : '';
+    d.innerHTML='<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><div style="font-size:12px;font-weight:600;color:'+(previewIdx===i?'#006633':'#222')+';line-height:1.4">'+escHtml(p.name)+'</div>'+layerBadge+'</div><div style="font-size:11px;color:#888">'+escHtml(p.meta_title||'')+'</div>';
     d.onclick=()=>{ previewIdx=i; renderPreview(); };
     list.appendChild(d);
   });
@@ -794,12 +1072,15 @@ function renderPreview(){
   if(previewIdx!==null&&enriched[previewIdx]){
     const p=enriched[previewIdx];
     const mtLen=(p.meta_title||'').length, mdLen=(p.meta_description||'').length;
+    const layerBadge=p._layer?`<span class="badge badge-${p._layer}" style="margin-left:6px">${p._layer}</span>`:'';
+    const bronInfo=p._bron?`<span style="font-size:11px;color:#999;margin-left:6px">bron: ${escHtml(p._bron)}</span>`:'';
     detail.innerHTML=
+      '<div style="display:flex;align-items:center;margin-bottom:10px">'+layerBadge+bronInfo+'</div>'+
       '<span class="lbl">description_short</span>'+
       '<div style="font-size:13px;color:#333;line-height:1.65;margin-bottom:13px">'+p.description_short+'</div>'+
-      '<span class="lbl">meta_title <span style="font-weight:400;color:'+(mtLen>60?'#c0392b':'#999')+'">'+'</span>'+mtLen+'/60</span>'+
+      '<span class="lbl">meta_title <span style="font-weight:400;color:'+(mtLen>60?'#c0392b':'#999')+'">'+mtLen+'/60</span></span>'+
       '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_title||'')+'</div>'+
-      '<span class="lbl">meta_description <span style="font-weight:400;color:'+(mdLen>155?'#c0392b':'#999')+'">'+'</span>'+mdLen+'/155</span>'+
+      '<span class="lbl">meta_description <span style="font-weight:400;color:'+(mdLen>155?'#c0392b':'#999')+'">'+mdLen+'/155</span></span>'+
       '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_description||'')+'</div>'+
       '<span class="lbl" style="margin-bottom:6px">meta_keywords</span>'+
       '<div style="margin-bottom:12px">'+(p.meta_keywords||'').split(',').map(k=>'<span class="kwtag">'+escHtml(k.trim())+'</span>').join('')+'</div>'+
@@ -811,11 +1092,9 @@ function renderPreview(){
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── INIT ─────────────────────────────────────────────────────────────
-const saved=loadSession();
-if(saved&&saved.enriched?.length>0){
-  // Laat saveBar zien na file upload
-}
-
+$('systemPromptInput').value=DEFAULT_SYSTEM_PROMPT;
+$('systemPromptInput').addEventListener('input', updatePromptCharCount);
+updatePromptCharCount();
 </script>
 </body>
 </html>
