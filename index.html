@@ -115,7 +115,7 @@ input[type=text]:focus{border-color:#006633}
     <input type="text" id="onlyKw" placeholder="bijv. DeoxIT, Yamaha, snare" style="margin-bottom:8px" oninput="updateKwPreviews()">
     <div id="onlyKwPreview" style="display:none;margin-bottom:10px;font-size:11px;color:#006633;background:#edf7ed;padding:5px 10px;border-radius:4px;border:1px solid #a8d5a2"></div>
 
-    <div id="herbereken-wrap" style="display:none;margin-top:6px;display:none;align-items:center;gap:12px;padding:12px 14px;background:#f0f7f3;border:1.5px solid #a8d5a2;border-radius:7px">
+    <div id="herbereken-wrap" style="display:none;margin-top:6px;align-items:center;gap:12px;padding:12px 14px;background:#f0f7f3;border:1.5px solid #a8d5a2;border-radius:7px">
       <button class="btn btn-green" onclick="herbereken()" style="padding:8px 18px;font-size:13px">🔄 Herbereken filter</button>
       <div id="herberekenStatus" style="font-size:12px;color:#555"></div>
     </div>
@@ -183,7 +183,7 @@ const BATCH_SIZE    = 3;
 const MAX_RETRIES   = 3;
 const AUTOSAVE_EVERY = 10;
 const SAVE_KEY      = 'schreeven_enriched_v2';
-const MODEL         = 'claude-sonnet-4-20250514';
+const MODEL         = 'claude-sonnet-4-5';
 const MAX_TOKENS    = 4000;
 // Kosten per 1M tokens (USD, Sonnet 4)
 const COST_IN  = 3.0;
@@ -797,7 +797,7 @@ function renderPreview(){
     detail.innerHTML=
       '<span class="lbl">description_short</span>'+
       '<div style="font-size:13px;color:#333;line-height:1.65;margin-bottom:13px">'+p.description_short+'</div>'+
-      '<span class="lbl">meta_title <span style="font-weight:400;color:'+(mtLen>60?'#c0392b':'#999');+'">'+'</span>'+mtLen+'/60</span>'+
+      '<span class="lbl">meta_title <span style="font-weight:400;color:'+(mtLen>60?'#c0392b':'#999')+'">'+'</span>'+mtLen+'/60</span>'+
       '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_title||'')+'</div>'+
       '<span class="lbl">meta_description <span style="font-weight:400;color:'+(mdLen>155?'#c0392b':'#999')+'">'+'</span>'+mdLen+'/155</span>'+
       '<div style="font-size:13px;color:#333;margin-bottom:13px">'+escHtml(p.meta_description||'')+'</div>'+
