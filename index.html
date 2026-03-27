@@ -386,6 +386,8 @@ select{cursor:pointer}
       <div class="fm-stat"><div class="fm-stat-num" id="fmStatPrijsNul" style="color:#2c5f8a">0</div><div class="fm-stat-lbl">Prijs nul</div></div>
     </div>
 
+    <!-- BRONMELDING -->
+    <div id="fmBronMelding" style="font-size:11px;margin-bottom:10px;font-weight:600"></div>
     <!-- MERK OVERZICHT -->
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:#006633;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Score per merk (gefilterde selectie)</div>
@@ -1134,16 +1136,17 @@ function fmAnalyseProduct(p){
   const titleLen=(p.title||'').trim().length;
   if(titleLen<5) issues.push('geen_meta');
   else if(titleLen<20) issues.push('korte_meta');
-  // 3. Geen afbeelding
-  if(!(p.imageLink||'').trim()) issues.push('geen_img');
-  // 4. Prijs nul of ontbrekend
-  if(!p.price||p.price<=0) issues.push('prijs_nul');
+  // 3. Geen afbeelding — alleen relevant voor Merchant feed (niet PrestaShop CSV)
+  if(!p.isPrestaShop && !(p.imageLink||'').trim()) issues.push('geen_img');
+  // 4. Prijs nul — alleen relevant voor Merchant feed (niet PrestaShop CSV)
+  if(!p.isPrestaShop && (!p.price||p.price<=0)) issues.push('prijs_nul');
   // Score: 0-100, aftrek per issue
+  // Voor PrestaShop CSV: alleen desc en meta tellen (geen prijs/img in die bron)
   let score=100;
-  if(issues.includes('geen_desc')) score-=40;
-  else if(issues.includes('korte_desc')) score-=15;
-  if(issues.includes('geen_meta')) score-=25;
-  else if(issues.includes('korte_meta')) score-=10;
+  if(issues.includes('geen_desc')) score-=50;
+  else if(issues.includes('korte_desc')) score-=20;
+  if(issues.includes('geen_meta')) score-=35;
+  else if(issues.includes('korte_meta')) score-=15;
   if(issues.includes('geen_img')) score-=20;
   if(issues.includes('prijs_nul')) score-=15;
   p.issues=issues;
@@ -1204,11 +1207,19 @@ function fmResetFilters(){
 
 function fmRenderStats(){
   const p=fmFiltered;
+  const isPS=p.length>0&&p[0].isPrestaShop;
   $('fmStatTotaal').textContent=p.length.toLocaleString();
   $('fmStatGeenDesc').textContent=p.filter(x=>x.issues.includes('geen_desc')||x.issues.includes('korte_desc')).length.toLocaleString();
   $('fmStatGeenMeta').textContent=p.filter(x=>x.issues.includes('geen_meta')||x.issues.includes('korte_meta')).length.toLocaleString();
-  $('fmStatGeenImg').textContent=p.filter(x=>x.issues.includes('geen_img')).length.toLocaleString();
-  $('fmStatPrijsNul').textContent=p.filter(x=>x.issues.includes('prijs_nul')).length.toLocaleString();
+  // Afbeelding en prijs: toon n.v.t. voor PrestaShop CSV
+  $('fmStatGeenImg').textContent=isPS?'n.v.t.':p.filter(x=>x.issues.includes('geen_img')).length.toLocaleString();
+  $('fmStatGeenImg').style.color=isPS?'#bbb':'#6d28d9';
+  $('fmStatPrijsNul').textContent=isPS?'n.v.t.':p.filter(x=>x.issues.includes('prijs_nul')).length.toLocaleString();
+  $('fmStatPrijsNul').style.color=isPS?'#bbb':'#2c5f8a';
+  // Toon bronmelding
+  const srcEl=document.getElementById('fmBronMelding');
+  if(srcEl) srcEl.textContent=isPS?'Bron: PrestaShop CSV — prijs en afbeelding niet beschikbaar in deze export. Gebruik de Merchant XML feed voor volledige analyse.':'Bron: Google Merchant XML feed';
+  if(srcEl) srcEl.style.color=isPS?'#b45309':'#006633';
 }
 
 function fmRenderBrands(){
@@ -1289,30 +1300,48 @@ async function fmLoadUrl(){
   if(!url){alert('Vul een feed URL in');return;}
   const btn=$('fmLoadUrlBtn');btn.textContent='⏳ Laden...';btn.disabled=true;
   fmSetStatus('Bezig met ophalen van '+url+'...','#555');
+  // Helper: fetch met timeout via AbortController (AbortSignal.timeout werkt niet in alle browsers)
+  async function fetchWithTimeout(fetchUrl, ms){
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),ms);
+    try{
+      const r=await fetch(fetchUrl,{signal:ctrl.signal});
+      clearTimeout(timer);
+      return r;
+    }catch(e){clearTimeout(timer);throw e;}
+  }
+
+  // Probeer eerst via allorigins CORS proxy
+  let loaded=false;
   try{
-    // Gebruik een CORS proxy voor de feed
     const proxyUrl='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
-    const resp=await fetch(proxyUrl,{signal:AbortSignal.timeout(30000)});
+    fmSetStatus('Ophalen via proxy...','#555');
+    const resp=await fetchWithTimeout(proxyUrl,30000);
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     const text=await resp.text();
-    if(!text.trim())throw new Error('Lege response ontvangen');
+    if(!text.trim())throw new Error('Lege response');
     if(text.includes('<item>')||text.includes('<rss')||text.includes('<?xml')){
       const products=fmParseXml(text);
-      if(!products.length)throw new Error('Geen producten gevonden in de XML feed');
+      if(!products.length)throw new Error('Geen producten gevonden in XML');
       fmLoadProducts(products);
       fmSetStatus('✅ '+products.length.toLocaleString()+' producten geladen uit feed','#006633');
-    }else{throw new Error('Onverwacht bestandsformaat — verwacht XML');}
-  }catch(e){
-    // Fallback: direct fetch proberen (werkt als CORS toegestaan is)
-    try{
-      const resp2=await fetch(url,{signal:AbortSignal.timeout(15000)});
-      const text2=await resp2.text();
-      const products=fmParseXml(text2);
-      if(!products.length)throw new Error('Geen producten gevonden');
-      fmLoadProducts(products);
-      fmSetStatus('✅ '+products.length.toLocaleString()+' producten geladen','#006633');
-    }catch(e2){
-      fmSetStatus('❌ Kon feed niet ophalen: '+e.message+'. Upload het XML-bestand handmatig hieronder.','#c0392b');
+      loaded=true;
+    }else{throw new Error('Geen XML herkend in response');}
+  }catch(e1){
+    // Fallback: directe fetch (werkt als de server CORS toestaat)
+    if(!loaded){
+      try{
+        fmSetStatus('Proxy mislukt, directe verbinding proberen...','#555');
+        const resp2=await fetchWithTimeout(url,15000);
+        const text2=await resp2.text();
+        const products=fmParseXml(text2);
+        if(!products.length)throw new Error('Geen producten gevonden');
+        fmLoadProducts(products);
+        fmSetStatus('✅ '+products.length.toLocaleString()+' producten geladen (directe verbinding)','#006633');
+        loaded=true;
+      }catch(e2){
+        fmSetStatus('❌ Kon feed niet ophalen ('+e2.message+'). Download het XML-bestand en upload het hieronder.','#c0392b');
+      }
     }
   }
   btn.textContent='⬇ Ophalen';btn.disabled=false;
@@ -1321,57 +1350,104 @@ async function fmLoadUrl(){
 // FEED LADEN VIA UPLOAD
 function fmHandleFile(file){
   if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const text=ev.target.result;
-    try{
-      let products;
-      if(file.name.endsWith('.xml')||text.trim().startsWith('<?xml')||text.includes('<rss')){
-        products=fmParseXml(text);
-      }else if(file.name.endsWith('.csv')||text.includes(';')){
-        // Probeer CSV als Merchant feed
-        products=fmParseMerchantCsv(text);
-      }else{throw new Error('Onbekend bestandsformaat');}
-      if(!products||!products.length)throw new Error('Geen producten gevonden');
-      fmLoadProducts(products);
-      fmSetStatus('✅ '+products.length.toLocaleString()+' producten geladen uit '+file.name,'#006633');
-    }catch(e){fmSetStatus('❌ Fout bij inladen: '+e.message,'#c0392b');}
+  fmSetStatus('Bezig met inladen van '+file.name+'...','#555');
+  // Probeer eerst UTF-8, dan latin-1 als fallback (zelfde als verrijker)
+  const tryRead=(enc)=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const text=ev.target.result;
+      // Detecteer encoding problemen
+      if(enc==='utf-8'&&(text.match(/\uFFFD/g)||[]).length>20){
+        tryRead('latin1');return;
+      }
+      try{
+        let products;
+        if(file.name.toLowerCase().endsWith('.xml')||text.trim().startsWith('<?xml')||text.includes('<rss')){
+          products=fmParseXml(text);
+        }else{
+          // CSV — PrestaShop of Merchant formaat
+          products=fmParseMerchantCsv(text);
+        }
+        if(!products||!products.length)throw new Error('Geen producten herkend in dit bestand. Controleer of het een geldige XML feed of CSV is.');
+        fmLoadProducts(products);
+        fmSetStatus('✅ '+products.length.toLocaleString()+' producten geladen uit '+file.name+' ('+enc+')','#006633');
+      }catch(e){fmSetStatus('❌ Fout bij inladen: '+e.message,'#c0392b');}
+    };
+    reader.readAsText(file,enc);
   };
-  reader.readAsText(file,'utf-8');
+  tryRead('utf-8');
 }
+
 
 function fmParseMerchantCsv(text){
-  // Google Merchant CSV heeft TAB-scheiding
-  const sep=text.includes('\t')?'\t':';';
-  const lines=text.split(/\r?\n/);if(lines.length<2)return[];
-  const headers=lines[0].split(sep).map(h=>h.trim().replace(/^\uFEFF/,'').toLowerCase());
-  const products=[];
-  for(let i=1;i<lines.length;i++){
-    if(!lines[i].trim())continue;
-    const cols=lines[i].split(sep);
-    const row={};headers.forEach((h,idx)=>row[h]=(cols[idx]||'').trim().replace(/^"|"$/g,''));
-    const price=parseFloat((row['price']||row['verkoopprijs']||'0').replace(/[^0-9.,]/g,'').replace(',','.'))||0;
-    products.push({
-      id:row['id']||row['productnummer']||row['product nummer']||'',
-      title:row['title']||row['name']||row['naam']||row['omschrijving']||'',
-      desc:row['description']||row['beschrijving']||'',
-      descShort:row['description_short']||row['short_description']||row['beschrijving_kort']||'',
-      brand:row['brand']||row['merk']||'',
-      price,priceRaw:row['price']||'',
-      imageLink:row['image_link']||row['afbeelding']||'',
-      availability:row['availability']||'',
-      condition:row['condition']||'',
-      productType:row['product_type']||row['categorie']||'',
-      mpn:row['mpn']||'',gtin:row['gtin']||row['ean']||'',
-      googleCategory:row['google_product_category']||'',
-      link:row['link']||'',
-      leverancier:row['product_type']?(row['product_type'].split('>')[0].trim()):(row['merk']||''),
-      issues:[],score:0
-    });
-  }
-  return products;
-}
+  // Robuuste parser: ondersteunt geciteerde velden met ; en newlines erin
+  // Detecteer scheidingsteken
+  const firstLine=text.slice(0,500);
+  const sep=firstLine.includes('\t')?'\t':';';
 
+  // Parseer alle rijen correct (zelfde logica als verrijker parseCsv)
+  function parseAllRows(raw){
+    const lines=raw.split(/\r?\n/);
+    if(lines.length<2)return{headers:[],rows:[]};
+    const headers=lines[0].split(sep).map(h=>h.replace(/^\uFEFF/,'').replace(/^"|"$/g,'').trim().toLowerCase());
+    const rows=[];let i=1;
+    while(i<lines.length){
+      if(!lines[i].trim()){i++;continue;}
+      let line=lines[i];
+      // Plak geciteerde multiline velden samen
+      while((line.match(/"/g)||[]).length%2!==0&&i+1<lines.length){i++;line+='\n'+lines[i];}
+      const cols=[];let cur='',inQ=false;
+      for(let c=0;c<line.length;c++){
+        if(line[c]==='"')inQ=!inQ;
+        else if(line[c]===sep&&!inQ){cols.push(cur);cur='';}
+        else cur+=line[c];
+      }
+      cols.push(cur);
+      const obj={};headers.forEach((h,idx)=>obj[h]=(cols[idx]||'').replace(/^"|"$/g,'').trim());
+      rows.push(obj);i++;
+    }
+    return{headers,rows};
+  }
+
+  const{headers,rows}=parseAllRows(text);
+  if(!rows.length)return[];
+
+  // PrestaShop CSV herkend als merk leeg is maar 'name' aanwezig
+  const isPrestaShop=headers.includes('name')&&!headers.includes('brand');
+
+  return rows.map(row=>{
+    const price=parseFloat((row['price']||row['verkoopprijs inclusief']||row['verkoopprijs']||'0').replace(/[^0-9.,]/g,'').replace(',','.'))||0;
+    // Merk: probeer diverse kolommen; voor PrestaShop ook uit meta_keywords eerste keyword
+    let brand=row['brand']||row['merk']||row['kopie kenmerken - merk']||'';
+    if(!brand && isPrestaShop){
+      // Probeer merk uit meta_keywords (eerste keyword vaak het merk)
+      const kw=(row['meta_keywords']||'').split(',')[0].trim();
+      // Alleen gebruiken als het op een merknaam lijkt (niet te lang, geen spaties, begint met hoofdletter)
+      if(kw && kw.length<25 && /^[A-Z]/.test(kw)) brand=kw;
+    }
+    const title=row['title']||row['name']||row['naam']||row['omschrijving']||'';
+    const desc=row['description']||row['grote omschrijving (e-commerce)']||row['beschrijving']||'';
+    const descShort=row['description_short']||row['kleine omschrijving (e-commerce)']||row['short_description']||'';
+    // Leverancier: uit product_type eerste segment, of merk, of meta_keywords eerste woord
+    const productType=row['product_type']||row['categorie']||'';
+    const leverancier=productType?(productType.split('>')[0].trim()):brand;
+    // Productnummer: voor PrestaShop gebruik link_rewrite als id fallback
+    const id=row['id']||row['productnummer']||row['product nummer']||row['mpn']||row['link_rewrite']||'';
+    const isPS=isPrestaShop; // markeer bron
+    return{
+      id,title,desc,descShort,brand,price,
+      priceRaw:row['price']||row['verkoopprijs inclusief']||'',
+      imageLink:row['image_link']||row['afbeelding']||'',
+      availability:row['availability']||row['voorraad']||'',
+      condition:row['condition']||'',
+      productType,mpn:row['mpn']||'',
+      gtin:row['gtin']||row['ean']||row['ean_clean']||'',
+      googleCategory:row['google_product_category']||'',
+      link:row['link']||row['link_rewrite']||'',
+      leverancier,isPrestaShop:isPS,issues:[],score:0
+    };
+  }).filter(p=>p.title);
+}
 function fmSetStatus(msg,color){
   const el=$('fmLoadStatus');el.style.display='block';el.textContent=msg;
   el.style.background=color==='#006633'?'#edf7ed':color==='#c0392b'?'#fef2f2':'#f9f9f6';
