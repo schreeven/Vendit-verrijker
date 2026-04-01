@@ -395,7 +395,9 @@ const VELDEN = [
   {key:'Verkoop_ex',         label:'Verkoop ex',             vplicht:false},
   {key:'Kleur',              label:'Kleur',                  vplicht:false},
   {key:'Gewicht',            label:'Gewicht',                vplicht:false},
-  {key:'Afmeting',           label:'Afmeting',               vplicht:false},
+  {key:'Afmeting',            label:'Afmeting (product mm)',   vplicht:false},
+  {key:'Verpakking_afmeting', label:'Verpakking afmeting (cm)', vplicht:false},
+  {key:'Verpakking_gewicht',  label:'Verpakking gewicht (kg)',  vplicht:false},
   {key:'Voorraad_leverancier',label:'Voorraad leverancier',  vplicht:false},
   {key:'Afbeelding',         label:'Afbeelding URL',         vplicht:false},
   {key:'Leverancier_artikel',label:'Leverancier artikelcode',vplicht:false},
@@ -421,6 +423,10 @@ const ALGAM_PRODUITS = {
     'name':                ['Designation'],
     'Type':                ['Serie','SousSerie'],
     'Soort':               ['Rubrique'],
+    // Dimensies voor verzendkosten — worden samengevoegd in rijNaarRecord
+    '_Longueur':           ['Longueur'],
+    '_Largeur':            ['Largeur'],
+    '_Hauteur':            ['Hauteur'],
   },
   prefixRegels:[],
 };
@@ -697,6 +703,13 @@ function autoMapping(headers, profiel) {
     const k = (profiel.mapping['Categorie']||[]).find(c => headers.includes(c));
     if (k) m['Categorie'] = k;
   }
+  // Extra: dimensievelden voor verzendkosten (beginnen met _)
+  ['_Longueur','_Largeur','_Hauteur'].forEach(veld => {
+    if (profiel.mapping[veld]) {
+      const k = (profiel.mapping[veld]||[]).find(c => headers.includes(c));
+      if (k) m[veld] = k;
+    }
+  });
   return m;
 }
 
@@ -734,12 +747,45 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     });
   }
 
-  // Descriptifs_nl: kolom_2 + kolom_3 samenvoegen als beide gevuld
+  // Descriptifs_nl: kolom_2 + kolom_3 samenvoegen + velden parsen
   if (profiel?.algamBestandType === 'descriptifs') {
     const col2 = mapping['Sub_omschrijving'] ? (rij[headers.indexOf(mapping['Sub_omschrijving'])]||'').trim() : '';
     const col3 = r.Descriptif || '';
     if (col2 && col3) r.Descriptif = col3 + ' | ' + col2;
     else if (col2 && !col3) r.Descriptif = col2;
+
+    // Parse "- Sleutel : waarde" blokken uit kolom_3 naar losse velden
+    if (col3) {
+      const parseVal = (tekst, sleutels) => {
+        for (const s of sleutels) {
+          const m = tekst.match(new RegExp('-\\s*' + s + '\\s*:\\s*([^-]+?)(?=\\s*-\\s*[A-Z]|$)', 'i'));
+          if (m) return m[1].trim();
+        }
+        return '';
+      };
+      if (!r.Kleur)    r.Kleur    = parseVal(col3, ['Color','Kleuren','Kleur','Couleur']);
+      if (!r.Gewicht)  r.Gewicht  = parseVal(col3, ['Gewicht','Poids','Weight']);
+      // Afmeting = productafmeting in mm (uit Descriptifs_nl — NIET verpakking)
+      if (!r.Afmeting) r.Afmeting = parseVal(col3, ['Afmetingen \\(mm\\)','Afmeting','Dimensions']);
+      // Maat = vorm/model/dikte: Dreadnought, 4/4, Strat, 0.73mm, medium
+      if (!r.Maat)     r.Maat     = parseVal(col3, ['Formaat','Dikte','Gauge','Taille','Format']);
+    }
+  }
+
+  // Produits: L x B x H = verpakkingsdimensies (doos) — NIET productafmeting
+  if (profiel?.algamBestandType === 'produits') {
+    const lk = mapping['_Longueur'], bk = mapping['_Largeur'], hk = mapping['_Hauteur'];
+    const l = lk ? (rij[headers.indexOf(lk)]||'').trim() : '';
+    const b = bk ? (rij[headers.indexOf(bk)]||'').trim() : '';
+    const h = hk ? (rij[headers.indexOf(hk)]||'').trim() : '';
+    if (l && b && l !== '0' && b !== '0') {
+      r.Verpakking_afmeting = h && h !== '0' ? `${l} x ${b} x ${h} cm` : `${l} x ${b} cm`;
+    }
+    // Poids = verpakkingsgewicht in kg
+    if (r.Gewicht) {
+      r.Verpakking_gewicht = r.Gewicht;
+      r.Gewicht = ''; // Gewicht veld bewaren voor productgewicht uit Descriptifs_nl
+    }
   }
 
   r._warnings = [];
