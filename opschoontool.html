@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -127,7 +126,14 @@
   .profiel-nieuw:hover { border-color: var(--groen); color: var(--groen); }
   small { font-size: 0.71rem; color: var(--grijs); }
   hr.scheider { border: none; border-top: 1px solid var(--lichtgrijs); margin: 14px 0; }
-
+  .merge-profiel-banner { background: linear-gradient(135deg, #edf9ed, #e8f4ff); border: 1px solid var(--groen); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 0.8rem; }
+  .merge-profiel-banner strong { color: var(--donkergroen); display: block; margin-bottom: 4px; }
+  .merge-profiel-banner span { color: var(--grijs); font-size: 0.73rem; }
+  .bestand-type-badge { font-size: 0.65rem; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
+  .btb-produits { background: #e8faf3; color: #0d6e4f; }
+  .btb-descriptifs { background: #e8f4ff; color: #1a5c99; }
+  .btb-abmusic { background: #f3e8ff; color: #5b21b6; }
+  .btb-onbekend { background: var(--lichtgrijs); color: var(--grijs); }
   /* DASHBOARD */
   .db-bronnen { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 8px; margin-bottom: 14px; }
   .db-bron { background: var(--warmgrijs); border-radius: 8px; padding: 10px 12px; border: 1px solid var(--lichtgrijs); }
@@ -195,19 +201,30 @@
     <div class="panel">
       <div class="panel-header"><span class="step">1</span> Bestanden uploaden</div>
       <div class="panel-body">
+        <div id="algamMergeBanner" style="display:none;" class="merge-profiel-banner">
+          <strong>✓ Algam 3-bestand merge herkend</strong>
+          <span id="algamMergeBannerTekst">Upload Produits.xlsx, Descriptifs_nl.csv en Tarif_AB_Music.xls</span>
+        </div>
         <div class="bestand-lijst" id="bestandLijst"></div>
         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
           <div class="icon">📂</div>
-          <div class="label">Klik of sleep CSV bestanden hier</div>
+          <div class="label">Klik of sleep bestanden hier</div>
           <div class="sublabel">CSV, XLS en XLSX · Meerdere bestanden tegelijk mogelijk</div>
         </div>
         <input type="file" id="fileInput" accept=".csv,.txt,.xls,.xlsx" multiple>
+        <div style="margin-top:10px;padding:9px 12px;background:var(--warmgrijs);border-radius:6px;font-size:0.75rem;color:var(--grijs);">
+          <strong style="color:var(--donkergroen);display:block;margin-bottom:4px;">Algam 3-bestand merge</strong>
+          Sleep tegelijk: <strong>Produits.xlsx</strong> + <strong>Descriptifs_nl.csv</strong> + <strong>Tarif_AB_Music.xls</strong>
+        </div>
       </div>
     </div>
 
     <div class="panel" id="mergePanel" style="display:none;">
       <div class="panel-header"><span class="step">2</span> Merge instellingen</div>
       <div class="panel-body">
+        <div id="algamMergeInfo" style="display:none;" class="melding m-ok" style="margin-bottom:10px;">
+          <span>✓</span><div><strong>Algam merge actief</strong> — prioriteiten automatisch ingesteld</div>
+        </div>
         <div class="merge-sleutel-rij">
           <label>Sleutelveld:</label>
           <select id="mergeSleutel">
@@ -216,7 +233,7 @@
             <option value="Type">Type</option>
           </select>
         </div>
-        <small style="display:block;margin-bottom:12px;">Records worden gematcht op dit veld. Sleepvolgorde bepaalt standaard prioriteit.</small>
+        <small style="display:block;margin-bottom:12px;">Records worden gematcht op dit veld.</small>
         <div style="font-size:0.72rem;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Prioriteit per veld bij conflict</div>
         <div style="max-height:200px;overflow-y:auto;">
           <table class="prioriteit-tabel">
@@ -246,7 +263,7 @@
         </div>
         <div class="optie-rij">
           <input type="checkbox" id="optFrans" checked>
-          <div class="optie-tekst"><strong>Franse namen markeren</strong><span>Accent-detectie + Franse trefwoorden</span></div>
+          <div class="optie-tekst"><strong>Franse namen filteren</strong><span>Producten met Franse naam zonder NL/EN alternatief worden overgeslagen</span></div>
         </div>
         <div class="optie-rij">
           <input type="checkbox" id="optOmschrijving" checked>
@@ -293,7 +310,7 @@
           <div id="previewLeeg" style="text-align:center;padding:40px;color:var(--grijs);font-size:0.84rem;">Upload bestanden en start de verwerking</div>
           <div class="preview-wrap" id="previewWrap" style="display:none;">
             <table><thead><tr>
-              <th>#</th><th>Merk</th><th>Type</th><th>Soort</th><th>Omschrijving</th>
+              <th>#</th><th>Merk</th><th>Type</th><th>Soort</th><th>Naam (webshop)</th>
               <th>Lev.artikel</th><th>Inkoop ex</th><th>Verkoop incl</th><th>Bron</th><th>⚠</th>
             </tr></thead><tbody id="previewBody"></tbody></table>
           </div>
@@ -355,12 +372,15 @@
 
 <script>
 // ─── STATE ───────────────────────────────────
-let bestanden = [];      // [{naam, headers, rijen, profielId, mapping, klaar}]
+let bestanden = [];
 let profielen = {};
 let verwerktRijen = [];
 let bezig = false;
 let actiefMappingIdx = null;
-let veldPrioriteit = {}; // {veldKey: bestandIdx}
+let veldPrioriteit = {};
+
+// Bestandstype tracking voor Algam merge
+let algamMergeStatus = { produits: null, descriptifs: null, abmusic: null };
 
 const VELDEN = [
   {key:'Merk',               label:'Merk',                   vplicht:true},
@@ -383,78 +403,72 @@ const VELDEN = [
   {key:'name',               label:'Productnaam (webshop)',  vplicht:false},
 ];
 
-const ALGAM = {
-  naam:'Algam (Produits.xlsx)', delimiter:';',
+// ─── INGEBAKKEN PROFIELEN ────────────────────
+
+const ALGAM_PRODUITS = {
+  naam:'Algam Produits.xlsx', delimiter:',',
+  algamBestandType: 'produits',
+  algamPrefixStrip: true,
   mapping:{
-    'Merk':                ['Marque','Merk','Brand','Fabricant','Manufacturer'],
-    // Produit = artikelcode MET prefix (ADU 6S6270) → wordt Type na strip
-    'Leverancier_artikel': ['Produit','Productnummer','Ref fournisseur',
-                            'Référence fournisseur','Supplier ref','Référence',
-                            'Reference','Art. fournisseur','Code fournisseur','Leverancier_artikel'],
-    'Soort':               ['Soort'],
-    // Rubrique / Gamme = interne categorie → fallback voor Soort AI
-    'Categorie':           ['Rubrique','Gamme','Serie','SousSerie',
-                            'Type','Catégorie','Categorie','Category','Famille','Rayon'],
-    'Inkoop_ex':           ['HtBrut','Inkoop Ex.','Inkoop_ex','Prix achat HT',
-                            'PA HT','Cost','Prix dachat HT'],
-    'Verkoop_incl':        ['TtcPublic','Verkoop Inc.','Verkoop_incl','Prix vente TTC',
-                            'Prix TTC','PV TTC','Retail','Prix conseillé TTC','PVTTC'],
-    'Verkoop_ex':          ['HtDeee','Verkoop Ex.','Verkoop_ex','Prix vente HT',
-                            'Prix HT','PV HT'],
-    'name':                ['Designation','Désignation','name','Omschrijving',
-                            'Libellé','Libelle','Nom produit','Naam'],
-    'Sub_omschrijving':    ['Sub_omschrijving','Désignation courte','Libellé court'],
-    'Descriptif':          ['Descriptif','Description','Omschrijving tekst',
-                            'Description longue','Présentation'],
-    'EAN':                 ['CodeBarre','Code Barre','EAN','EAN13','Code EAN',
-                            'Code barre','Barcode','GTIN'],
-    'Kleur':               ['Couleur','Kleur','Color','Coloris','Finition'],
-    'Maat':                ['Maat','Taille','Size','Format'],
-    'Gewicht':             ['Poids','Gewicht','Weight','Poids net','Poids brut'],
-    'Afmeting':            ['Longueur','Largeur','Hauteur','Afmeting','Dimensions',
-                            'Encombrement'],
-    'Voorraad_leverancier':['Voorraad','Stock','Quantité','Qté disponible',
-                            'Disponibilité','Stock disponible'],
-    'Afbeelding':          ['UrlImage','UrlImageBig','Afbeelding','Image',
-                            'Photo URL','Visuel','Lien image','URL image'],
+    'Merk':                ['Marque'],
+    'Leverancier_artikel': ['Produit'],
+    'Verkoop_incl':        ['TtcPublic'],
+    'Inkoop_ex':           ['HtBrut'],
+    'Afbeelding':          ['UrlImage','UrlImageBig'],
+    'EAN':                 ['CodeBarre'],
+    'Gewicht':             ['Poids'],
+    'Categorie':           ['Rubrique'],
+    'name':                ['Designation'],
+    'Type':                ['Serie','SousSerie'],
+    'Soort':               ['Rubrique'],
   },
-  prefixRegels:[], algamPrefixStrip:true,
+  prefixRegels:[],
 };
 
-// AB Music prijslijst profiel (Tarif_AB_Music_2026.xls)
 const AB_MUSIC = {
-  naam:'AB Music (Tarif prijslijst)', delimiter:';',
+  naam:'AB Music Tarif prijslijst', delimiter:',',
+  algamBestandType: 'abmusic',
+  algamPrefixStrip: true,
   mapping:{
-    'Merk':                ['Marque','Merk','Brand'],
-    // Produit = artikelcode MET prefix → strip via algamPrefixStrip
-    'Leverancier_artikel': ['Produit','Productnummer','Ref fournisseur','Leverancier_artikel'],
-    'name':                ['Libelle','Libellé','Designation','Désignation','name','Naam'],
-    'Inkoop_ex':           ['Base HT','HtBrut','Inkoop Ex.','Inkoop_ex','Prix achat HT'],
-    'Verkoop_incl':        ['Prix TTC\nindicatif','Prix TTC','TtcPublic',
-                            'Verkoop Inc.','Verkoop_incl','Prix conseillé TTC'],
-    'Verkoop_ex':          ['HT DEEE','HtDeee','Verkoop Ex.','Prix vente HT'],
-    'EAN':                 ['Code Barre','CodeBarre','EAN','EAN13','Barcode'],
-    'Soort':               ['Soort'],
-    'Categorie':           ['Rubrique','Gamme','Type','Catégorie','Categorie'],
-    'Descriptif':          ['Descriptif','Description','Libelle long'],
+    'Merk':                ['Marque'],
+    'Leverancier_artikel': ['Produit'],
+    'name':                ['Libelle'],
+    'Inkoop_ex':           ['Base HT'],
+    'Verkoop_incl':        ['Prix TTC\nindicatif','Prix TTC'],
+    'EAN':                 ['Code Barre','CodeBarre'],
   },
-  prefixRegels:[], algamPrefixStrip:true,
+  prefixRegels:[],
 };
 
-// Descriptifs_nl.csv — geen header, positionele kolommen
-// Kolom 0: Cle (interne sleutel), Kolom 1: artikelcode, Kolom 3: Nederlandse beschrijving
 const DESCRIPTIFS_NL = {
-  naam:'Algam Descriptifs NL (csv)', delimiter:',',
-  geenHeader: true,  // geen headerrij — positionele mapping
+  naam:'Algam Descriptifs NL', delimiter:',',
+  algamBestandType: 'descriptifs',
+  geenHeader: true,
   positieMapping: {
-    'Leverancier_artikel': 1,  // artikelcode
-    'Descriptif':          3,  // Nederlandse tekst
+    'Leverancier_artikel': 1,
+    'Descriptif':          3,
+    'Sub_omschrijving':    2,
   },
-  mapping:{
-    'Leverancier_artikel': [],
-    'Descriptif':          [],
-  },
-  prefixRegels:[], algamPrefixStrip:true,
+  mapping:{ 'Leverancier_artikel':[], 'Descriptif':[], 'Sub_omschrijving':[] },
+  prefixRegels:[],
+};
+
+// Prioriteiten voor Algam 3-bestand merge
+// Naam: AB Music Libelle wint (minder Frans)
+// Inkoop: AB Music Base HT wint (actueel)
+// Verkoop: Produits TtcPublic wint (volledigst)
+// Rest: Produits wint (meest compleet)
+const ALGAM_VELD_PRIORITEIT = {
+  'name':            'abmusic',
+  'Inkoop_ex':       'abmusic',
+  'Verkoop_incl':    'produits',
+  'Afbeelding':      'produits',
+  'Gewicht':         'produits',
+  'EAN':             'produits',
+  'Categorie':       'produits',
+  'Merk':            'produits',
+  'Descriptif':      'descriptifs',
+  'Sub_omschrijving':'descriptifs',
 };
 
 // ─── INIT ────────────────────────────────────
@@ -467,25 +481,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); [...e.dataTransfer.files].forEach(leesBestand); });
-  document.getElementById('fileInput').addEventListener('change', e => { [...e.target.files].forEach(leesBestand); e.target.value = ''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    [...e.dataTransfer.files].forEach(leesBestand);
+  });
+  document.getElementById('fileInput').addEventListener('change', e => {
+    [...e.target.files].forEach(leesBestand); e.target.value = '';
+  });
 });
 
 // ─── PROFIELEN ───────────────────────────────
 function laadProfielen() {
   const op = localStorage.getItem('schreeven_opschoon_profielen');
   profielen = op ? JSON.parse(op) : {};
-  // Ingebakken profielen — worden niet opgeslagen in localStorage
-  profielen['algam_produits']    = ALGAM;
+  profielen['algam_produits']    = ALGAM_PRODUITS;
   profielen['ab_music_tarif']    = AB_MUSIC;
   profielen['algam_descriptifs'] = DESCRIPTIFS_NL;
 }
 function slaProfielenOp() {
   const k = {...profielen};
-  // Verwijder alle ingebakken profielen voor opslag
-  delete k['algam_produits'];
-  delete k['ab_music_tarif'];
-  delete k['algam_descriptifs'];
+  delete k['algam_produits']; delete k['ab_music_tarif']; delete k['algam_descriptifs'];
   localStorage.setItem('schreeven_opschoon_profielen', JSON.stringify(k));
 }
 function openNieuwProfiel() { document.getElementById('modalNieuwProfiel').classList.add('open'); }
@@ -501,57 +516,114 @@ function slaProfielOp() {
   log(`Profiel aangemaakt: ${naam}`, 'ok');
 }
 
-// ─── BESTANDEN ───────────────────────────────
-function leesBestand(file) {
-  const isExcel = /\.xlsx?$/i.test(file.name);
-  if (isExcel) {
-    leesExcel(file);
+// ─── BESTANDSTYPE HERKENNING ─────────────────
+function herkenAlgamBestandType(bestandNaam, headers) {
+  const n = bestandNaam.toLowerCase();
+  // Op bestandsnaam
+  if (n.includes('produits')) return 'produits';
+  if (n.includes('descriptifs')) return 'descriptifs';
+  if ((n.includes('tarif') && n.includes('ab')) || n.includes('ab_music') || n.includes('abmusic')) return 'abmusic';
+  // Op kolommen
+  if (headers.includes('TtcPublic') || headers.includes('CodeBarre')) return 'produits';
+  if (headers.includes('Libelle') && headers.includes('Base HT')) return 'abmusic';
+  return null;
+}
+
+function updateAlgamMergeBanner() {
+  const types = bestanden.map(b => b.algamBestandType).filter(Boolean);
+  const heeftProduits    = types.includes('produits');
+  const heeftDescriptifs = types.includes('descriptifs');
+  const heeftAbmusic     = types.includes('abmusic');
+  const banner = document.getElementById('algamMergeBanner');
+  const tekst  = document.getElementById('algamMergeBannerTekst');
+  const mergeInfo = document.getElementById('algamMergeInfo');
+
+  const ontbreekt = [];
+  if (!heeftProduits)    ontbreekt.push('Produits.xlsx');
+  if (!heeftDescriptifs) ontbreekt.push('Descriptifs_nl.csv');
+  if (!heeftAbmusic)     ontbreekt.push('Tarif_AB_Music.xls');
+
+  const isCompleet = heeftProduits && heeftDescriptifs && heeftAbmusic;
+  const isGestart  = heeftProduits || heeftDescriptifs || heeftAbmusic;
+
+  if (!isGestart) {
+    banner.style.display = 'none';
   } else {
-    leesCSV(file);
+    banner.style.display = 'block';
+    if (isCompleet) {
+      tekst.textContent = '3 bestanden geladen — optimale merge klaar';
+      banner.style.background = 'linear-gradient(135deg,#edf9ed,#edf9ed)';
+      banner.style.borderColor = 'var(--groen)';
+    } else {
+      tekst.textContent = `Nog te uploaden: ${ontbreekt.join(', ')}`;
+      banner.style.background = 'linear-gradient(135deg,#fff4e0,#fff4e0)';
+      banner.style.borderColor = 'var(--oranje)';
+    }
   }
+  if (mergeInfo) mergeInfo.style.display = isCompleet ? 'flex' : 'none';
+}
+
+// ─── BESTANDEN INLEZEN ───────────────────────
+function leesBestand(file) {
+  if (/\.xlsx?$/i.test(file.name)) leesExcel(file);
+  else leesCSV(file);
 }
 
 function verwerkRijen(file, headers, rijen) {
-  // Controleer of een profiel positionele mapping heeft (geen header)
-  // bijv. Descriptifs_nl.csv
-  let profielId = herkenProfiel(headers);
+  const algamType = herkenAlgamBestandType(file.name, headers);
+  let profielId = null;
 
-  // Fallback: herken op bestandsnaam
-  if (!profielId) {
-    const naam = file.name.toLowerCase();
-    if (naam.includes('descriptifs')) profielId = 'algam_descriptifs';
-    else if (naam.includes('tarif') && naam.includes('ab')) profielId = 'ab_music_tarif';
-    else if (naam.includes('produits')) profielId = 'algam_produits';
-  }
+  if (algamType === 'produits')    profielId = 'algam_produits';
+  else if (algamType === 'abmusic') profielId = 'ab_music_tarif';
+  else if (algamType === 'descriptifs') profielId = 'algam_descriptifs';
+  else profielId = herkenProfiel(headers);
 
   const profiel = profielId ? profielen[profielId] : null;
-
-  // Positionele mapping: geen header, kolommen op index
   let mapping = {};
   let effectieveHeaders = headers;
+
   if (profiel && profiel.geenHeader) {
-    // Rijen bevatten al data, eerste rij is geen header
-    // Maak fictieve headers op positie
-    const maxKol = Math.max(...rijen.map(r => r.length));
+    // Positionele mapping — geen header in bestand
+    const maxKol = Math.max(...rijen.map(r => r.length), headers.length);
     effectieveHeaders = Array.from({length: maxKol}, (_, i) => `kolom_${i}`);
-    // Voeg eerste rij terug toe aan rijen (was al data)
     const alleRijen = [headers, ...rijen];
     Object.entries(profiel.positieMapping || {}).forEach(([veld, idx]) => {
       mapping[veld] = `kolom_${idx}`;
     });
-    bestanden.push({ naam: file.name, headers: effectieveHeaders, rijen: alleRijen.map(r => effectieveHeaders.map((_, i) => r[i] || '')), profielId, mapping, klaar: true });
+    bestanden.push({
+      naam: file.name, headers: effectieveHeaders,
+      rijen: alleRijen.map(r => effectieveHeaders.map((_, i) => r[i] || '')),
+      profielId, mapping, klaar: true, algamBestandType: algamType
+    });
     log(`Geladen: ${file.name} — ${alleRijen.length} rijen (positionele mapping)`, 'ok');
-    log(`  Profiel: ${profiel.naam}`, 'info');
-    renderAlles();
-    return;
+  } else {
+    mapping = profielId ? autoMapping(headers, profiel) : {};
+    bestanden.push({ naam: file.name, headers, rijen, profielId, mapping, klaar: !!profielId, algamBestandType: algamType });
+    log(`Geladen: ${file.name} — ${rijen.length} rijen${algamType ? ` [${algamType}]` : ''}`, 'ok');
   }
 
-  mapping = profielId ? autoMapping(headers, profiel) : {};
-  bestanden.push({ naam: file.name, headers, rijen, profielId, mapping, klaar: !!profielId });
-  log(`Geladen: ${file.name} — ${rijen.length} rijen`, 'ok');
-  if (profielId) log(`  Profiel: ${profiel.naam}`, 'info');
+  if (profiel) log(`  Profiel: ${profiel.naam}`, 'info');
   else log(`  Geen profiel herkend — stel mapping in`, 'warn');
+
+  // Stel Algam merge prioriteiten in als alle drie aanwezig
+  if (algamType) pas_algam_prioriteiten_toe();
   renderAlles();
+}
+
+function pas_algam_prioriteiten_toe() {
+  const types = bestanden.map((b,i) => ({type: b.algamBestandType, idx: i}));
+  const prodIdx    = types.find(t => t.type === 'produits')?.idx;
+  const descIdx    = types.find(t => t.type === 'descriptifs')?.idx;
+  const abmIdx     = types.find(t => t.type === 'abmusic')?.idx;
+  if (prodIdx === undefined) return;
+
+  // Zet veldprioriteiten op basis van bestandsindexen
+  Object.entries(ALGAM_VELD_PRIORITEIT).forEach(([veld, bronType]) => {
+    if (bronType === 'abmusic' && abmIdx !== undefined) veldPrioriteit[veld] = abmIdx;
+    else if (bronType === 'descriptifs' && descIdx !== undefined) veldPrioriteit[veld] = descIdx;
+    else if (bronType === 'produits') veldPrioriteit[veld] = prodIdx;
+  });
+  log('Algam merge prioriteiten automatisch ingesteld', 'ok');
 }
 
 function leesCSV(file) {
@@ -559,6 +631,7 @@ function leesCSV(file) {
   reader.onload = e => {
     let tekst = e.target.result;
     if (tekst.charCodeAt(0) === 0xFEFF) tekst = tekst.slice(1);
+    // Detecteer encoding problemen — probeer latin-1 als UTF-8 vreemd ziet
     const eerste = tekst.split('\n')[0];
     const delim = (eerste.match(/,/g)||[]).length > (eerste.match(/;/g)||[]).length ? ',' : ';';
     const alle = parseCSV(tekst, delim);
@@ -576,20 +649,16 @@ function leesExcel(file) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
-      // Eerste werkblad gebruiken
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const alleRijen = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (alleRijen.length < 2) { log(`${file.name}: leeg of ongeldig`, 'err'); return; }
-      // Alle waarden naar string
       const headers = alleRijen[0].map(h => String(h).trim());
       const rijen = alleRijen.slice(1)
         .filter(r => r.some(c => c !== '' && c !== null && c !== undefined))
         .map(r => headers.map((_, i) => String(r[i] ?? '').trim()));
-      log(`Excel geladen: ${file.name} (werkblad: ${workbook.SheetNames[0]})`, 'ok');
+      log(`Excel geladen: ${file.name} (${workbook.SheetNames[0]})`, 'ok');
       verwerkRijen(file, headers, rijen);
-    } catch(err) {
-      log(`Excel inlezen mislukt: ${err.message}`, 'err');
-    }
+    } catch(err) { log(`Excel inlezen mislukt: ${err.message}`, 'err'); }
   };
   reader.readAsArrayBuffer(file);
 }
@@ -623,114 +692,12 @@ function autoMapping(headers, profiel) {
     if (k) m[v.key] = k;
     else if (headers.includes(v.key)) m[v.key] = v.key;
   });
+  // Extra: Categorie voor AI soort fallback
+  if (!m['Categorie'] && profiel.mapping['Categorie']) {
+    const k = (profiel.mapping['Categorie']||[]).find(c => headers.includes(c));
+    if (k) m['Categorie'] = k;
+  }
   return m;
-}
-
-// ─── RENDER ──────────────────────────────────
-function renderAlles() {
-  renderBestandenLijst();
-  renderBestandProfielen();
-  document.getElementById('mergePanel').style.display = bestanden.length > 1 ? 'block' : 'none';
-  document.getElementById('stap3nr').textContent = bestanden.length > 1 ? '3' : '2';
-  if (bestanden.length > 1) renderPrioriteitTabel();
-  document.getElementById('btnStart').disabled = bestanden.length === 0;
-  berekenDashboard(false);
-  if (bestanden.length > 0) toonTab('dashboard');
-}
-
-function renderBestandenLijst() {
-  document.getElementById('bestandLijst').innerHTML = bestanden.map((b,i) => `
-    <div class="bestand-rij ${b.klaar?'klaar':''}">
-      <div class="bestand-rang">${i+1}</div>
-      <div><div class="bestand-naam">${b.naam}</div><div class="bestand-meta">${b.rijen.length} rijen · ${b.headers.length} kol.</div></div>
-      <div class="profiel-badge-klein">${b.profielId ? profielen[b.profielId].naam : 'Geen profiel'}</div>
-      <button class="verwijder-btn" onclick="verwijderBestand(${i})">✕</button>
-    </div>`).join('');
-}
-
-function renderBestandProfielen() {
-  const el = document.getElementById('bestandProfielLijst');
-  if (!bestanden.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>'; return; }
-  el.innerHTML = bestanden.map((b,i) => `
-    <div style="margin-bottom:14px;">
-      <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);margin-bottom:6px;text-transform:uppercase;">Bestand ${i+1}: ${b.naam}</div>
-      ${Object.entries(profielen).map(([id,p]) => `
-        <div class="profiel-kaart ${b.profielId===id?'actief':''}" onclick="selecteerProfiel(${i},'${id}')">
-          <div class="profiel-naam">${p.naam}</div>
-          <div class="profiel-badge">${b.profielId===id?'Actief':'Selecteer'}</div>
-        </div>`).join('')}
-      <button class="btn btn-outline" style="width:100%;margin-top:6px;font-size:0.77rem;" onclick="openMappingModal(${i})">⚙ Mapping instellen</button>
-    </div>
-    ${i < bestanden.length-1 ? '<hr class="scheider">' : ''}`).join('');
-}
-
-function renderPrioriteitTabel() {
-  const tbody = document.getElementById('prioriteitBody');
-  tbody.innerHTML = VELDEN.filter(v => v.key !== 'Omschrijving').map(v => `
-    <tr>
-      <td style="font-weight:600;">${v.label}</td>
-      <td><select onchange="setPrioriteit('${v.key}',this.value)">
-        ${bestanden.map((b,i) => `<option value="${i}" ${(veldPrioriteit[v.key]??0)===i?'selected':''}>B${i+1}: ${b.naam.slice(0,18)}</option>`).join('')}
-      </select></td>
-    </tr>`).join('');
-}
-
-function setPrioriteit(veld, idx) { veldPrioriteit[veld] = parseInt(idx); }
-function verwijderBestand(idx) { bestanden.splice(idx,1); veldPrioriteit={}; renderAlles(); if (!bestanden.length) document.getElementById('btnStart').disabled=true; }
-function selecteerProfiel(bi, pid) {
-  bestanden[bi].profielId = pid;
-  bestanden[bi].mapping = autoMapping(bestanden[bi].headers, profielen[pid]);
-  bestanden[bi].klaar = true;
-  renderAlles();
-  log(`Bestand ${bi+1}: profiel "${profielen[pid].naam}"`, 'info');
-}
-
-// ─── MAPPING MODAL ───────────────────────────
-function openMappingModal(idx) {
-  actiefMappingIdx = idx;
-  const b = bestanden[idx];
-  document.getElementById('modalMappingTitel').textContent = `Kolommen koppelen — ${b.naam}`;
-  let html = '<div class="mapping-grid"><div class="mapping-header">Schreeven veld</div><div></div><div class="mapping-header">Kolom in CSV</div>';
-  VELDEN.forEach(v => {
-    const huidig = b.mapping[v.key]||'';
-    const opties = b.headers.map(h => `<option value="${h}" ${h===huidig?'selected':''}>${h}</option>`).join('');
-    html += `<div class="mapping-label ${v.vplicht?'':'opt'}">${v.label}${v.vplicht?' *':''}</div>
-      <div class="mapping-arrow">→</div>
-      <select class="mapping-select" data-veld="${v.key}"><option value="">— niet gebruiken —</option>${opties}</select>`;
-  });
-  html += '</div>';
-  document.getElementById('modalMappingInhoud').innerHTML = html;
-  document.getElementById('modalMapping').classList.add('open');
-}
-
-function leesModalMapping() {
-  const m = {};
-  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) m[s.dataset.veld]=s.value; });
-  return m;
-}
-
-function mappingBevestigen() {
-  if (actiefMappingIdx===null) return;
-  bestanden[actiefMappingIdx].mapping = leesModalMapping();
-  bestanden[actiefMappingIdx].klaar = true;
-  sluitModal('modalMapping');
-  renderAlles();
-  berekenDashboard(false);
-  log(`Mapping bevestigd voor bestand ${actiefMappingIdx+1}`, 'ok');
-}
-
-function mappingOpslaan() {
-  const naam = prompt('Naam voor dit profiel:');
-  if (!naam) return;
-  const mapping = {};
-  leesModalMapping();
-  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) mapping[s.dataset.veld]=[s.value]; });
-  const id = 'p_' + naam.toLowerCase().replace(/\s+/g,'_');
-  profielen[id] = { naam, delimiter:';', mapping, prefixRegels:[] };
-  slaProfielenOp();
-  bestanden[actiefMappingIdx].profielId = id;
-  mappingBevestigen();
-  log(`Profiel opgeslagen: ${naam}`, 'ok');
 }
 
 // ─── RECORD VERWERKEN ────────────────────────
@@ -740,13 +707,22 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     const k = mapping[v.key];
     r[v.key] = k ? ((rij[headers.indexOf(k)]||'').trim()) : '';
   });
+  // Categorie apart opslaan voor AI fallback
+  const catK = mapping['Categorie'];
+  if (catK) r._catFallback = (rij[headers.indexOf(catK)]||'').trim();
 
-  // Algam prefix strip
+  // Algam prefix strip: "DUN 6502" → Type="6502", Leverancier_artikel="DUN 6502"
   if (profiel?.algamPrefixStrip && r.Leverancier_artikel) {
-    if (r.Type) { r._catFallback = r.Type; r.Type = ''; }
     const m = r.Leverancier_artikel.match(/^([A-Z]{2,4}) (.+)$/);
-    r.Type = m ? m[2].trim() : r.Leverancier_artikel;
+    if (m) {
+      r.Type = r.Type || m[2].trim();
+    } else {
+      // Geen prefix match — gebruik Leverancier_artikel zelf als Type
+      r.Type = r.Type || r.Leverancier_artikel;
+    }
   }
+  // AB Music: Libelle is de naam, maar als Type nog leeg is gebruik Libelle als fallback
+  if (!r.Type && r.name) r.Type = r.name;
 
   // Handmatige prefix strip
   if (profiel?.prefixRegels?.length && r.Type) {
@@ -758,7 +734,14 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     });
   }
 
-  if (!r.Soort && (r.Categorie || r._catFallback)) r._catFallback = r.Categorie || r._catFallback;
+  // Descriptifs_nl: kolom_2 + kolom_3 samenvoegen als beide gevuld
+  if (profiel?.algamBestandType === 'descriptifs') {
+    const col2 = mapping['Sub_omschrijving'] ? (rij[headers.indexOf(mapping['Sub_omschrijving'])]||'').trim() : '';
+    const col3 = r.Descriptif || '';
+    if (col2 && col3) r.Descriptif = col3 + ' | ' + col2;
+    else if (col2 && !col3) r.Descriptif = col2;
+  }
+
   r._warnings = [];
   r._soortBron = 'geen';
   return r;
@@ -768,7 +751,10 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
 function mergeRecords(recordsPerBestand, sleutelveld) {
   const lookups = recordsPerBestand.map(recs => {
     const map = new Map();
-    recs.forEach(r => { const k=(r[sleutelveld]||'').trim().toLowerCase(); if(k) map.set(k,r); });
+    recs.forEach(r => {
+      const k = (r[sleutelveld]||'').trim().toLowerCase();
+      if (k) map.set(k, r);
+    });
     return map;
   });
 
@@ -798,7 +784,6 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
       }
     });
 
-    // Extra velden overnemen
     aanwezig.forEach(r => {
       if (r._catFallback && !merged._catFallback) merged._catFallback = r._catFallback;
       merged._warnings.push(...(r._warnings||[]));
@@ -819,16 +804,15 @@ async function startVerwerking() {
   document.getElementById('btnStart').disabled = true;
   verwerktRijen = [];
 
-  const optSoort = document.getElementById('optSoort').checked;
-  const optFrans = document.getElementById('optFrans').checked;
+  const optSoort       = document.getElementById('optSoort').checked;
+  const optFrans       = document.getElementById('optFrans').checked;
   const optOmschrijving = document.getElementById('optOmschrijving').checked;
-  const optAlleenKern = document.getElementById('optAlleenKern').checked;
-  const sleutelveld = document.getElementById('mergeSleutel')?.value || 'Leverancier_artikel';
+  const optAlleenKern  = document.getElementById('optAlleenKern').checked;
+  const sleutelveld    = document.getElementById('mergeSleutel')?.value || 'Leverancier_artikel';
 
   log('Start verwerking...', 'ok');
   document.getElementById('voortgangFill').style.width = '10%';
 
-  // Rijen → records per bestand
   const recordsPerBestand = bestanden.map(b => {
     const profiel = b.profielId ? profielen[b.profielId] : null;
     return b.rijen.map(rij => rijNaarRecord(rij, b.headers, b.mapping, profiel));
@@ -837,7 +821,6 @@ async function startVerwerking() {
   document.getElementById('voortgangFill').style.width = '30%';
   await wacht(0);
 
-  // Merge of direct
   let records, aantalGemergd = 0;
   if (bestanden.length > 1) {
     log(`Merge ${bestanden.length} bestanden op "${sleutelveld}"...`, 'info');
@@ -850,33 +833,44 @@ async function startVerwerking() {
   document.getElementById('voortgangFill').style.width = '50%';
   await wacht(0);
 
-  // Opschonen
   let aantalFrans = 0, aantalOvergeslagen = 0;
   for (const r of records) {
     if (optAlleenKern && (!r.Merk || !r.Type)) { aantalOvergeslagen++; continue; }
-    if (optFrans && bevatFrans(r.name||r.Omschrijving||'')) { r._warnings.push('Franse naam'); aantalFrans++; }
-    if (optOmschrijving) r.Omschrijving = [r.Merk,r.Type,r.Soort].filter(Boolean).join(' ');
-    if (optSoort && !r.Soort && (r.Type||r.name)) r._soortNodig = true;
+
+    // Franse naam filter: weggooien als naam Frans is
+    // (AB Music naam heeft al gewonnen in de merge, dus als die er is is hij NL/EN)
+    if (optFrans && bevatFrans(r.name || '')) {
+      // Controleer of er geen schone naam is
+      if (!r.name || bevatFrans(r.name)) {
+        aantalFrans++;
+        aantalOvergeslagen++;
+        continue; // Weggooien
+      }
+    }
+
+    if (optOmschrijving) r.Omschrijving = [r.Merk, r.Type, r.Soort].filter(Boolean).join(' ');
+    if (optSoort && !r.Soort && (r.Type || r.name)) r._soortNodig = true;
     verwerktRijen.push(r);
   }
 
-  log(`${verwerktRijen.length} records na filter (${aantalOvergeslagen} overgeslagen)`, 'info');
+  log(`${verwerktRijen.length} records na filter (${aantalOvergeslagen} overgeslagen, ${aantalFrans} Frans)`, 'info');
   document.getElementById('voortgangFill').style.width = '65%';
 
-  // AI soort
   let aantalSoortAi = 0;
   if (optSoort) {
     const nodig = verwerktRijen.filter(r => r._soortNodig);
     if (nodig.length) {
       log(`Soort AI detectie voor ${nodig.length} producten...`, 'info');
       aantalSoortAi = await detecteerSoortBatch(nodig);
-      if (optOmschrijving) verwerktRijen.forEach(r => { r.Omschrijving = [r.Merk,r.Type,r.Soort].filter(Boolean).join(' '); });
+      if (optOmschrijving) verwerktRijen.forEach(r => {
+        r.Omschrijving = [r.Merk, r.Type, r.Soort].filter(Boolean).join(' ');
+      });
     }
   }
 
   document.getElementById('voortgangFill').style.width = '100%';
   updateStats(records.length, verwerktRijen.length, aantalGemergd, aantalFrans, aantalOvergeslagen, aantalSoortAi);
-  renderPreview(verwerktRijen.slice(0,100));
+  renderPreview(verwerktRijen.slice(0, 100));
   maakRapport(records.length, aantalGemergd, aantalFrans, aantalOvergeslagen, aantalSoortAi);
   berekenDashboard(true);
   toonTab('dashboard');
@@ -889,7 +883,7 @@ async function startVerwerking() {
 function bevatFrans(t) {
   if (!t) return false;
   return /[àáâãäéèêëîïôùûüç]/i.test(t) ||
-    /\b(pour|avec|sans|noir|blanc|rouge|bleu|bois|metal|guitare|basse|clavier|batterie|trompette|clarinette|saxophone|violon|fl[uû]te)\b/i.test(t);
+    /\b(pour|avec|sans|noir|blanc|rouge|bleu|bois|guitare|basse|clavier|trompette|clarinette|saxophone|violon|sachet|présentoir|bocal|tourne|mécanique|jeu de|pièces)\b/i.test(t);
 }
 
 async function detecteerSoortBatch(producten) {
@@ -899,7 +893,7 @@ async function detecteerSoortBatch(producten) {
   for (let i = 0; i < producten.length; i += BATCH) {
     const batch = producten.slice(i, i+BATCH);
     const lijst = batch.map((r,idx) => {
-      const cat = r.Categorie||r._catFallback||'';
+      const cat = r.Categorie || r._catFallback || '';
       return `${idx+1}. Merk:${r.Merk||'?'} Type:${r.Type||'?'} Cat:${cat} Naam:${(r.name||'').slice(0,50)} Info:${(r.Descriptif||'').slice(0,70)}`;
     }).join('\n');
     const prompt = `Medewerker Nederlandse muziekwinkel. Geef per product een kort Nederlands soort-label (1-2 woorden, lowercase).\nVoorbeelden: plectrum, capo, snaren, slide, vingerplectrum, gitaarversterker, klarinet, DJ controller, cajon, effectpedaal\nGebruik Naam en Cat als primaire bron. Type is artikelcode.\nAlleen JSON array: ["label1","label2",...]\n\n${lijst}`;
@@ -911,144 +905,239 @@ async function detecteerSoortBatch(producten) {
       });
       const data = await resp.json();
       const labels = JSON.parse((data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim());
-      batch.forEach((r,idx) => { if(labels[idx]&&labels[idx]!=='?') { r.Soort=labels[idx]; r._soortBron='ai'; totaal++; } });
+      batch.forEach((r,idx) => {
+        if (labels[idx] && labels[idx] !== '?') { r.Soort = labels[idx]; r._soortBron = 'ai'; totaal++; }
+      });
       log(`Soort batch ${Math.floor(i/BATCH)+1}: ${labels.filter(l=>l&&l!=='?').length}/${batch.length}`, 'info');
-    } catch(err) { log(`Soort batch fout: ${err.message}`,'warn'); }
+    } catch(err) { log(`Soort batch fout: ${err.message}`, 'warn'); }
     await wacht(500);
   }
   return totaal;
 }
 
+// ─── RENDER ──────────────────────────────────
+function renderAlles() {
+  renderBestandenLijst();
+  renderBestandProfielen();
+  updateAlgamMergeBanner();
+  document.getElementById('mergePanel').style.display = bestanden.length > 1 ? 'block' : 'none';
+  document.getElementById('stap3nr').textContent = bestanden.length > 1 ? '3' : '2';
+  if (bestanden.length > 1) renderPrioriteitTabel();
+  document.getElementById('btnStart').disabled = bestanden.length === 0;
+  berekenDashboard(false);
+  if (bestanden.length > 0) toonTab('dashboard');
+}
+
+function bestandTypeBadge(type) {
+  if (type === 'produits')    return '<span class="bestand-type-badge btb-produits">Produits</span>';
+  if (type === 'descriptifs') return '<span class="bestand-type-badge btb-descriptifs">Descriptifs</span>';
+  if (type === 'abmusic')     return '<span class="bestand-type-badge btb-abmusic">AB Music</span>';
+  return '';
+}
+
+function renderBestandenLijst() {
+  document.getElementById('bestandLijst').innerHTML = bestanden.map((b,i) => `
+    <div class="bestand-rij ${b.klaar?'klaar':''}">
+      <div class="bestand-rang">${i+1}</div>
+      <div>
+        <div class="bestand-naam">${b.naam} ${bestandTypeBadge(b.algamBestandType)}</div>
+        <div class="bestand-meta">${b.rijen.length.toLocaleString()} rijen · ${b.headers.length} kol.</div>
+      </div>
+      <div class="profiel-badge-klein">${b.profielId ? profielen[b.profielId].naam : 'Geen profiel'}</div>
+      <button class="verwijder-btn" onclick="verwijderBestand(${i})">✕</button>
+    </div>`).join('');
+}
+
+function renderBestandProfielen() {
+  const el = document.getElementById('bestandProfielLijst');
+  if (!bestanden.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>';
+    return;
+  }
+  el.innerHTML = bestanden.map((b,i) => `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);margin-bottom:6px;text-transform:uppercase;">
+        Bestand ${i+1}: ${b.naam}
+      </div>
+      ${b.algamBestandType ? `
+        <div class="melding m-ok" style="margin-bottom:8px;padding:7px 10px;">
+          <span>✓</span><div style="font-size:0.78rem;">
+            <strong>Algam profiel herkend</strong> — ${profielen[b.profielId]?.naam || ''}
+          </div>
+        </div>` :
+        Object.entries(profielen).map(([id,p]) => `
+          <div class="profiel-kaart ${b.profielId===id?'actief':''}" onclick="selecteerProfiel(${i},'${id}')">
+            <div class="profiel-naam">${p.naam}</div>
+            <div class="profiel-badge">${b.profielId===id?'Actief':'Selecteer'}</div>
+          </div>`).join('')
+      }
+      <button class="btn btn-outline" style="width:100%;margin-top:6px;font-size:0.77rem;" onclick="openMappingModal(${i})">⚙ Mapping bekijken / aanpassen</button>
+    </div>
+    ${i < bestanden.length-1 ? '<hr class="scheider">' : ''}`).join('');
+}
+
+function renderPrioriteitTabel() {
+  const tbody = document.getElementById('prioriteitBody');
+  tbody.innerHTML = VELDEN.filter(v => v.key !== 'Omschrijving').map(v => {
+    const huidigePrio = veldPrioriteit[v.key] ?? 0;
+    const algamTypeVanPrio = bestanden[huidigePrio]?.algamBestandType;
+    const autoLabel = algamTypeVanPrio ? ` (auto: ${algamTypeVanPrio})` : '';
+    return `<tr>
+      <td style="font-weight:600;">${v.label}${autoLabel ? `<span style="color:var(--groen);font-size:0.68rem;font-weight:400;"> ${autoLabel}</span>` : ''}</td>
+      <td><select onchange="setPrioriteit('${v.key}',this.value)">
+        ${bestanden.map((b,i) => `<option value="${i}" ${huidigePrio===i?'selected':''}>B${i+1}: ${b.naam.slice(0,18)}</option>`).join('')}
+      </select></td>
+    </tr>`;
+  }).join('');
+}
+
+function setPrioriteit(veld, idx) { veldPrioriteit[veld] = parseInt(idx); }
+function verwijderBestand(idx) {
+  bestanden.splice(idx, 1); veldPrioriteit = {};
+  renderAlles();
+  if (!bestanden.length) document.getElementById('btnStart').disabled = true;
+}
+function selecteerProfiel(bi, pid) {
+  bestanden[bi].profielId = pid;
+  bestanden[bi].mapping = autoMapping(bestanden[bi].headers, profielen[pid]);
+  bestanden[bi].klaar = true;
+  renderAlles();
+  log(`Bestand ${bi+1}: profiel "${profielen[pid].naam}"`, 'info');
+}
+
+// ─── MAPPING MODAL ───────────────────────────
+function openMappingModal(idx) {
+  actiefMappingIdx = idx;
+  const b = bestanden[idx];
+  document.getElementById('modalMappingTitel').textContent = `Kolommen koppelen — ${b.naam}`;
+  let html = '<div class="mapping-grid"><div class="mapping-header">Schreeven veld</div><div></div><div class="mapping-header">Kolom in CSV</div>';
+  VELDEN.forEach(v => {
+    const huidig = b.mapping[v.key] || '';
+    const opties = b.headers.map(h => `<option value="${h}" ${h===huidig?'selected':''}>${h}</option>`).join('');
+    html += `<div class="mapping-label ${v.vplicht?'':'opt'}">${v.label}${v.vplicht?' *':''}</div>
+      <div class="mapping-arrow">→</div>
+      <select class="mapping-select" data-veld="${v.key}"><option value="">— niet gebruiken —</option>${opties}</select>`;
+  });
+  html += '</div>';
+  document.getElementById('modalMappingInhoud').innerHTML = html;
+  document.getElementById('modalMapping').classList.add('open');
+}
+
+function leesModalMapping() {
+  const m = {};
+  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) m[s.dataset.veld] = s.value; });
+  return m;
+}
+
+function mappingBevestigen() {
+  if (actiefMappingIdx === null) return;
+  bestanden[actiefMappingIdx].mapping = leesModalMapping();
+  bestanden[actiefMappingIdx].klaar = true;
+  sluitModal('modalMapping');
+  renderAlles();
+  log(`Mapping bevestigd voor bestand ${actiefMappingIdx+1}`, 'ok');
+}
+
+function mappingOpslaan() {
+  const naam = prompt('Naam voor dit profiel:');
+  if (!naam) return;
+  const mapping = {};
+  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) mapping[s.dataset.veld] = [s.value]; });
+  const id = 'p_' + naam.toLowerCase().replace(/\s+/g,'_');
+  profielen[id] = { naam, delimiter:';', mapping, prefixRegels:[] };
+  slaProfielenOp();
+  bestanden[actiefMappingIdx].profielId = id;
+  mappingBevestigen();
+  log(`Profiel opgeslagen: ${naam}`, 'ok');
+}
 
 // ─── DASHBOARD ───────────────────────────────
 function berekenDashboard(verwerkt) {
   const leeg = document.getElementById('dashboardLeeg');
   const inhoud = document.getElementById('dashboardInhoud');
   if (!bestanden.length) { leeg.style.display='block'; inhoud.style.display='none'; return; }
-  leeg.style.display = 'none';
-  inhoud.style.display = 'block';
+  leeg.style.display = 'none'; inhoud.style.display = 'block';
 
-  // Bepaal bronset — voor verwerking: schat op basis van mapping, na verwerking: werkelijke data
   const bronKleuren = ['#1D9E75','#378ADD','#7F77DD','#BA7517','#E24B4A'];
   const heeftVerwerkt = verwerkt && verwerktRijen.length > 0;
-  const dataset = heeftVerwerkt ? verwerktRijen : null;
 
-  // Bronbestanden samenvatting
   const bronHTML = bestanden.map((b,i) => {
     const kleur = bronKleuren[i % bronKleuren.length];
     const gevuldeVelden = VELDEN.filter(v => b.mapping[v.key]).length;
     const pct = Math.round(gevuldeVelden / VELDEN.length * 100);
+    const typeLabel = b.algamBestandType ? ` · ${b.algamBestandType}` : '';
     return `<div class="db-bron actief">
-      <div class="db-bron-naam" style="color:${kleur}">B${i+1}: ${b.naam.replace(/\..+$/,'')}</div>
-      <div class="db-bron-meta">${b.rijen.length.toLocaleString()} rijen · ${gevuldeVelden} velden gekoppeld</div>
+      <div class="db-bron-naam" style="color:${kleur}">B${i+1}: ${b.naam.replace(/\..+$/,'')}${typeLabel}</div>
+      <div class="db-bron-meta">${b.rijen.length.toLocaleString()} rijen · ${gevuldeVelden} velden</div>
       <div class="db-bron-bar"><div class="db-bron-fill" style="width:${pct}%;background:${kleur}"></div></div>
     </div>`;
   }).join('');
 
-  // Merge preview
   let mergeHTML = '';
   if (bestanden.length > 1) {
     const sleutel = document.getElementById('mergeSleutel')?.value || 'Leverancier_artikel';
-    const bronBlokken = bestanden.map((b,i) => `<div class="db-merge-blok">B${i+1}: ${b.naam.replace(/\..+$/,'')}</div>`).join('<div class="db-pijl">+</div>');
-    const totaalUniek = heeftVerwerkt
-      ? verwerktRijen.length.toLocaleString()
-      : `~${Math.max(...bestanden.map(b=>b.rijen.length)).toLocaleString()}`;
-    mergeHTML = `<div class="db-sectie">Merge</div>
+    const bronBlokken = bestanden.map((b,i) => `<div class="db-merge-blok">B${i+1}</div>`).join('<div class="db-pijl">+</div>');
+    const totaalUniek = heeftVerwerkt ? verwerktRijen.length.toLocaleString() : `~${Math.max(...bestanden.map(b=>b.rijen.length)).toLocaleString()}`;
+    mergeHTML = `<div class="db-sectie">Merge strategie</div>
     <div class="db-merge-rij">
       ${bronBlokken}
       <div class="db-pijl">→</div>
       <div class="db-merge-blok resultaat">${totaalUniek} unieke records · sleutel: ${sleutel}</div>
+    </div>
+    <div style="font-size:0.73rem;color:var(--grijs);margin-bottom:10px;">
+      Naam: AB Music Libelle wint · Inkoop: AB Music Base HT · Verkoop: Produits TtcPublic · Descriptif: Descriptifs_nl kolom 3+2
     </div>`;
   }
 
-  // Vulgraad per veld berekenen
-  const veldStats = VELDEN.filter(v => !['Omschrijving'].includes(v.key)).map(v => {
-    let pct = 0;
-    let bronLabel = '';
-    let status = 'leeg';
-
+  const veldStats = VELDEN.filter(v => v.key !== 'Omschrijving').map(v => {
+    let pct = 0, bronLabel = '', status = 'leeg';
     if (heeftVerwerkt) {
-      // Na verwerking: werkelijke vulgraad
       const gevuld = verwerktRijen.filter(r => r[v.key] && r[v.key] !== '').length;
       pct = Math.round(gevuld / verwerktRijen.length * 100);
-      // Bepaal bron
       const aiGevuld = verwerktRijen.filter(r => r._soortBron === 'ai' && v.key === 'Soort').length;
       bronLabel = aiGevuld > 0 ? `AI: ${aiGevuld}` : '';
-      // Bron uit bronBestanden
-      if (!bronLabel) {
-        const bronIdxSet = new Set(verwerktRijen.flatMap(r => r._bronBestanden||[]).filter(i => {
-          const b = bestanden[i];
-          return b && b.mapping[v.key];
-        }));
-        bronLabel = [...bronIdxSet].map(i => `B${i+1}`).join('+');
-      }
     } else {
-      // Voor verwerking: schat op basis van mapping
-      const bronIdxSet = bestanden.filter(b => b.mapping[v.key]).map((b,_) => bestanden.indexOf(b));
+      const bronIdxSet = bestanden.filter(b => b.mapping[v.key]).map(b => bestanden.indexOf(b));
       if (bronIdxSet.length > 0) {
-        // Schat op het grootste bestand dat dit veld heeft
         const grootsteBron = bronIdxSet.reduce((a,b) => bestanden[a].rijen.length >= bestanden[b].rijen.length ? a : b);
-        const totaalRijen = Math.max(...bestanden.map(b=>b.rijen.length));
-        pct = Math.round(bestanden[grootsteBron].rijen.length / totaalRijen * 100);
+        pct = Math.round(bestanden[grootsteBron].rijen.length / Math.max(...bestanden.map(b=>b.rijen.length)) * 100);
         bronLabel = bronIdxSet.map(i=>`B${i+1}`).join('+');
       }
     }
-
-    // Status bepalen
-    if (v.key === 'Ecom_kort' || v.key === 'Ecom_lang' || v.key === 'meta_title' || v.key === 'meta_description' || v.key === 'meta_keywords') {
-      status = 'verrijker';
-      bronLabel = '→ verrijker';
-      pct = heeftVerwerkt ? 0 : 0;
-    } else if (v.key === 'Soort' && !heeftVerwerkt) {
-      status = 'ai';
-      bronLabel = 'AI detectie';
-      pct = bestanden.some(b => b.mapping['Soort']) ? 30 : 5;
-    } else if (pct >= 90) status = 'vol';
-    else if (pct >= 40) status = 'deel';
-    else if (pct > 0) status = 'leeg';
-    else status = 'leeg';
-
-    // Balk kleur
-    const balkKleur = status === 'vol' ? '#1D9E75' :
-                      status === 'deel' ? '#BA7517' :
-                      status === 'ai' ? '#378ADD' :
-                      status === 'verrijker' ? '#7F77DD' : '#E24B4A';
-
-    const statusLabels = {vol:'volledig', deel:'gedeeltelijk', leeg:'ontbreekt', ai:'AI detectie', verrijker:'→ verrijker'};
-
+    if (v.key === 'Soort' && !heeftVerwerkt) { status='ai'; bronLabel='AI detectie'; pct=5; }
+    else if (pct >= 90) status='vol';
+    else if (pct >= 40) status='deel';
+    else status='leeg';
+    const balkKleur = status==='vol'?'#1D9E75':status==='deel'?'#BA7517':status==='ai'?'#378ADD':'#E24B4A';
+    const statusLabels = {vol:'volledig',deel:'gedeeltelijk',leeg:'ontbreekt',ai:'AI detectie'};
     return `<div class="veld-rij">
       <div class="veld-naam">${v.label}</div>
       <div class="veld-balk-wrap"><div class="veld-balk" style="width:${pct}%;background:${balkKleur}"></div></div>
-      <div class="veld-pct">${status === 'verrijker' ? '—' : pct + '%'}${bronLabel ? ` <span style="font-size:0.65rem;color:var(--grijs)">${bronLabel}</span>` : ''}</div>
+      <div class="veld-pct">${pct}%${bronLabel?` <span style="font-size:0.65rem;color:var(--grijs)">${bronLabel}</span>`:''}</div>
       <div><span class="veld-status ${status}">${statusLabels[status]}</span></div>
     </div>`;
   }).join('');
 
-  // Samenvatting stats
-  let volTotaal = 0, deelTotaal = 0, leegTotaal = 0, klaarvoor = 0;
+  let volTotaal=0,deelTotaal=0,leegTotaal=0,klaarvoor=0;
   if (heeftVerwerkt) {
-    const kernVelden = ['Merk','Type','Inkoop_ex','Verkoop_incl'];
-    volTotaal = verwerktRijen.filter(r => kernVelden.every(k => r[k])).length;
-    deelTotaal = verwerktRijen.filter(r => kernVelden.some(k => r[k]) && !kernVelden.every(k => r[k])).length;
+    const kern = ['Merk','Type','Inkoop_ex','Verkoop_incl'];
+    volTotaal  = verwerktRijen.filter(r => kern.every(k=>r[k])).length;
+    deelTotaal = verwerktRijen.filter(r => kern.some(k=>r[k]) && !kern.every(k=>r[k])).length;
     leegTotaal = verwerktRijen.filter(r => !r.Merk && !r.Type).length;
-    klaarvoor = verwerktRijen.filter(r => r.Merk && r.Type).length;
+    klaarvoor  = verwerktRijen.filter(r => r.Merk && r.Type).length;
   }
 
-  // Waarschuwingen
   const warns = [];
-  if (!bestanden.some(b => b.mapping['Inkoop_ex'])) warns.push('Geen inkoopprijs gekoppeld in een van de bestanden');
+  if (!bestanden.some(b => b.mapping['Inkoop_ex'])) warns.push('Geen inkoopprijs gekoppeld');
   if (!bestanden.some(b => b.mapping['EAN'])) warns.push('Geen EAN/barcode gekoppeld');
-  if (bestanden.length > 1 && !document.getElementById('mergeSleutel')?.value) warns.push('Sleutelveld voor merge niet ingesteld');
   const fransWarn = heeftVerwerkt ? verwerktRijen.filter(r => r._warnings?.includes('Franse naam')).length : 0;
-  if (fransWarn > 0) warns.push(`${fransWarn} producten met Franse naam gedetecteerd`);
+  if (fransWarn > 0) warns.push(`${fransWarn} producten met Franse naam overgeslagen`);
 
-  const warnHTML = warns.map(w => `<div class="db-warn">${w}</div>`).join('');
   const okItems = [];
-  if (bestanden.some(b => b.mapping['Merk'])) okItems.push('Merk gekoppeld');
-  if (bestanden.some(b => b.mapping['Verkoop_incl'])) okItems.push('Verkoopprijs aanwezig');
-  if (bestanden.some(b => b.mapping['Afbeelding'])) okItems.push('Afbeelding URLs aanwezig');
-  if (bestanden.some(b => b.mapping['Descriptif'])) okItems.push('NL beschrijving als AI bron');
-  const okHTML = okItems.map(o => `<div class="db-ok">✓ ${o}</div>`).join('');
+  if (bestanden.some(b => b.mapping['Afbeelding'])) okItems.push('Afbeelding URLs aanwezig (Produits)');
+  if (bestanden.some(b => b.mapping['Descriptif'])) okItems.push('NL beschrijving als AI broninfo');
+  if (bestanden.some(b => b.algamBestandType === 'abmusic')) okItems.push('AB Music naam wint — minder Frans');
+  if (bestanden.some(b => b.algamBestandType === 'abmusic')) okItems.push('AB Music inkoopprijs meest actueel');
 
   inhoud.innerHTML = `
     <div class="db-sectie">Bronbestanden</div>
@@ -1062,7 +1151,8 @@ function berekenDashboard(verwerkt) {
       <div class="db-stat"><div class="ds-getal" style="color:var(--rood)">${leegTotaal.toLocaleString()}</div><div class="ds-label">Overgeslagen</div></div>
       <div class="db-stat"><div class="ds-getal" style="color:var(--blauw)">${klaarvoor.toLocaleString()}</div><div class="ds-label">Naar verrijker</div></div>
     </div>` : ''}
-    ${warnHTML}${okHTML}
+    ${warns.map(w=>`<div class="db-warn">${w}</div>`).join('')}
+    ${okItems.map(o=>`<div class="db-ok">✓ ${o}</div>`).join('')}
     <div class="db-sectie">Vulgraad per veld</div>
     <div class="veld-grid">${veldStats}</div>
   `;
@@ -1082,12 +1172,12 @@ function renderPreview(rijen) {
       <td class="${r.Merk?'ok':'leeg'}">${r.Merk||'—'}</td>
       <td class="${r.Type?'ok':'leeg'}">${r.Type||'—'}</td>
       <td>${soort}</td>
-      <td>${r.Omschrijving||'—'}</td>
+      <td class="${r.name?'ok':'leeg'}" title="${r.name||''}">${r.name||'—'}</td>
       <td class="${r.Leverancier_artikel?'ok':'leeg'}">${r.Leverancier_artikel||'—'}</td>
       <td class="${r.Inkoop_ex?'ok':'leeg'}">${r.Inkoop_ex||'—'}</td>
       <td class="${r.Verkoop_incl?'ok':'leeg'}">${r.Verkoop_incl||'—'}</td>
       <td class="${isMerge?'merge':'ok'}">${bron}</td>
-      <td class="${w?'warn':''}">${w}</td>
+      <td class="${w?'warn':''}">${w||''}</td>
     </tr>`;
   }).join('');
 }
@@ -1100,8 +1190,8 @@ function maakRapport(totaal, gemergd, frans, overgeslagen, soortAi) {
   el.innerHTML = `
     <div class="melding m-ok"><span>✓</span><div><strong>${verwerktRijen.length} producten klaar voor export</strong> (van ${totaal} ingelezen)</div></div>
     ${bestanden.length>1?`<div class="melding m-info"><span>🔗</span><div><strong>${gemergd} records samengesteld uit meerdere bestanden</strong></div></div>`:''}
-    ${overgeslagen?`<div class="melding m-warn"><span>⚠</span><div><strong>${overgeslagen} overgeslagen</strong> — Merk of Type ontbreekt</div></div>`:''}
-    ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten met Franse naam</strong> — controleer voor webshop</div></div>`:''}
+    ${overgeslagen?`<div class="melding m-warn"><span>⚠</span><div><strong>${overgeslagen} overgeslagen</strong> — Merk/Type ontbreekt of Franse naam</div></div>`:''}
+    ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten overgeslagen</strong> — Franse naam, geen NL/EN alternatief</div></div>`:''}
     ${soortAi?`<div class="melding m-info"><span>🤖</span><div><strong>${soortAi} Soort-labels door AI ingevuld</strong></div></div>`:''}
     <div class="melding m-ok"><span>📥</span><div>Output klaar voor Vendit CAB import of als invoer voor de Vendit-verrijker</div></div>`;
 }
@@ -1111,12 +1201,13 @@ function downloadCSV() {
   if (!verwerktRijen.length) return;
   const keys = VELDEN.map(v=>v.key);
   const regels = verwerktRijen.map(r => keys.map(k => {
-    const w=r[k]||'';
-    return (w.includes(';')||w.includes('"')||w.includes('\n')) ? `"${w.replace(/"/g,'""')}"` : w;
+    const w = r[k] || '';
+    return (w.includes(';') || w.includes('"') || w.includes('\n'))
+      ? `"${w.replace(/"/g,'""')}"` : w;
   }).join(';'));
   const csv = '\uFEFF' + [keys.join(';'), ...regels].join('\n');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
   a.download = `schreeven_opgeschoond_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   log(`CSV gedownload — ${verwerktRijen.length} producten`, 'ok');
@@ -1124,41 +1215,42 @@ function downloadCSV() {
 
 // ─── HULP ────────────────────────────────────
 function updateStats(t,v,g,f,o,s) {
-  document.getElementById('stTotaal').textContent=t||'—';
-  document.getElementById('stVerwerkt').textContent=v||'—';
-  document.getElementById('stGemergd').textContent=g||'—';
-  document.getElementById('stFrans').textContent=f||'—';
-  document.getElementById('stOvegeslagen').textContent=o||'—';
-  document.getElementById('stSoortAi').textContent=s||'—';
+  document.getElementById('stTotaal').textContent = t||'—';
+  document.getElementById('stVerwerkt').textContent = v||'—';
+  document.getElementById('stGemergd').textContent = g||'—';
+  document.getElementById('stFrans').textContent = f||'—';
+  document.getElementById('stOvegeslagen').textContent = o||'—';
+  document.getElementById('stSoortAi').textContent = s||'—';
 }
 function toonTab(naam) {
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('actief',['dashboard','preview','log','rapport'][i]===naam));
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('actief',c.id===`tab-${naam}`));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('actief', ['dashboard','preview','log','rapport'][i]===naam));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('actief', c.id===`tab-${naam}`));
 }
-function log(tekst,type='info') {
-  const box=document.getElementById('logBox');
-  const el=document.createElement('div');
-  el.className=`log-${type}`;
-  el.textContent=`[${new Date().toLocaleTimeString('nl-NL')}] ${tekst}`;
-  box.appendChild(el); box.scrollTop=box.scrollHeight;
+function log(tekst, type='info') {
+  const box = document.getElementById('logBox');
+  const el = document.createElement('div');
+  el.className = `log-${type}`;
+  el.textContent = `[${new Date().toLocaleTimeString('nl-NL')}] ${tekst}`;
+  box.appendChild(el); box.scrollTop = box.scrollHeight;
 }
 function sluitModal(id) { document.getElementById(id).classList.remove('open'); }
 function resetAlles() {
-  bestanden=[]; verwerktRijen=[]; bezig=false; veldPrioriteit={};
-  ['bestandLijst'].forEach(id=>document.getElementById(id).innerHTML='');
-  document.getElementById('bestandProfielLijst').innerHTML='<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>';
-  document.getElementById('mergePanel').style.display='none';
-  document.getElementById('previewLeeg').style.display='block';
-  document.getElementById('previewWrap').style.display='none';
-  document.getElementById('rapportLeeg').style.display='block';
-  document.getElementById('rapportInhoud').style.display='none';
-  document.getElementById('btnStart').disabled=true;
-  document.getElementById('btnDownload').disabled=false;
-  document.getElementById('voortgangFill').style.width='0%';
-  document.getElementById('logBox').innerHTML='<span class="log-info">Reset.</span>';
+  bestanden = []; verwerktRijen = []; bezig = false; veldPrioriteit = {};
+  document.getElementById('bestandLijst').innerHTML = '';
+  document.getElementById('bestandProfielLijst').innerHTML = '<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>';
+  document.getElementById('mergePanel').style.display = 'none';
+  document.getElementById('algamMergeBanner').style.display = 'none';
+  document.getElementById('previewLeeg').style.display = 'block';
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('rapportLeeg').style.display = 'block';
+  document.getElementById('rapportInhoud').style.display = 'none';
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnDownload').disabled = true;
+  document.getElementById('voortgangFill').style.width = '0%';
+  document.getElementById('logBox').innerHTML = '<span class="log-info">Reset.</span>';
   updateStats(0,0,0,0,0,0);
 }
-function wacht(ms) { return new Promise(r=>setTimeout(r,ms)); }
+function wacht(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
 </html>
