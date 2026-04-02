@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.3</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.4</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -267,7 +267,7 @@
         </div>
         <div class="optie-rij">
           <input type="checkbox" id="optOmschrijving" checked>
-          <div class="optie-tekst"><strong>Omschrijving samenstellen</strong><span>Merk + Type + Soort samenvoegen</span></div>
+          <div class="optie-tekst"><strong>Omschrijving samenstellen</strong><span>Altijd: Merk + Type + name (dubbeling wordt automatisch verwijderd)</span></div>
         </div>
         <div class="optie-rij">
           <input type="checkbox" id="optAlleenKern" checked>
@@ -381,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "2.3";
+const TOOL_VERSIE = "2.4";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -862,10 +862,20 @@ function stelOmschrijvingSamen(r) {
   const name  = (r.name  || '').trim();
   const soort = (r.Soort || '').trim();
 
-  // Omschrijving = Merk + name (dubbeling eruit)
-  if (!name) return [merk, type_].filter(Boolean).join(' ').trim();
-  if (merk && name.toLowerCase().includes(merk.toLowerCase())) return name.trim();
-  return [merk, name].filter(Boolean).join(' ').trim();
+  // Omschrijving = Merk + Type + name (dubbeling eruit)
+  const delen = [];
+  let opgebouwd = '';
+  const voegToe = (deel) => {
+    if (!deel) return;
+    if (!opgebouwd.toLowerCase().includes(deel.toLowerCase())) {
+      delen.push(deel);
+      opgebouwd = delen.join(' ');
+    }
+  };
+  voegToe(merk);
+  voegToe(type_);
+  voegToe(name);
+  return opgebouwd.trim();
 }
 
 // ─── HOOFDVERWERKING ─────────────────────────
@@ -914,7 +924,7 @@ async function startVerwerking() {
       aantalFrans++;
     }
 
-    if (optOmschrijving) r.Omschrijving = stelOmschrijvingSamen(r);
+    r.Omschrijving = stelOmschrijvingSamen(r); // altijd samenstellen
     if (optSoort && !r.Soort && (r.Type || r.name)) r._soortNodig = true;
     verwerktRijen.push(r);
   }
@@ -928,8 +938,8 @@ async function startVerwerking() {
     if (nodig.length) {
       log(`Soort AI detectie voor ${nodig.length} producten...`, 'info');
       aantalSoortAi = await detecteerSoortBatch(nodig);
-      if (optOmschrijving) verwerktRijen.forEach(r => {
-        r.Omschrijving = [r.Merk, r.Type, r.Soort].filter(Boolean).join(' ');
+      verwerktRijen.forEach(r => {
+        r.Omschrijving = stelOmschrijvingSamen(r);
       });
     }
   }
