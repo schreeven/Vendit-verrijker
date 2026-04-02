@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.7</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.8</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -381,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "2.7";
+const TOOL_VERSIE = "2.8";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -1268,11 +1268,26 @@ function berekenDashboard(verwerkt) {
         pct = Math.round(bestanden[grootsteBron].rijen.length / Math.max(...bestanden.map(b=>b.rijen.length)) * 100);
         bronLabel = bronIdxSet.map(i=>`B${i+1}`).join('+');
       }
+      // Velden die via tekst-parsing gevuld worden — tonen geschatte dekking
+      const geparsed = {
+        'Kleur':               { pct: 65, label: 'uit Descriptif Color + naam' },
+        'Maat':                { pct: 40, label: 'uit Descriptif Formaat/Dikte + naam' },
+        'Afmeting':            { pct: 30, label: 'uit Descriptif Afmetingen (mm)' },
+        'Verpakking_afmeting': { pct: 89, label: 'uit Produits L×B×H' },
+        'Verpakking_gewicht':  { pct: 92, label: 'uit Produits Poids' },
+      };
+      if (geparsed[v.key] && bestanden.some(b => b.algamBestandType)) {
+        pct = geparsed[v.key].pct;
+        bronLabel = geparsed[v.key].label;
+        status = 'ai';
+      }
     }
     if (v.key === 'Soort' && !heeftVerwerkt) { status='ai'; bronLabel='AI detectie'; pct=5; }
-    else if (pct >= 90) status='vol';
-    else if (pct >= 40) status='deel';
-    else status='leeg';
+    if (status !== 'ai') {
+      if (pct >= 90) status='vol';
+      else if (pct >= 40) status='deel';
+      else status='leeg';
+    }
     const balkKleur = status==='vol'?'#1D9E75':status==='deel'?'#BA7517':status==='ai'?'#378ADD':'#E24B4A';
     const statusLabels = {vol:'volledig',deel:'gedeeltelijk',leeg:'ontbreekt',ai:'AI detectie'};
     return `<div class="veld-rij">
@@ -1446,4 +1461,4 @@ function resetAlles() {
 function wacht(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
-</html>
+</html>1
