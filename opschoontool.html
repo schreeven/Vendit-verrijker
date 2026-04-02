@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.2</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.3</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -381,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "2.2";
+const TOOL_VERSIE = "2.3";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -862,30 +862,10 @@ function stelOmschrijvingSamen(r) {
   const name  = (r.name  || '').trim();
   const soort = (r.Soort || '').trim();
 
-  // Vaste volgorde: Merk → Type → name → Soort
-  // Elk deel alleen toevoegen als het niet al in de opgebouwde string zit
-  const delen = [];
-  let opgebouwd = '';
-
-  const voegToe = (deel) => {
-    if (!deel) return;
-    if (!opgebouwd.toLowerCase().includes(deel.toLowerCase())) {
-      delen.push(deel);
-      opgebouwd = delen.join(' ');
-    }
-  };
-
-  voegToe(merk);
-  voegToe(type_);
-  voegToe(name);
-
-  // Soort: alleen toevoegen als het specifiek is
-  const generiek = new Set(['accessoires','amps effects','audio','percussie','']);
-  if (soort && !generiek.has(soort.toLowerCase())) {
-    voegToe(soort);
-  }
-
-  return opgebouwd.trim();
+  // Omschrijving = Merk + name (dubbeling eruit)
+  if (!name) return [merk, type_].filter(Boolean).join(' ').trim();
+  if (merk && name.toLowerCase().includes(merk.toLowerCase())) return name.trim();
+  return [merk, name].filter(Boolean).join(' ').trim();
 }
 
 // ─── HOOFDVERWERKING ─────────────────────────
