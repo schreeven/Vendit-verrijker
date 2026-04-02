@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.0</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.1</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -381,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "3.0";
+const TOOL_VERSIE = "3.1";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -863,7 +863,15 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
   });
 
   const alleSleutels = new Set();
-  lookups.forEach(l => l.forEach((_,k) => alleSleutels.add(k)));
+  // Descriptifs_nl mag geen nieuwe sleutels aanmaken — alleen aanvullen
+  // Basis = AB Music + Produits
+  const descriptifIndices = bestanden
+    .map((b,i) => b.algamBestandType === 'descriptifs' ? i : -1)
+    .filter(i => i >= 0);
+  lookups.forEach((l, idx) => {
+    if (!descriptifIndices.includes(idx)) l.forEach((_,k) => alleSleutels.add(k));
+  });
+  if (alleSleutels.size === 0) lookups.forEach(l => l.forEach((_,k) => alleSleutels.add(k)));
 
   let aantalGemergd = 0;
   const resultaat = [];
