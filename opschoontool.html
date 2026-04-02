@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.4</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.7</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -381,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "2.4";
+const TOOL_VERSIE = "2.7";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -800,6 +800,47 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     }
   }
 
+  // Kleur en Maat extraheren uit name (AB Music Libelle) als veld nog leeg is
+  if (!r.Kleur && r.name) {
+    const kleurWoorden = {
+      'black':'zwart','white':'wit','red':'rood','blue':'blauw',
+      'green':'groen','yellow':'geel','grey':'grijs','gray':'grijs',
+      'brown':'bruin','silver':'zilver','gold':'goud','orange':'oranje',
+      'purple':'paars','pink':'roze','transparent':'transparant',
+      'natural':'naturel','zwart':'zwart','wit':'wit','rood':'rood',
+      'blauw':'blauw','groen':'groen','geel':'geel','grijs':'grijs',
+    };
+    const naamLower = r.name.toLowerCase();
+    for (const [en, nl] of Object.entries(kleurWoorden)) {
+      if (new RegExp('\\b' + en + '\\b').test(naamLower)) {
+        r.Kleur = nl; break;
+      }
+    }
+  }
+
+  if (!r.Maat && r.name) {
+    const naam = r.name;
+    // Dikte in mm (plectra): 0.73mm, 1,14mm, .88mm
+    let m = naam.match(/(?:^|\s)(\d+[.,]\d+\s*mm|[.,]\d+\s*mm)(?:\s|$|-)/i);
+    if (m) { r.Maat = m[1].replace(',','.'); }
+    // Zwaarte snaren/plectra: extra light, light, medium, heavy, extra heavy
+    else if ((m = naam.match(/\b(extra\s*light|extra\s*heavy|medium\s*light|medium\s*heavy|light|medium|heavy)\b/i))) {
+      r.Maat = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    }
+    // Instrument fractie: 4/4, 3/4, 1/2, 1/4
+    else if ((m = naam.match(/\b([1-4]\/[248])\b/))) {
+      r.Maat = m[1];
+    }
+    // Inch formaat: 22", 14", 10 inch
+    else if ((m = naam.match(/\b(\d{1,2})["\s]*(inch|")/i))) {
+      r.Maat = m[1] + '"';
+    }
+    // Instrument formaat
+    else if ((m = naam.match(/\b(dreadnought|auditorium|concert|soprano|tenor|bariton|parlor|jumbo|grand)\b/i))) {
+      r.Maat = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    }
+  }
+
   r._warnings = [];
   r._soortBron = 'geen';
   return r;
@@ -1082,6 +1123,53 @@ function selecteerProfiel(bi, pid) {
   log(`Bestand ${bi+1}: profiel "${profielen[pid].naam}"`, 'info');
 }
 
+// ─── KOLOMNAAM VERTALINGEN ───────────────────────
+const KOLOM_LABELS = {
+  // Produits.xlsx
+  'Marque':        'Merk (Marque)',
+  'Produit':       'Artikelcode (Produit)',
+  'Designation':   'Productnaam FR (Designation)',
+  'Rubrique':      'Categorie NL (Rubrique)',
+  'Gamme':         'Productlijn (Gamme)',
+  'Serie':         'Serie/Type (Serie)',
+  'SousSerie':     'Sub-serie (SousSerie)',
+  'TtcPublic':     'Adviesprijs incl BTW (TtcPublic)',
+  'HtBrut':        'Inkoopprijs excl BTW (HtBrut)',
+  'HtDeee':        'Milieubijdrage (HtDeee)',
+  'CodeBarre':     'Barcode/EAN (CodeBarre)',
+  'Poids':         'Gewicht kg (Poids)',
+  'Volume':        'Volume m³ (Volume)',
+  'Longueur':      'Lengte cm (Longueur)',
+  'Largeur':       'Breedte cm (Largeur)',
+  'Hauteur':       'Hoogte cm (Hauteur)',
+  'UrlImage':      'Afbeelding URL (UrlImage)',
+  'UrlImageBig':   'Afbeelding groot (UrlImageBig)',
+  'UrlImageSmall': 'Afbeelding klein (UrlImageSmall)',
+  'UrlProduit':    'Product URL (UrlProduit)',
+  'ImageBN':       'Afbeelding zwart/wit (ImageBN)',
+  'Cle':           'Intern ID (Cle)',
+  'Division':      'Divisie (Division)',
+  'Douane':        'Douanecode (Douane)',
+  'Origine':       'Herkomstland (Origine)',
+  'CondiVente':    'Verkoopverpakking (CondiVente)',
+  'CondiMaster':   'Masterkarton (CondiMaster)',
+  'UVC':           'Consumentenverpakking (UVC)',
+  'InnerCarton':   'Binnenkarton (InnerCarton)',
+  // AB Music
+  'Libelle':       'Productnaam NL (Libelle)',
+  'Base HT':       'Inkoopprijs excl BTW (Base HT)',
+  'Prix TTC\nindicatif': 'Adviesprijs incl BTW (Prix TTC)',
+  // Descriptifs_nl
+  'kolom_0':       'Intern ID (kolom 0)',
+  'kolom_1':       'Artikelcode (kolom 1)',
+  'kolom_2':       'Lange beschrijving NL (kolom 2)',
+  'kolom_3':       'Spec-bullets NL (kolom 3)',
+};
+
+function kolomLabel(h) {
+  return KOLOM_LABELS[h] || h;
+}
+
 // ─── MAPPING MODAL ───────────────────────────
 function openMappingModal(idx) {
   actiefMappingIdx = idx;
@@ -1090,7 +1178,7 @@ function openMappingModal(idx) {
   let html = '<div class="mapping-grid"><div class="mapping-header">Schreeven veld</div><div></div><div class="mapping-header">Kolom in CSV</div>';
   VELDEN.forEach(v => {
     const huidig = b.mapping[v.key] || '';
-    const opties = b.headers.map(h => `<option value="${h}" ${h===huidig?'selected':''}>${h}</option>`).join('');
+    const opties = b.headers.map(h => `<option value="${h}" ${h===huidig?'selected':''}>${kolomLabel(h)}</option>`).join('');
     html += `<div class="mapping-label ${v.vplicht?'':'opt'}">${v.label}${v.vplicht?' *':''}</div>
       <div class="mapping-arrow">→</div>
       <select class="mapping-select" data-veld="${v.key}"><option value="">— niet gebruiken —</option>${opties}</select>`;
