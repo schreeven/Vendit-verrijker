@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v1.8</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.2</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -263,7 +263,7 @@
         </div>
         <div class="optie-rij">
           <input type="checkbox" id="optFrans" checked>
-          <div class="optie-tekst"><strong>Franse namen filteren</strong><span>Producten met Franse naam zonder NL/EN alternatief worden overgeslagen</span></div>
+          <div class="optie-tekst"><strong>Franse namen markeren</strong><span>Naam wordt gemarkeerd als ⚠ Frans — product blijft altijd bewaard</span></div>
         </div>
         <div class="optie-rij">
           <input type="checkbox" id="optOmschrijving" checked>
@@ -287,7 +287,7 @@
           <div class="stat-blok"><div class="getal" id="stTotaal">—</div><div class="label">Totaal</div></div>
           <div class="stat-blok"><div class="getal" id="stVerwerkt" style="color:var(--groen)">—</div><div class="label">Verwerkt</div></div>
           <div class="stat-blok"><div class="getal" id="stGemergd" style="color:var(--paars)">—</div><div class="label">Gemergd</div></div>
-          <div class="stat-blok"><div class="getal" id="stFrans" style="color:var(--oranje)">—</div><div class="label">Frans</div></div>
+          <div class="stat-blok"><div class="getal" id="stFrans" style="color:var(--oranje)">—</div><div class="label">Frans ⚠</div></div>
           <div class="stat-blok"><div class="getal" id="stOvegeslagen" style="color:var(--rood)">—</div><div class="label">Overgeslagen</div></div>
           <div class="stat-blok"><div class="getal" id="stSoortAi" style="color:var(--blauw)">—</div><div class="label">Soort AI</div></div>
         </div>
@@ -325,6 +325,15 @@
           <div id="rapportInhoud" style="display:none;"></div>
         </div>
 
+        <div id="downloadOpties" style="display:none;margin-top:12px;padding:12px 14px;background:var(--warmgrijs);border-radius:8px;border:1px solid var(--lichtgrijs);">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Download filter</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="merkFilter" style="padding:6px 10px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.82rem;min-width:180px;">
+              <option value="">Alle merken</option>
+            </select>
+            <span style="font-size:0.75rem;color:var(--grijs);" id="filterTeller"></span>
+          </div>
+        </div>
         <div class="btn-rij">
           <button class="btn btn-groen" id="btnStart" onclick="startVerwerking()" disabled>▶ Start verwerking</button>
           <button class="btn btn-outline" id="btnDownload" onclick="downloadCSV()" disabled>⬇ Download CSV</button>
@@ -372,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "1.8";
+const TOOL_VERSIE = "2.2";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -846,6 +855,39 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
   return { records: resultaat, aantalGemergd };
 }
 
+// ─── OMSCHRIJVING SAMENSTELLEN ──────────────────
+function stelOmschrijvingSamen(r) {
+  const merk  = (r.Merk  || '').trim();
+  const type_ = (r.Type  || '').trim();
+  const name  = (r.name  || '').trim();
+  const soort = (r.Soort || '').trim();
+
+  // Vaste volgorde: Merk → Type → name → Soort
+  // Elk deel alleen toevoegen als het niet al in de opgebouwde string zit
+  const delen = [];
+  let opgebouwd = '';
+
+  const voegToe = (deel) => {
+    if (!deel) return;
+    if (!opgebouwd.toLowerCase().includes(deel.toLowerCase())) {
+      delen.push(deel);
+      opgebouwd = delen.join(' ');
+    }
+  };
+
+  voegToe(merk);
+  voegToe(type_);
+  voegToe(name);
+
+  // Soort: alleen toevoegen als het specifiek is
+  const generiek = new Set(['accessoires','amps effects','audio','percussie','']);
+  if (soort && !generiek.has(soort.toLowerCase())) {
+    voegToe(soort);
+  }
+
+  return opgebouwd.trim();
+}
+
 // ─── HOOFDVERWERKING ─────────────────────────
 async function startVerwerking() {
   if (bezig || !bestanden.length) return;
@@ -886,18 +928,13 @@ async function startVerwerking() {
   for (const r of records) {
     if (optAlleenKern && (!r.Merk || !r.Type)) { aantalOvergeslagen++; continue; }
 
-    // Franse naam filter: weggooien als naam Frans is
-    // (AB Music naam heeft al gewonnen in de merge, dus als die er is is hij NL/EN)
+    // Franse naam: NOOIT weggooien — altijd markeren met waarschuwing
     if (optFrans && bevatFrans(r.name || '')) {
-      // Controleer of er geen schone naam is
-      if (!r.name || bevatFrans(r.name)) {
-        aantalFrans++;
-        aantalOvergeslagen++;
-        continue; // Weggooien
-      }
+      r._warnings.push('Franse naam — controleren');
+      aantalFrans++;
     }
 
-    if (optOmschrijving) r.Omschrijving = [r.Merk, r.Type, r.Soort].filter(Boolean).join(' ');
+    if (optOmschrijving) r.Omschrijving = stelOmschrijvingSamen(r);
     if (optSoort && !r.Soort && (r.Type || r.name)) r._soortNodig = true;
     verwerktRijen.push(r);
   }
@@ -924,6 +961,7 @@ async function startVerwerking() {
   berekenDashboard(true);
   toonTab('dashboard');
   document.getElementById('btnDownload').disabled = false;
+  vulMerkFilter();
   bezig = false;
   log('✓ Verwerking voltooid', 'ok');
 }
@@ -1240,26 +1278,54 @@ function maakRapport(totaal, gemergd, frans, overgeslagen, soortAi) {
     <div class="melding m-ok"><span>✓</span><div><strong>${verwerktRijen.length} producten klaar voor export</strong> (van ${totaal} ingelezen)</div></div>
     ${bestanden.length>1?`<div class="melding m-info"><span>🔗</span><div><strong>${gemergd} records samengesteld uit meerdere bestanden</strong></div></div>`:''}
     ${overgeslagen?`<div class="melding m-warn"><span>⚠</span><div><strong>${overgeslagen} overgeslagen</strong> — Merk/Type ontbreekt of Franse naam</div></div>`:''}
-    ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten overgeslagen</strong> — Franse naam, geen NL/EN alternatief</div></div>`:''}
+    ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten met Franse naam gemarkeerd</strong> — controleer en vertaal vóór Vendit import</div></div>`:''}
     ${soortAi?`<div class="melding m-info"><span>🤖</span><div><strong>${soortAi} Soort-labels door AI ingevuld</strong></div></div>`:''}
     <div class="melding m-ok"><span>📥</span><div>Output klaar voor Vendit CAB import of als invoer voor de Vendit-verrijker</div></div>`;
+}
+
+// ─── MERKFILTER ──────────────────────────────
+function vulMerkFilter() {
+  if (!verwerktRijen.length) return;
+  const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))].sort();
+  const sel = document.getElementById('merkFilter');
+  sel.innerHTML = '<option value="">Alle merken (' + verwerktRijen.length.toLocaleString() + ')</option>';
+  merken.forEach(m => {
+    const n = verwerktRijen.filter(r => r.Merk === m).length;
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = `${m} (${n})`;
+    sel.appendChild(opt);
+  });
+  document.getElementById('downloadOpties').style.display = 'block';
+  sel.addEventListener('change', updateFilterTeller);
+  updateFilterTeller();
+}
+function updateFilterTeller() {
+  const merk = document.getElementById('merkFilter').value;
+  const gefilterd = merk ? verwerktRijen.filter(r => r.Merk === merk) : verwerktRijen;
+  document.getElementById('filterTeller').textContent =
+    merk ? `${gefilterd.length} producten geselecteerd` : '';
 }
 
 // ─── DOWNLOAD ────────────────────────────────
 function downloadCSV() {
   if (!verwerktRijen.length) return;
+  const merk = document.getElementById('merkFilter')?.value || '';
+  const rijen = merk ? verwerktRijen.filter(r => r.Merk === merk) : verwerktRijen;
+  const merkSuffix = merk ? `_${merk.toLowerCase().replace(/[^a-z0-9]/g,'_')}` : '';
   const keys = VELDEN.map(v=>v.key);
-  const regels = verwerktRijen.map(r => keys.map(k => {
+  const regels = rijen.map(r => keys.map(k => {
     const w = r[k] || '';
     return (w.includes(';') || w.includes('"') || w.includes('\n'))
       ? `"${w.replace(/"/g,'""')}"` : w;
   }).join(';'));
   const csv = '\uFEFF' + [keys.join(';'), ...regels].join('\n');
+  log(`CSV gedownload — ${rijen.length} producten${merk ? ' (' + merk + ')' : ''}`, 'ok');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-  a.download = `schreeven_opgeschoond_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `schreeven_opgeschoond${merkSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-  log(`CSV gedownload — ${verwerktRijen.length} producten`, 'ok');
+
 }
 
 // ─── HULP ────────────────────────────────────
