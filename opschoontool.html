@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v2.8</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.0</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -381,7 +381,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "2.8";
+const TOOL_VERSIE = "3.0";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -780,7 +780,11 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
       // Afmeting = productafmeting in mm (uit Descriptifs_nl — NIET verpakking)
       if (!r.Afmeting) r.Afmeting = parseVal(col3, ['Afmetingen \\(mm\\)','Afmeting','Dimensions']);
       // Maat = vorm/model/dikte: Dreadnought, 4/4, Strat, 0.73mm, medium
-      if (!r.Maat)     r.Maat     = parseVal(col3, ['Formaat','Dikte','Gauge','Taille','Format']);
+      if (!r.Maat) {
+        let maatVal = parseVal(col3, ['Formaat','Dikte','Gauge','Taille','Format']);
+        // Strip " mm" uit dikte waarden: "0,73 mm" → "0,73"
+        r.Maat = maatVal.replace(/\s*mm$/i, '').trim();
+      }
     }
   }
 
@@ -821,8 +825,9 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
   if (!r.Maat && r.name) {
     const naam = r.name;
     // Dikte in mm (plectra): 0.73mm, 1,14mm, .88mm
-    let m = naam.match(/(?:^|\s)(\d+[.,]\d+\s*mm|[.,]\d+\s*mm)(?:\s|$|-)/i);
-    if (m) { r.Maat = m[1].replace(',','.'); }
+    let m = naam.match(/(?:^|\s)(\d+[.,]\d+)\s*mm(?:\s|$|-)/i);
+    if (m) { r.Maat = m[1]; }  // alleen het getal, bijv. "0,73" niet "0,73 mm"
+    else if ((m = naam.match(/(?:^|\s)([.,]\d+)\s*mm(?:\s|$|-)/i))) { r.Maat = m[1]; }
     // Zwaarte snaren/plectra: extra light, light, medium, heavy, extra heavy
     else if ((m = naam.match(/\b(extra\s*light|extra\s*heavy|medium\s*light|medium\s*heavy|light|medium|heavy)\b/i))) {
       r.Maat = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
@@ -903,7 +908,11 @@ function stelOmschrijvingSamen(r) {
   const name  = (r.name  || '').trim();
   const soort = (r.Soort || '').trim();
 
-  // Omschrijving = Merk + Type + name (dubbeling eruit)
+  // Omschrijving = MERK (caps) + Type (zonder prefix) + name
+  const merkCaps = merk.toUpperCase();
+  // Strip leverancier prefix uit Leverancier_artikel: "ADU 412R73" → "412R73"
+  const artikelClean = (r.Leverancier_artikel || type_ || '')
+    .replace(/^[A-Z]{2,4}\s+/, '').trim();
   const delen = [];
   let opgebouwd = '';
   const voegToe = (deel) => {
@@ -913,8 +922,8 @@ function stelOmschrijvingSamen(r) {
       opgebouwd = delen.join(' ');
     }
   };
-  voegToe(merk);
-  voegToe(type_);
+  voegToe(merkCaps);
+  voegToe(artikelClean);
   voegToe(name);
   return opgebouwd.trim();
 }
@@ -1461,4 +1470,4 @@ function resetAlles() {
 function wacht(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
-</html>1
+</html>
