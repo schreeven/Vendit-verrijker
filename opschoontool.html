@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.9</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v5.1</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -404,6 +404,14 @@
           onkeydown="if(event.key==='Enter')kwVoegKortingToe()">
         <button class="btn btn-groen" onclick="kwVoegKortingToe()" style="padding:8px 14px;">+ Voeg toe</button>
       </div>
+      <div style="border-top:1px solid var(--lichtgrijs);padding-top:10px;margin-bottom:10px;">
+        <label style="font-size:0.78rem;font-weight:600;color:var(--oranje);display:block;margin-bottom:4px;">Betalingskorting (optioneel — apart veld)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="number" id="kwBetalingPct" placeholder="bijv. 2" min="0" max="20" step="0.1"
+            style="width:100px;padding:6px 9px;border:1px solid var(--oranje);border-radius:5px;font-size:0.85rem;text-align:center;">
+          <span style="font-size:0.78rem;color:var(--grijs);">% — alleen toegepast als checkbox aangevinkt bij download</span>
+        </div>
+      </div>
       <div id="kwBerekening" style="background:var(--warmgrijs);border-radius:6px;padding:10px;font-size:0.82rem;margin-bottom:10px;display:none;">
         <div id="kwBerekeningTekst"></div>
       </div>
@@ -452,7 +460,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.9";
+const TOOL_VERSIE = "5.1";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -1025,6 +1033,10 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     }
   }
 
+  // EU notatie voor prijsvelden
+  ['Inkoop_ex','Inkoop_basis','Verkoop_incl','Verkoop_ex'].forEach(k => {
+    if (r[k]) r[k] = r[k].replace('.', ',');
+  });
   r._warnings = [];
   r._soortBron = 'geen';
   return r;
@@ -1190,7 +1202,7 @@ async function startVerwerking() {
       const kortingReeks = kortingen[(r.Merk||'').toUpperCase()] ||
         Object.entries(kortingen).find(([k]) => (r.Merk||'').toUpperCase().includes(k))?.[1];
       if (kortingReeks && kortingReeks.length) {
-        r.Inkoop_basis = r.Inkoop_ex; // originele catalogusprijs bewaren
+        r.Inkoop_basis = r.Inkoop_ex.replace('.', ','); // bewaar origineel in EU notatie
         r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
       }
     }
@@ -1640,17 +1652,16 @@ function renderKortingLijst() {
     el.innerHTML = '<div style="font-size:0.75rem;color:var(--grijs);padding:6px 0;">Geen kortingen ingesteld</div>';
     return;
   }
-  el.innerHTML = Object.entries(kortingen).map(([merk, reeks]) => {
+  el.innerHTML = Object.entries(kortingen).map(([merk, obj]) => {
+    const reeks = Array.isArray(obj) ? obj : (obj?.reeks || []);
+    const betaling = Array.isArray(obj) ? null : obj?.betaling;
     const effectief = reeks.reduce((p, k) => p * (1 - k/100), 1);
-    const formule = reeks.map(k => `×${(1-k/100).toFixed(2)}`).join(' → ');
-    const betalingAan = document.getElementById('kortingBetaling')?.checked;
-    const actieveReeks = (betalingAan || reeks.length === 1) ? reeks : reeks.slice(0, -1);
-    const actief = actieveReeks.reduce((p,k) => p*(1-k/100), 1);
-    const betalingLabel = reeks.length > 1 ? ` <span style="color:var(--oranje);font-size:0.68rem;">(+${reeks[reeks.length-1]}% betaling)</span>` : '';
+    const formule = reeks.map(k => `-${k}%`).join(' → ');
+    const betalingLabel = betaling ? ` <span style="color:var(--oranje);font-size:0.68rem;">+ ${betaling}% betaling apart</span>` : '';
     return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--warmgrijs);border-radius:5px;font-size:0.78rem;flex-wrap:wrap;">
       <span style="font-weight:700;min-width:80px;">${merk}</span>
       <span style="color:var(--grijs);font-family:monospace;font-size:0.72rem;">${formule}</span>
-      <span style="color:var(--donkergroen);font-weight:600;">= ×${actief.toFixed(4)}</span>
+      <span style="color:var(--donkergroen);font-weight:600;">= ×${effectief.toFixed(4)}</span>
       <span style="color:var(--grijs);font-size:0.7rem;">op Inkoop_basis</span>
       ${betalingLabel}
       <button onclick="verwijderKorting('${merk}')" style="background:none;border:none;cursor:pointer;color:var(--grijs);font-size:0.9rem;padding:0 2px;margin-left:auto;">✕</button>
@@ -1763,7 +1774,13 @@ function kwRenderReeks() {
 
 function kwBevestig() {
   if (!kwMerk || !kwReeks.length) return;
-  kortingen[kwMerk] = kwReeks;
+  // Betalingskorting is apart veld in wizard
+  const betalingEl = document.getElementById('kwBetalingPct');
+  const betalingPct = betalingEl ? parseFloat(betalingEl.value) : NaN;
+  kortingen[kwMerk] = {
+    reeks: kwReeks,
+    betaling: !isNaN(betalingPct) && betalingPct > 0 ? betalingPct : null,
+  };
   slaKortingenOp();
   renderKortingLijst();
   vulKortingMerkDropdown();
@@ -1917,22 +1934,27 @@ function pasKortingToe(inkoopStr, merk) {
   const merkUpper = (merk || '').toUpperCase();
   const merkTitle = (merk || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   // Match op CAPS, Title Case of gedeeltelijk
-  const reeks = kortingen[merkUpper] || kortingen[merkTitle] ||
-    Object.entries(kortingen).find(([k]) => {
+  const gevonden = kortingen[merkUpper] || kortingen[merkTitle] ||
+    Object.entries(kortingen).find(([k,v]) => {
       const kUp = k.toUpperCase();
       return merkUpper === kUp || merkUpper.includes(kUp) || kUp.includes(merkUpper);
     })?.[1];
+  // Ondersteun beide formaten: array [6,3] en {reeks:[6,3], betaling:2}
+  const reeks = Array.isArray(gevonden) ? gevonden : (gevonden?.reeks || []);
+  const betalingPctObj = Array.isArray(gevonden) ? null : gevonden?.betaling;
   if (!reeks || !reeks.length) return inkoopStr;
+
+  // Pas ALLE handelskortingen toe
+  let resultaat = reeks.reduce((p, k) => p * (1 - k/100), inkoop);
+
+  // Betalingskorting apart — alleen als aangevinkt
   const betalingAan = document.getElementById('kortingBetaling')?.checked || false;
-  const toeTePassenReeks = betalingAan ? reeks : reeks.slice(0, -1).concat(reeks.length === 1 ? reeks : []);
-  // Pas elke korting gestapeld toe
-  const stappen = betalingAan ? reeks : reeks.slice(0, reeks.length > 1 ? reeks.length - 1 : 1);
-  // Eigenlijk: altijd alle kortingen BEHALVE de laatste als die betalingskorting is
-  const effectieveReeks = (betalingAan || reeks.length === 1) ? reeks : reeks.slice(0, -1);
-  // Als betalingAan: neem hele reeks. Anders: alles behalve laatste (betalingskorting)
-  const finalReeks = betalingAan ? reeks : (reeks.length > 1 ? reeks.slice(0, -1) : reeks);
-  const resultaat = finalReeks.reduce((p, k) => p * (1 - k/100), inkoop);
-  return resultaat.toFixed(2);
+  const betalingPct = betalingPctObj;
+  if (betalingAan && betalingPct) {
+    resultaat = resultaat * (1 - betalingPct/100);
+  }
+
+  return resultaat.toFixed(2).replace('.', ','); // EU notatie
 }
 
 // ─── HERBEREKEN ──────────────────────────────
@@ -1946,7 +1968,7 @@ function herbereken() {
     // Herbereken korting op Inkoop_basis
     if (r.Inkoop_basis && r.Merk) {
       // Reset eerst naar basis
-      r.Inkoop_ex = r.Inkoop_basis;
+      r.Inkoop_ex = r.Inkoop_basis.replace(',', '.'); // tijdelijk punt voor berekening
       // Pas nieuwe korting toe
       const nieuweInkoop = pasKortingToe(r.Inkoop_basis, r.Merk);
       if (nieuweInkoop !== r.Inkoop_basis) {
