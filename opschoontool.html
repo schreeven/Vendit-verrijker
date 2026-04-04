@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.9</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.0</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -278,6 +278,14 @@
           <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting in reeks is betalingskorting (optioneel toepassen)</label>
         </div>
         <small style="color:var(--grijs);">Reeks: kommagescheiden percentages. 6,3 = eerst 6% dan 3% over uitkomst</small>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="exporteerKortingen()" style="font-size:0.75rem;padding:5px 10px;">⬇ Exporteer als XLS</button>
+          <label class="btn btn-outline" style="font-size:0.75rem;padding:5px 10px;cursor:pointer;">
+            ⬆ Importeer XLS
+            <input type="file" accept=".xlsx,.xls,.csv" onchange="importeerKortingen(event)" style="display:none;">
+          </label>
+          <button class="btn btn-outline" onclick="exporteerKortingenJSON()" style="font-size:0.75rem;padding:5px 10px;">💾 Sla op als JSON</button>
+        </div>
       </div>
     </div>
 
@@ -408,7 +416,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "3.9";
+const TOOL_VERSIE = "4.0";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -1609,6 +1617,83 @@ function voegKortingToe() {
   document.getElementById('kortingMerkSelect').value = '';
   log(`Korting opgeslagen: ${merk} → ${reeks.map(k=>k+'%').join(' → ')}`, 'ok');
   vulKortingMerkDropdown();
+}
+
+function exporteerKortingen() {
+  // Exporteer als CSV/XLS compatibel formaat
+  const regels = [['Merk','Korting_1_%','Korting_2_%','Korting_3_%','Korting_4_%','Betalingskorting_laatste']];
+  Object.entries(kortingen).forEach(([merk, reeks]) => {
+    const betalingIdx = reeks.length > 1 ? reeks.length - 1 : -1;
+    const rij = [merk];
+    reeks.forEach((k, i) => rij.push(k));
+    while (rij.length < 5) rij.push('');
+    rij.push(betalingIdx >= 0 ? 'ja' : 'nee');
+    regels.push(rij);
+  });
+  const csv = '\uFEFF' + regels.map(r => r.join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = `schreeven_dealerkortingen_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  log('Kortingsprofiel geëxporteerd als CSV', 'ok');
+}
+
+function exporteerKortingenJSON() {
+  const json = JSON.stringify(kortingen, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+  a.download = `schreeven_dealerkortingen_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  log('Kortingsprofiel geëxporteerd als JSON', 'ok');
+}
+
+function importeerKortingen(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const naam = file.name.toLowerCase();
+
+  if (naam.endsWith('.json')) {
+    // JSON import
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        Object.entries(data).forEach(([merk, reeks]) => {
+          if (Array.isArray(reeks) && reeks.every(k => typeof k === 'number')) {
+            kortingen[merk.toUpperCase()] = reeks;
+          }
+        });
+        slaKortingenOp();
+        renderKortingLijst();
+        log(`Kortingsprofiel geladen: ${Object.keys(data).length} merken`, 'ok');
+      } catch(e) { log('JSON import mislukt: ' + e.message, 'err'); }
+    };
+    reader.readAsText(file);
+  } else {
+    // CSV import
+    const reader = new FileReader();
+    reader.onload = e => {
+      const regels = e.target.result.replace(/\r/g,'').split('\n').filter(Boolean);
+      let geladen = 0;
+      regels.slice(1).forEach(regel => {
+        const delen = regel.split(';').map(s => s.trim().replace(/^"|"$/g,''));
+        const merk = (delen[0]||'').toUpperCase();
+        if (!merk) return;
+        const reeks = [];
+        for (let i = 1; i <= 4; i++) {
+          const v = parseFloat(delen[i]);
+          if (!isNaN(v) && v > 0) reeks.push(v);
+        }
+        if (reeks.length) { kortingen[merk] = reeks; geladen++; }
+      });
+      slaKortingenOp();
+      renderKortingLijst();
+      vulKortingMerkDropdown();
+      log(`Kortingsprofiel geladen: ${geladen} merken`, 'ok');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+  event.target.value = ''; // reset file input
 }
 
 function verwijderKorting(merk) {
