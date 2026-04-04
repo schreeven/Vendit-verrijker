@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.8</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.9</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -364,6 +364,7 @@
         </div>
         <div class="btn-rij">
           <button class="btn btn-groen" id="btnStart" onclick="startVerwerking()" disabled>▶ Start verwerking</button>
+          <button class="btn btn-outline" id="btnHerbereken" onclick="herbereken()" disabled style="border-color:var(--oranje);color:var(--oranje);">⚡ Herbereken</button>
           <button class="btn btn-outline" id="btnDownload" onclick="downloadCSV()" disabled>⬇ Download CSV</button>
           <button class="btn btn-outline" onclick="resetAlles()">🔄 Reset</button>
         </div>
@@ -451,7 +452,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.8";
+const TOOL_VERSIE = "4.9";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -1220,6 +1221,7 @@ async function startVerwerking() {
   berekenDashboard(true);
   toonTab('dashboard');
   document.getElementById('btnDownload').disabled = false;
+  document.getElementById('btnHerbereken').disabled = false;
   vulMerkFilter();
   bezig = false;
   log('✓ Verwerking voltooid', 'ok');
@@ -1933,6 +1935,37 @@ function pasKortingToe(inkoopStr, merk) {
   return resultaat.toFixed(2);
 }
 
+// ─── HERBEREKEN ──────────────────────────────
+function herbereken() {
+  if (!verwerktRijen.length) return;
+  log('⚡ Herbereken kortingen + omschrijving...', 'info');
+
+  const optOmschrijving = true; // altijd
+
+  verwerktRijen.forEach(r => {
+    // Herbereken korting op Inkoop_basis
+    if (r.Inkoop_basis && r.Merk) {
+      // Reset eerst naar basis
+      r.Inkoop_ex = r.Inkoop_basis;
+      // Pas nieuwe korting toe
+      const nieuweInkoop = pasKortingToe(r.Inkoop_basis, r.Merk);
+      if (nieuweInkoop !== r.Inkoop_basis) {
+        r.Inkoop_ex = nieuweInkoop;
+      }
+    } else if (r.Inkoop_ex && r.Merk && !r.Inkoop_basis) {
+      // Geen basis bekend — pas toe op huidige inkoop
+      r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
+    }
+
+    // Herbereken omschrijving
+    r.Omschrijving = stelOmschrijvingSamen(r);
+  });
+
+  vulMerkFilter();
+  log(`✓ Herberekend: ${verwerktRijen.length.toLocaleString()} producten`, 'ok');
+  toonTab('log');
+}
+
 // ─── MERKFILTER ──────────────────────────────
 let geselecteerdeMerken = new Set();
 
@@ -2055,6 +2088,7 @@ function resetAlles() {
   document.getElementById('rapportInhoud').style.display = 'none';
   document.getElementById('btnStart').disabled = true;
   document.getElementById('btnDownload').disabled = true;
+  document.getElementById('btnHerbereken').disabled = true;
   document.getElementById('voortgangFill').style.width = '0%';
   document.getElementById('logBox').innerHTML = '<span class="log-info">Reset.</span>';
   updateStats(0,0,0,0,0,0);
