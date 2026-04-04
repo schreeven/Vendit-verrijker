@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.3</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.7</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -406,7 +406,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "3.3";
+const TOOL_VERSIE = "3.7";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -435,10 +435,25 @@ const VELDEN = [
   {key:'Afmeting',            label:'Afmeting (product mm)',   vplicht:false},
   {key:'Verpakking_afmeting', label:'Verpakking afmeting (cm)', vplicht:false},
   {key:'Verpakking_gewicht',  label:'Verpakking gewicht (kg)',  vplicht:false},
+  {key:'Materiaal',           label:'Materiaal',               vplicht:false},
+  {key:'Hoeveelheid',         label:'Hoeveelheid',              vplicht:false},
+  {key:'Aantal_snaren',       label:'Aantal snaren',            vplicht:false},
+  {key:'Gauge',               label:'Gauge / snaarmaat',        vplicht:false},
+  {key:'Omwonden',            label:'Omwonden',                 vplicht:false},
+  {key:'Instrument',           label:'Instrument',               vplicht:false},
+  {key:'Inputs',              label:'Inputs',                   vplicht:false},
+  {key:'Outputs',             label:'Outputs',                  vplicht:false},
+  {key:'Vermogen',            label:'Vermogen',                 vplicht:false},
+  {key:'Aantal_kanalen',      label:'Aantal kanalen',           vplicht:false},
   {key:'Voorraad_leverancier',label:'Voorraad leverancier',  vplicht:false},
   {key:'Afbeelding',         label:'Afbeelding URL',         vplicht:false},
   {key:'Leverancier_artikel',label:'Leverancier artikelcode',vplicht:false},
   {key:'Descriptif',         label:'Beschrijving (AI bron)', vplicht:false},
+  {key:'Materiaal',          label:'Materiaal',              vplicht:false},
+  {key:'Instrument',         label:'Instrument',             vplicht:false},
+  {key:'Inhoud',             label:'Inhoud (stuks/pack)',    vplicht:false},
+  {key:'Omwonden',           label:'Omwonden',               vplicht:false},
+  {key:'Aantal_snaren',      label:'Aantal snaren',          vplicht:false},
   {key:'name',               label:'Productnaam (webshop)',  vplicht:false},
 ];
 
@@ -496,6 +511,20 @@ const DESCRIPTIFS_NL = {
   prefixRegels:[],
 };
 
+// Descriptifs.csv (FR) — zelfde structuur, maar Franse teksten als fallback
+const DESCRIPTIFS_FR = {
+  naam:'Algam Descriptifs FR (fallback)', delimiter:',',
+  algamBestandType: 'descriptifs_fr',  // apart type — lagere prioriteit dan NL
+  geenHeader: true,
+  positieMapping: {
+    'Leverancier_artikel': 1,
+    'Descriptif':          3,
+    'Sub_omschrijving':    2,
+  },
+  mapping:{ 'Leverancier_artikel':[], 'Descriptif':[], 'Sub_omschrijving':[] },
+  prefixRegels:[],
+};
+
 // Prioriteiten voor Algam 3-bestand merge
 // Naam: AB Music Libelle wint (minder Frans)
 // Inkoop: AB Music Base HT wint (actueel)
@@ -541,10 +570,11 @@ function laadProfielen() {
   profielen['algam_produits']    = ALGAM_PRODUITS;
   profielen['ab_music_tarif']    = AB_MUSIC;
   profielen['algam_descriptifs'] = DESCRIPTIFS_NL;
+  profielen['algam_descriptifs_fr'] = DESCRIPTIFS_FR;
 }
 function slaProfielenOp() {
   const k = {...profielen};
-  delete k['algam_produits']; delete k['ab_music_tarif']; delete k['algam_descriptifs'];
+  delete k['algam_produits']; delete k['ab_music_tarif']; delete k['algam_descriptifs']; delete k['algam_descriptifs_fr'];
   localStorage.setItem('schreeven_opschoon_profielen', JSON.stringify(k));
 }
 function openNieuwProfiel() { document.getElementById('modalNieuwProfiel').classList.add('open'); }
@@ -565,7 +595,8 @@ function herkenAlgamBestandType(bestandNaam, headers) {
   const n = bestandNaam.toLowerCase();
   // Op bestandsnaam
   if (n.includes('produits')) return 'produits';
-  if (n.includes('descriptifs')) return 'descriptifs';
+  if (n.includes('descriptifs_nl') || n.includes('descriptifs nl')) return 'descriptifs';
+  if (n.includes('descriptifs')) return 'descriptifs_fr';
   if ((n.includes('tarif') && n.includes('ab')) || n.includes('ab_music') || n.includes('abmusic')) return 'abmusic';
   // Op kolommen
   if (headers.includes('TtcPublic') || headers.includes('CodeBarre')) return 'produits';
@@ -576,7 +607,9 @@ function herkenAlgamBestandType(bestandNaam, headers) {
 function updateAlgamMergeBanner() {
   const types = bestanden.map(b => b.algamBestandType).filter(Boolean);
   const heeftProduits    = types.includes('produits');
-  const heeftDescriptifs = types.includes('descriptifs');
+  const heeftDescriptifs = types.includes('descriptifs') || types.includes('descriptifs_fr');
+  const heeftDescriptifsNL = types.includes('descriptifs');
+  const heeftDescriptifsFR = types.includes('descriptifs_fr');
   const heeftAbmusic     = types.includes('abmusic');
   const banner = document.getElementById('algamMergeBanner');
   const tekst  = document.getElementById('algamMergeBannerTekst');
@@ -785,6 +818,19 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     });
   }
 
+  // Descriptifs FR: zelfde structuur maar check of tekst echt Frans is
+  if (profiel?.algamBestandType === 'descriptifs_fr') {
+    const col2 = mapping['Sub_omschrijving'] ? (rij[headers.indexOf(mapping['Sub_omschrijving'])]||'').trim() : '';
+    const col3 = r.Descriptif || '';
+    if (col2 && col3) r.Descriptif = col3 + ' | ' + col2;
+    else if (col2 && !col3) r.Descriptif = col2;
+    // Markeer alleen als de tekst echt Frans is
+    if (isFrenchDescriptif(r.Descriptif)) {
+      r._isFrDescriptif = true;
+    }
+    // Zo niet: tekst is universeel (- Color : zwart stijl) → gewoon gebruiken
+  }
+
   // Descriptifs_nl: kolom_2 + kolom_3 samenvoegen + velden parsen
   if (profiel?.algamBestandType === 'descriptifs') {
     const col2 = mapping['Sub_omschrijving'] ? (rij[headers.indexOf(mapping['Sub_omschrijving'])]||'').trim() : '';
@@ -801,15 +847,31 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
         }
         return '';
       };
-      if (!r.Kleur)    r.Kleur    = parseVal(col3, ['Color','Kleuren','Kleur','Couleur']);
-      if (!r.Gewicht)  r.Gewicht  = parseVal(col3, ['Gewicht','Poids','Weight']);
-      // Afmeting = productafmeting in mm (uit Descriptifs_nl — NIET verpakking)
-      if (!r.Afmeting) r.Afmeting = parseVal(col3, ['Afmetingen \\(mm\\)','Afmeting','Dimensions']);
-      // Maat = vorm/model/dikte: Dreadnought, 4/4, Strat, 0.73mm, medium
+      if (!r.Kleur)          r.Kleur          = parseVal(col3, ['Color','Kleuren','Kleur','Couleur']);
+      if (!r.Gewicht)        r.Gewicht        = parseVal(col3, ['Gewicht','Poids','Weight']);
+      if (!r.Afmeting)       r.Afmeting       = parseVal(col3, ['Afmetingen \\(mm\\)','Afmeting','Dimensions']);
+      if (!r.Materiaal)      r.Materiaal      = parseVal(col3, ['Materiaal','Material']);
+      if (!r.Hoeveelheid)    r.Hoeveelheid    = parseVal(col3, ['Hoeveelheid','Quantity']);
+      if (!r.Aantal_snaren)  r.Aantal_snaren  = parseVal(col3, ['Aantal snaren']);
+      if (!r.Gauge)          r.Gauge          = parseVal(col3, ['Gauge']);
+      if (!r.Omwonden)       r.Omwonden       = parseVal(col3, ['Omwonden']);
+      if (!r.Instrument)     r.Instrument     = parseVal(col3, ['Bestemming','Destination','Instrument']);
+      if (!r.Inputs)         r.Inputs         = parseVal(col3, ['Inputs']);
+      if (!r.Outputs)        r.Outputs        = parseVal(col3, ['Outputs']);
+      if (!r.Vermogen)       r.Vermogen       = parseVal(col3, ['Vermogen','Puissance']);
+      if (!r.Aantal_kanalen) r.Aantal_kanalen = parseVal(col3, ['Aantal kanalen']);
       if (!r.Maat) {
-        let maatVal = parseVal(col3, ['Formaat','Dikte','Gauge','Taille','Format']);
-        // Strip " mm" uit dikte waarden: "0,73 mm" → "0,73"
+        let maatVal = parseVal(col3, ['Formaat','Dikte','Taille','Format']);
         r.Maat = maatVal.replace(/\s*mm$/i, '').trim();
+      }
+      if (!r.Kleur) r.Kleur = parseVal(col3, ['Afwerking']);
+      if (!r.Sub_omschrijving) {
+        const hoeV = r.Hoeveelheid || '';
+        const hoe  = hoeV && hoeV !== '1' ? hoeV + ' stuks' : '';
+        r.Sub_omschrijving = [r.Materiaal, hoe].filter(Boolean).join(' · ');
+      }
+      if (!r._catFallback) {
+        r._catFallback = parseVal(col3, ['Instrument']);
       }
     }
   }
@@ -911,12 +973,25 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
 
     VELDEN.forEach(v => {
       const prio = veldPrioriteit[v.key] ?? 0;
-      const volgorde = [prio, ...lookups.map((_,i)=>i).filter(i=>i!==prio)];
+      // Sorteer: descriptifs_fr altijd na descriptifs_nl
+      const frIndices = bestanden
+        .map((b,i) => b.algamBestandType === 'descriptifs_fr' ? i : -1)
+        .filter(i => i >= 0);
+      const volgorde = [prio, ...lookups.map((_,i)=>i).filter(i=>i!==prio)]
+        .sort((a,b) => {
+          const aFr = frIndices.includes(a) ? 1 : 0;
+          const bFr = frIndices.includes(b) ? 1 : 0;
+          return aFr - bFr; // FR komt altijd laatste
+        });
       for (const idx of volgorde) {
         const rec = lookups[idx]?.get(sleutel);
         if (rec?.[v.key]) {
           merged[v.key] = rec[v.key];
           if (!merged._bronBestanden.includes(idx)) merged._bronBestanden.push(idx);
+          // Markeer als Frans descriptif
+          if (frIndices.includes(idx) && v.key === 'Descriptif') {
+            merged._franseDescriptif = true;
+          }
           break;
         }
       }
@@ -1002,6 +1077,10 @@ async function startVerwerking() {
   for (const r of records) {
     if (optAlleenKern && (!r.Merk || !r.Type)) { aantalOvergeslagen++; continue; }
 
+    // Franse descriptif markeren
+    if (r._franseDescriptif || r._isFrDescriptif) {
+      r._warnings.push('Descriptif is Frans — vertalen');
+    }
     // Franse naam: NOOIT weggooien — altijd markeren met waarschuwing
     if (optFrans && bevatFrans(r.name || '')) {
       r._warnings.push('Franse naam — controleren');
@@ -1045,6 +1124,17 @@ async function startVerwerking() {
 }
 
 // ─── DETECTIE ────────────────────────────────
+function isFrenchDescriptif(tekst) {
+  if (!tekst) return false;
+  // Echte Franse accenten (é,è,ê,ë,â,î,ô,û,ù,ü,à,ä)
+  if (/[àâäéèêëîïôùûü]/i.test(tekst)) return true;
+  // Franse sleutelwoorden in descriptif context
+  if (/\b(Catégorie|Couleur|Matériau|Désignation|Épaisseur|Finition|Quantité|Longueur|Largeur|Hauteur)\b/.test(tekst)) return true;
+  // Franse kleurwoorden
+  if (/\b(noir|blanc|rouge|bleu|vert|jaune|gris|brun|doré|argenté)\b/i.test(tekst)) return true;
+  return false;
+}
+
 function bevatFrans(t) {
   if (!t) return false;
   return /[àáâãäéèêëîïôùûüç]/i.test(t) ||
@@ -1096,7 +1186,8 @@ function renderAlles() {
 
 function bestandTypeBadge(type) {
   if (type === 'produits')    return '<span class="bestand-type-badge btb-produits">Produits</span>';
-  if (type === 'descriptifs') return '<span class="bestand-type-badge btb-descriptifs">Descriptifs</span>';
+  if (type === 'descriptifs') return '<span class="bestand-type-badge btb-descriptifs">Descriptifs NL</span>';
+  if (type === 'descriptifs_fr') return '<span class="bestand-type-badge btb-descriptifs" style="background:#fff4e0;color:#854F0B;">Descriptifs FR</span>';
   if (type === 'abmusic')     return '<span class="bestand-type-badge btb-abmusic">AB Music</span>';
   return '';
 }
@@ -1558,10 +1649,15 @@ function downloadCSV() {
   const rijen = merk ? verwerktRijen.filter(r => r.Merk === merk) : verwerktRijen;
   const merkSuffix = merk ? `_${merk.toLowerCase().replace(/[^a-z0-9]/g,'_')}` : '';
   const keys = VELDEN.map(v=>v.key);
+  // Velden die als tekst moeten worden opgeslagen (niet als formule)
+  const TEKST_VELDEN = new Set(['Descriptif','Sub_omschrijving','Omschrijving','name']);
   const regels = rijen.map(r => keys.map(k => {
-    const w = r[k] || '';
-    return (w.includes(';') || w.includes('"') || w.includes('\n'))
-      ? `"${w.replace(/"/g,'""')}"` : w;
+    let w = r[k] || '';
+    // Voorkom Excel #NAAM? fout: cel die begint met - of = wordt als formule gezien
+    const alsFormule = w.startsWith('-') || w.startsWith('=') || w.startsWith('+');
+    const quoten = alsFormule || w.includes(';') || w.includes('"') || w.includes('\n');
+    if (alsFormule) w = "'" + w; // apostrof voorkomt formule-interpretatie
+    return quoten ? `"${w.replace(/"/g,'""')}"` : w;
   }).join(';'));
   const csv = '\uFEFF' + [keys.join(';'), ...regels].join('\n');
   log(`CSV gedownload — ${rijen.length} producten${merk ? ' (' + merk + ')' : ''}`, 'ok');
