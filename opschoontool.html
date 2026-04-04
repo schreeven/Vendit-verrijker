@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.6</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.8</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -451,7 +451,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.6";
+const TOOL_VERSIE = "4.8";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -830,6 +830,45 @@ function autoMapping(headers, profiel) {
   return m;
 }
 
+// ─── MERK NORMALISATIE ───────────────────────
+const MERK_UITZONDERINGEN = {
+  // Afkortingen die volledig in caps blijven
+  'hk audio':        'HK Audio',
+  'bg':              'BG',
+  'jm':              'JM',
+  'akg':             'AKG',
+  'jbl':             'JBL',
+  'qsc':             'QSC',
+  'rme':             'RME',
+  'dpa':             'DPA',
+  'iem':             'IEM',
+  'svt':             'SVT',
+  'ldm':             'LDM',
+  'lr baggs':        'LR Baggs',
+  'tc electronic':   'TC Electronic',
+  'tc helicon':      'TC Helicon',
+  'c.f martin & co': 'C.F. Martin & Co.',
+  'c.f. martin':     'C.F. Martin',
+  'q-sys':           'Q-SYS',
+  'g&l':             'G&L',
+  'k&m':             'K&M',
+  'hughes & kettner':'Hughes & Kettner',
+  'allen & heath':   'Allen & Heath',
+  'martin by harman':'Martin By Harman',
+  'martin audio':    'Martin Audio',
+  'cf martin':       'C.F. Martin',
+};
+
+function normaliseerMerk(merk) {
+  if (!merk) return merk;
+  const s = merk.trim();
+  const lower = s.toLowerCase();
+  // Check uitzonderingen
+  if (MERK_UITZONDERINGEN[lower]) return MERK_UITZONDERINGEN[lower];
+  // Standaard Title Case
+  return lower.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // ─── RECORD VERWERKEN ────────────────────────
 function rijNaarRecord(rij, headers, mapping, profiel) {
   const r = {};
@@ -840,6 +879,11 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
   // Categorie apart opslaan voor AI fallback
   const catK = mapping['Categorie'];
   if (catK) r._catFallback = (rij[headers.indexOf(catK)]||'').trim();
+
+  // Normaliseer Merk naar Title Case — voorkomt dubbelen (DUNLOP vs Dunlop)
+  if (r.Merk) {
+    r.Merk = normaliseerMerk(r.Merk);
+  }
 
   // Algam prefix strip: "DUN 6502" → Type="6502", Leverancier_artikel="DUN 6502"
   if (profiel?.algamPrefixStrip && r.Leverancier_artikel) {
@@ -1869,9 +1913,13 @@ function pasKortingToe(inkoopStr, merk) {
   const inkoop = parseFloat(inkoopStr.replace(',', '.'));
   if (isNaN(inkoop)) return inkoopStr;
   const merkUpper = (merk || '').toUpperCase();
-  // Exacte match of gedeeltelijke match
-  const reeks = kortingen[merkUpper] ||
-    Object.entries(kortingen).find(([k]) => merkUpper.includes(k) || k.includes(merkUpper))?.[1];
+  const merkTitle = (merk || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  // Match op CAPS, Title Case of gedeeltelijk
+  const reeks = kortingen[merkUpper] || kortingen[merkTitle] ||
+    Object.entries(kortingen).find(([k]) => {
+      const kUp = k.toUpperCase();
+      return merkUpper === kUp || merkUpper.includes(kUp) || kUp.includes(merkUpper);
+    })?.[1];
   if (!reeks || !reeks.length) return inkoopStr;
   const betalingAan = document.getElementById('kortingBetaling')?.checked || false;
   const toeTePassenReeks = betalingAan ? reeks : reeks.slice(0, -1).concat(reeks.length === 1 ? reeks : []);
