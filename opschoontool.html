@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.7</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.9</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -262,15 +262,17 @@
           Betalingskorting is optioneel — vink aan of je die meeneemt.
         </small>
         <div id="kortingLijst" style="margin-bottom:10px;display:flex;flex-direction:column;gap:4px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;">
-          <select id="kortingMerk" style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;font-family:inherit;">
-            <option value="">— kies merk —</option>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:4px;">
+          <select id="kortingMerkSelect" onchange="kortingMerkSelectChange()" style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;font-family:inherit;">
+            <option value="">— kies of typ merk —</option>
           </select>
           <input type="text" id="kortingReeks" placeholder="bijv. 6,3,2" 
             style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;text-align:center;">
           <button class="btn btn-groen" onclick="voegKortingToe()" style="padding:6px 12px;font-size:0.8rem;">+</button>
         </div>
-        <small style="color:var(--grijs);display:block;margin-bottom:6px;">Merken verschijnen automatisch na het uploaden van bestanden</small>
+        <input type="text" id="kortingMerk" placeholder="Of typ merknaam vrij (bijv. DUNLOP)" 
+          style="width:100%;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;margin-bottom:6px;font-family:inherit;text-transform:uppercase;">
+        <small style="color:var(--grijs);display:block;margin-bottom:6px;">Dropdown vult na uploaden · of typ direct in het veld eronder</small>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <input type="checkbox" id="kortingBetaling" style="width:14px;height:14px;accent-color:var(--oranje);">
           <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting in reeks is betalingskorting (optioneel toepassen)</label>
@@ -406,7 +408,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "3.7";
+const TOOL_VERSIE = "3.9";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -424,7 +426,8 @@ const VELDEN = [
   {key:'Type',               label:'Type',                   vplicht:true},
   {key:'Soort',              label:'Soort',                  vplicht:false},
   {key:'Omschrijving',       label:'Omschrijving',           vplicht:false},
-  {key:'Inkoop_ex',          label:'Inkoop ex',              vplicht:true},
+  {key:'Inkoop_basis',        label:'Inkoop basis (catalogus)', vplicht:false},
+  {key:'Inkoop_ex',          label:'Inkoop ex (na korting)',  vplicht:true},
   {key:'Verkoop_incl',       label:'Verkoop incl',           vplicht:true},
   {key:'Sub_omschrijving',   label:'Sub omschrijving',       vplicht:false},
   {key:'Maat',               label:'Maat',                   vplicht:false},
@@ -1087,9 +1090,14 @@ async function startVerwerking() {
       aantalFrans++;
     }
 
-    // Pas dealerkorting toe op inkoopprijs
+    // Pas dealerkorting toe op inkoopprijs — bewaar basis
     if (r.Inkoop_ex && r.Merk) {
-      r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
+      const kortingReeks = kortingen[(r.Merk||'').toUpperCase()] ||
+        Object.entries(kortingen).find(([k]) => (r.Merk||'').toUpperCase().includes(k))?.[1];
+      if (kortingReeks && kortingReeks.length) {
+        r.Inkoop_basis = r.Inkoop_ex; // originele catalogusprijs bewaren
+        r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
+      }
     }
     r.Omschrijving = stelOmschrijvingSamen(r); // altijd samenstellen
     if (optSoort && !r.Soort && (r.Type || r.name)) r._soortNodig = true;
@@ -1521,10 +1529,7 @@ let kortingBetalingAan = false;
 
 function laadKortingen() {
   const op = localStorage.getItem('schreeven_kortingen');
-  kortingen = op ? JSON.parse(op) : {
-    'DUNLOP': [6, 3],
-    'ERNIE BALL': [5],
-  };
+  kortingen = op ? JSON.parse(op) : {};
   renderKortingLijst();
 }
 
@@ -1541,14 +1546,26 @@ function renderKortingLijst() {
   }
   el.innerHTML = Object.entries(kortingen).map(([merk, reeks]) => {
     const effectief = reeks.reduce((p, k) => p * (1 - k/100), 1);
-    const steps = reeks.map(k => `-${k}%`).join(' → ');
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--warmgrijs);border-radius:5px;font-size:0.78rem;">
-      <span style="font-weight:700;flex:1;">${merk}</span>
-      <span style="color:var(--grijs);">${steps}</span>
-      <span style="color:var(--donkergroen);font-weight:600;">= ×${effectief.toFixed(4)}</span>
-      <button onclick="verwijderKorting('${merk}')" style="background:none;border:none;cursor:pointer;color:var(--grijs);font-size:0.9rem;padding:0 2px;">✕</button>
+    const formule = reeks.map(k => `×${(1-k/100).toFixed(2)}`).join(' → ');
+    const betalingAan = document.getElementById('kortingBetaling')?.checked;
+    const actieveReeks = (betalingAan || reeks.length === 1) ? reeks : reeks.slice(0, -1);
+    const actief = actieveReeks.reduce((p,k) => p*(1-k/100), 1);
+    const betalingLabel = reeks.length > 1 ? ` <span style="color:var(--oranje);font-size:0.68rem;">(+${reeks[reeks.length-1]}% betaling)</span>` : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--warmgrijs);border-radius:5px;font-size:0.78rem;flex-wrap:wrap;">
+      <span style="font-weight:700;min-width:80px;">${merk}</span>
+      <span style="color:var(--grijs);font-family:monospace;font-size:0.72rem;">${formule}</span>
+      <span style="color:var(--donkergroen);font-weight:600;">= ×${actief.toFixed(4)}</span>
+      <span style="color:var(--grijs);font-size:0.7rem;">op Inkoop_basis</span>
+      ${betalingLabel}
+      <button onclick="verwijderKorting('${merk}')" style="background:none;border:none;cursor:pointer;color:var(--grijs);font-size:0.9rem;padding:0 2px;margin-left:auto;">✕</button>
     </div>`;
   }).join('');
+}
+
+function kortingMerkSelectChange() {
+  const sel = document.getElementById('kortingMerkSelect');
+  const inp = document.getElementById('kortingMerk');
+  if (sel.value) inp.value = sel.value;
 }
 
 function vulKortingMerkDropdown() {
@@ -1576,8 +1593,10 @@ function vulKortingMerkDropdown() {
 }
 
 function voegKortingToe() {
-  const merkEl = document.getElementById('kortingMerk');
-  const merk = (merkEl.value || '').trim().toUpperCase();
+  // Vrij tekstveld heeft prioriteit, anders dropdown
+  const inp = document.getElementById('kortingMerk');
+  const sel = document.getElementById('kortingMerkSelect');
+  const merk = ((inp?.value || sel?.value || '')).trim().toUpperCase();
   const reeksStr = (document.getElementById('kortingReeks').value || '').trim();
   if (!merk || !reeksStr) return;
   const reeks = reeksStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 0 && n < 100);
@@ -1587,6 +1606,7 @@ function voegKortingToe() {
   renderKortingLijst();
   document.getElementById('kortingMerk').value = '';
   document.getElementById('kortingReeks').value = '';
+  document.getElementById('kortingMerkSelect').value = '';
   log(`Korting opgeslagen: ${merk} → ${reeks.map(k=>k+'%').join(' → ')}`, 'ok');
   vulKortingMerkDropdown();
 }
