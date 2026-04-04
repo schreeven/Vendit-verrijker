@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.1</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v3.3</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -251,6 +251,31 @@
           <div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>
         </div>
         <div class="profiel-nieuw" onclick="openNieuwProfiel()">+ Nieuw leveranciersprofiel aanmaken</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">💰 Dealerkortingen per merk</div>
+      <div class="panel-body">
+        <small style="display:block;margin-bottom:10px;color:var(--grijs);">
+          Kortingen worden gestapeld berekend: 6% → dan 3% over uitkomst → dan 2% etc.<br>
+          Betalingskorting is optioneel — vink aan of je die meeneemt.
+        </small>
+        <div id="kortingLijst" style="margin-bottom:10px;display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;">
+          <select id="kortingMerk" style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;font-family:inherit;">
+            <option value="">— kies merk —</option>
+          </select>
+          <input type="text" id="kortingReeks" placeholder="bijv. 6,3,2" 
+            style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;text-align:center;">
+          <button class="btn btn-groen" onclick="voegKortingToe()" style="padding:6px 12px;font-size:0.8rem;">+</button>
+        </div>
+        <small style="color:var(--grijs);display:block;margin-bottom:6px;">Merken verschijnen automatisch na het uploaden van bestanden</small>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <input type="checkbox" id="kortingBetaling" style="width:14px;height:14px;accent-color:var(--oranje);">
+          <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting in reeks is betalingskorting (optioneel toepassen)</label>
+        </div>
+        <small style="color:var(--grijs);">Reeks: kommagescheiden percentages. 6,3 = eerst 6% dan 3% over uitkomst</small>
       </div>
     </div>
 
@@ -381,7 +406,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "3.1";
+const TOOL_VERSIE = "3.3";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -496,6 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('apiKey').addEventListener('change', () =>
     localStorage.setItem('schreeven_api_key', document.getElementById('apiKey').value));
   laadProfielen();
+  laadKortingen();
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
@@ -982,6 +1008,10 @@ async function startVerwerking() {
       aantalFrans++;
     }
 
+    // Pas dealerkorting toe op inkoopprijs
+    if (r.Inkoop_ex && r.Merk) {
+      r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
+    }
     r.Omschrijving = stelOmschrijvingSamen(r); // altijd samenstellen
     if (optSoort && !r.Soort && (r.Type || r.name)) r._soortNodig = true;
     verwerktRijen.push(r);
@@ -1054,6 +1084,7 @@ async function detecteerSoortBatch(producten) {
 function renderAlles() {
   renderBestandenLijst();
   renderBestandProfielen();
+  vulKortingMerkDropdown();
   updateAlgamMergeBanner();
   document.getElementById('mergePanel').style.display = bestanden.length > 1 ? 'block' : 'none';
   document.getElementById('stap3nr').textContent = bestanden.length > 1 ? '3' : '2';
@@ -1391,6 +1422,109 @@ function maakRapport(totaal, gemergd, frans, overgeslagen, soortAi) {
     ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten met Franse naam gemarkeerd</strong> — controleer en vertaal vóór Vendit import</div></div>`:''}
     ${soortAi?`<div class="melding m-info"><span>🤖</span><div><strong>${soortAi} Soort-labels door AI ingevuld</strong></div></div>`:''}
     <div class="melding m-ok"><span>📥</span><div>Output klaar voor Vendit CAB import of als invoer voor de Vendit-verrijker</div></div>`;
+}
+
+// ─── DEALERKORTINGEN ─────────────────────────
+let kortingen = {}; // {MERKNAAM: [6, 3, 2]}
+let kortingBetalingAan = false;
+
+function laadKortingen() {
+  const op = localStorage.getItem('schreeven_kortingen');
+  kortingen = op ? JSON.parse(op) : {
+    'DUNLOP': [6, 3],
+    'ERNIE BALL': [5],
+  };
+  renderKortingLijst();
+}
+
+function slaKortingenOp() {
+  localStorage.setItem('schreeven_kortingen', JSON.stringify(kortingen));
+}
+
+function renderKortingLijst() {
+  const el = document.getElementById('kortingLijst');
+  if (!el) return;
+  if (!Object.keys(kortingen).length) {
+    el.innerHTML = '<div style="font-size:0.75rem;color:var(--grijs);padding:6px 0;">Geen kortingen ingesteld</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(kortingen).map(([merk, reeks]) => {
+    const effectief = reeks.reduce((p, k) => p * (1 - k/100), 1);
+    const steps = reeks.map(k => `-${k}%`).join(' → ');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--warmgrijs);border-radius:5px;font-size:0.78rem;">
+      <span style="font-weight:700;flex:1;">${merk}</span>
+      <span style="color:var(--grijs);">${steps}</span>
+      <span style="color:var(--donkergroen);font-weight:600;">= ×${effectief.toFixed(4)}</span>
+      <button onclick="verwijderKorting('${merk}')" style="background:none;border:none;cursor:pointer;color:var(--grijs);font-size:0.9rem;padding:0 2px;">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function vulKortingMerkDropdown() {
+  const sel = document.getElementById('kortingMerk');
+  if (!sel) return;
+  const huidig = sel.value;
+  // Verzamel merken uit alle geladen bestanden
+  const merken = new Set();
+  bestanden.forEach(b => {
+    const merkMapping = b.mapping['Merk'];
+    if (!merkMapping) return;
+    const merkIdx = b.headers.indexOf(merkMapping);
+    if (merkIdx < 0) return;
+    b.rijen.forEach(r => {
+      const m = (r[merkIdx] || '').trim().toUpperCase();
+      if (m) merken.add(m);
+    });
+  });
+  // Voeg ook al ingestelde merken toe
+  Object.keys(kortingen).forEach(m => merken.add(m));
+  sel.innerHTML = '<option value="">— kies merk —</option>' +
+    [...merken].sort().map(m =>
+      `<option value="${m}" ${m === huidig ? 'selected' : ''}>${m}${kortingen[m] ? ' ✓' : ''}</option>`
+    ).join('');
+}
+
+function voegKortingToe() {
+  const merkEl = document.getElementById('kortingMerk');
+  const merk = (merkEl.value || '').trim().toUpperCase();
+  const reeksStr = (document.getElementById('kortingReeks').value || '').trim();
+  if (!merk || !reeksStr) return;
+  const reeks = reeksStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 0 && n < 100);
+  if (!reeks.length) return;
+  kortingen[merk] = reeks;
+  slaKortingenOp();
+  renderKortingLijst();
+  document.getElementById('kortingMerk').value = '';
+  document.getElementById('kortingReeks').value = '';
+  log(`Korting opgeslagen: ${merk} → ${reeks.map(k=>k+'%').join(' → ')}`, 'ok');
+  vulKortingMerkDropdown();
+}
+
+function verwijderKorting(merk) {
+  delete kortingen[merk];
+  slaKortingenOp();
+  renderKortingLijst();
+}
+
+function pasKortingToe(inkoopStr, merk) {
+  if (!inkoopStr) return inkoopStr;
+  const inkoop = parseFloat(inkoopStr.replace(',', '.'));
+  if (isNaN(inkoop)) return inkoopStr;
+  const merkUpper = (merk || '').toUpperCase();
+  // Exacte match of gedeeltelijke match
+  const reeks = kortingen[merkUpper] ||
+    Object.entries(kortingen).find(([k]) => merkUpper.includes(k) || k.includes(merkUpper))?.[1];
+  if (!reeks || !reeks.length) return inkoopStr;
+  const betalingAan = document.getElementById('kortingBetaling')?.checked || false;
+  const toeTePassenReeks = betalingAan ? reeks : reeks.slice(0, -1).concat(reeks.length === 1 ? reeks : []);
+  // Pas elke korting gestapeld toe
+  const stappen = betalingAan ? reeks : reeks.slice(0, reeks.length > 1 ? reeks.length - 1 : 1);
+  // Eigenlijk: altijd alle kortingen BEHALVE de laatste als die betalingskorting is
+  const effectieveReeks = (betalingAan || reeks.length === 1) ? reeks : reeks.slice(0, -1);
+  // Als betalingAan: neem hele reeks. Anders: alles behalve laatste (betalingskorting)
+  const finalReeks = betalingAan ? reeks : (reeks.length > 1 ? reeks.slice(0, -1) : reeks);
+  const resultaat = finalReeks.reduce((p, k) => p * (1 - k/100), inkoop);
+  return resultaat.toFixed(2);
 }
 
 // ─── MERKFILTER ──────────────────────────────
