@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.1</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.2</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -262,17 +262,16 @@
           Betalingskorting is optioneel — vink aan of je die meeneemt.
         </small>
         <div id="kortingLijst" style="margin-bottom:10px;display:flex;flex-direction:column;gap:4px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:4px;">
-          <select id="kortingMerkSelect" onchange="kortingMerkSelectChange()" style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;font-family:inherit;">
-            <option value="">— kies of typ merk —</option>
-          </select>
-          <input type="text" id="kortingReeks" placeholder="bijv. 6,3,2" 
-            style="padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;text-align:center;">
-          <button class="btn btn-groen" onclick="voegKortingToe()" style="padding:6px 12px;font-size:0.8rem;">+</button>
-        </div>
+        <select id="kortingMerkSelect" onchange="kortingMerkSelectChange()" style="width:100%;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;font-family:inherit;margin-bottom:4px;">
+          <option value="">— kies of typ merk —</option>
+        </select>
         <input type="text" id="kortingMerk" placeholder="Of typ merknaam vrij (bijv. DUNLOP)" 
-          style="width:100%;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;margin-bottom:6px;font-family:inherit;text-transform:uppercase;">
-        <small style="color:var(--grijs);display:block;margin-bottom:6px;">Dropdown vult na uploaden · of typ direct in het veld eronder</small>
+          style="width:100%;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;margin-bottom:4px;font-family:inherit;text-transform:uppercase;">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <input type="text" id="kortingReeks" placeholder="Kortingen: bijv. 6,3,2" 
+            style="flex:1;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;text-align:center;">
+          <button class="btn btn-groen" onclick="voegKortingToe()" style="padding:6px 14px;font-size:0.8rem;white-space:nowrap;">+</button>
+        </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <input type="checkbox" id="kortingBetaling" style="width:14px;height:14px;accent-color:var(--oranje);">
           <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting in reeks is betalingskorting (optioneel toepassen)</label>
@@ -416,7 +415,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.1";
+const TOOL_VERSIE = "4.2";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
