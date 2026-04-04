@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.3</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.5</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -350,13 +350,17 @@
         </div>
 
         <div id="downloadOpties" style="display:none;margin-top:12px;padding:12px 14px;background:var(--warmgrijs);border-radius:8px;border:1px solid var(--lichtgrijs);">
-          <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Download filter</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <select id="merkFilter" style="padding:6px 10px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.82rem;min-width:180px;">
-              <option value="">Alle merken</option>
-            </select>
-            <span style="font-size:0.75rem;color:var(--grijs);" id="filterTeller"></span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.3px;">Download filter — merken</div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="merkFilterAlles(true)" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--lichtgrijs);border-radius:4px;background:white;cursor:pointer;color:var(--donkergroen);">Alles</button>
+              <button onclick="merkFilterAlles(false)" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--lichtgrijs);border-radius:4px;background:white;cursor:pointer;color:var(--grijs);">Geen</button>
+            </div>
           </div>
+          <input type="text" id="merkFilterZoek" placeholder="Zoek merk..." onkeyup="filterMerkLijst()" 
+            style="width:100%;padding:5px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;margin-bottom:6px;">
+          <div id="merkFilterLijst" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;"></div>
+          <div style="margin-top:8px;font-size:0.75rem;color:var(--grijs);" id="filterTeller"></div>
         </div>
         <div class="btn-rij">
           <button class="btn btn-groen" id="btnStart" onclick="startVerwerking()" disabled>▶ Start verwerking</button>
@@ -447,7 +451,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.3";
+const TOOL_VERSIE = "4.5";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -995,8 +999,9 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
   const alleSleutels = new Set();
   // Descriptifs_nl mag geen nieuwe sleutels aanmaken — alleen aanvullen
   // Basis = AB Music + Produits
+  // Beide descriptifs types (NL en FR) zijn aanvulling, niet basis
   const descriptifIndices = bestanden
-    .map((b,i) => b.algamBestandType === 'descriptifs' ? i : -1)
+    .map((b,i) => (b.algamBestandType === 'descriptifs' || b.algamBestandType === 'descriptifs_fr') ? i : -1)
     .filter(i => i >= 0);
   lookups.forEach((l, idx) => {
     if (!descriptifIndices.includes(idx)) l.forEach((_,k) => alleSleutels.add(k));
@@ -1875,35 +1880,74 @@ function pasKortingToe(inkoopStr, merk) {
 }
 
 // ─── MERKFILTER ──────────────────────────────
+let geselecteerdeMerken = new Set();
+
 function vulMerkFilter() {
   if (!verwerktRijen.length) return;
   const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))].sort();
-  const sel = document.getElementById('merkFilter');
-  sel.innerHTML = '<option value="">Alle merken (' + verwerktRijen.length.toLocaleString() + ')</option>';
-  merken.forEach(m => {
-    const n = verwerktRijen.filter(r => r.Merk === m).length;
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = `${m} (${n})`;
-    sel.appendChild(opt);
-  });
+  geselecteerdeMerken = new Set(merken);
+  renderMerkFilterLijst(merken);
   document.getElementById('downloadOpties').style.display = 'block';
-  sel.addEventListener('change', updateFilterTeller);
   updateFilterTeller();
 }
-function updateFilterTeller() {
-  const merk = document.getElementById('merkFilter').value;
-  const gefilterd = merk ? verwerktRijen.filter(r => r.Merk === merk) : verwerktRijen;
-  document.getElementById('filterTeller').textContent =
-    merk ? `${gefilterd.length} producten geselecteerd` : '';
+
+function renderMerkFilterLijst(merken) {
+  const el = document.getElementById('merkFilterLijst');
+  if (!el) return;
+  if (!merken) merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))].sort();
+  el.innerHTML = merken.map(m => {
+    const n = verwerktRijen.filter(r => r.Merk === m).length;
+    const checked = geselecteerdeMerken.has(m);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:0.8rem;${checked?'background:#edf9ed':''}">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleMerk('${m.replace(/'/g,"\'")}', this.checked)"
+        style="width:14px;height:14px;accent-color:var(--groen);flex-shrink:0;">
+      <span style="flex:1;">${m}</span>
+      <span style="color:var(--grijs);font-size:0.72rem;">${n}</span>
+    </label>`;
+  }).join('');
 }
+
+function toggleMerk(merk, aan) {
+  if (aan) geselecteerdeMerken.add(merk);
+  else geselecteerdeMerken.delete(merk);
+  updateFilterTeller();
+  renderMerkFilterLijst();
+}
+
+function merkFilterAlles(aan) {
+  const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))];
+  geselecteerdeMerken = aan ? new Set(merken) : new Set();
+  renderMerkFilterLijst();
+  updateFilterTeller();
+}
+
+function filterMerkLijst() {
+  const zoek = (document.getElementById('merkFilterZoek')?.value||'').toLowerCase();
+  const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))]
+    .filter(m => m.toLowerCase().includes(zoek)).sort();
+  renderMerkFilterLijst(merken);
+}
+
+function updateFilterTeller() {
+  const alle = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))];
+  const isAlles = geselecteerdeMerken.size === alle.length;
+  const n = isAlles ? verwerktRijen.length : verwerktRijen.filter(r => geselecteerdeMerken.has(r.Merk)).length;
+  const el = document.getElementById('filterTeller');
+  if (el) el.textContent = isAlles
+    ? `Alle ${alle.length} merken · ${n.toLocaleString()} producten`
+    : `${geselecteerdeMerken.size} van ${alle.length} merken · ${n.toLocaleString()} producten`;
+}
+
 
 // ─── DOWNLOAD ────────────────────────────────
 function downloadCSV() {
   if (!verwerktRijen.length) return;
-  const merk = document.getElementById('merkFilter')?.value || '';
-  const rijen = merk ? verwerktRijen.filter(r => r.Merk === merk) : verwerktRijen;
-  const merkSuffix = merk ? `_${merk.toLowerCase().replace(/[^a-z0-9]/g,'_')}` : '';
+  const alle = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))];
+  const isAlles = !geselecteerdeMerken || geselecteerdeMerken.size === alle.length;
+  const rijen = isAlles ? verwerktRijen : verwerktRijen.filter(r => geselecteerdeMerken.has(r.Merk));
+  const merkSuffix = (!isAlles && geselecteerdeMerken.size === 1)
+    ? '_' + [...geselecteerdeMerken][0].toLowerCase().replace(/[^a-z0-9]/g,'_')
+    : (!isAlles ? `_${geselecteerdeMerken.size}merken` : '');
   const keys = VELDEN.map(v=>v.key);
   // Velden die als tekst moeten worden opgeslagen (niet als formule)
   const TEKST_VELDEN = new Set(['Descriptif','Sub_omschrijving','Omschrijving','name']);
