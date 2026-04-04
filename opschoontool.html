@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.5</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.6</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -451,7 +451,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.5";
+const TOOL_VERSIE = "4.6";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -1054,6 +1054,12 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
   });
 
   log(`Merge: ${resultaat.length} unieke records (${aantalGemergd} uit meerdere bestanden)`, 'ok');
+  // Debug: tel per merk
+  const merkTeller = {};
+  resultaat.forEach(r => { const m = r.Merk||'?'; merkTeller[m] = (merkTeller[m]||0)+1; });
+  const top5 = Object.entries(merkTeller).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  log(`Top merken: ${top5.map(([m,n])=>m+':'+n).join(', ')}`, 'info');
+  log(`Basis sleutels: ${alleSleutels.size} (descriptifs uitgesloten: ${descriptifIndices.length} bestanden)`, 'info');
   return { records: resultaat, aantalGemergd };
 }
 
@@ -1960,7 +1966,7 @@ function downloadCSV() {
     return quoten ? `"${w.replace(/"/g,'""')}"` : w;
   }).join(';'));
   const csv = '\uFEFF' + [keys.join(';'), ...regels].join('\n');
-  log(`CSV gedownload — ${rijen.length} producten${merk ? ' (' + merk + ')' : ''}`, 'ok');
+  log(`CSV gedownload — ${rijen.length} producten${merkSuffix ? ' (' + merkSuffix.slice(1) + ')' : ''}`, 'ok');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
   a.download = `schreeven_opgeschoond${merkSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
