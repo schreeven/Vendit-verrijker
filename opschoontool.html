@@ -177,7 +177,7 @@
   </div>
   <div class="divider"></div>
   <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.2</strong></div>
+  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v4.3</strong></div>
 </header>
 <nav>
   <a href="index.html">⚡ Vendit-verrijker</a>
@@ -262,21 +262,11 @@
           Betalingskorting is optioneel — vink aan of je die meeneemt.
         </small>
         <div id="kortingLijst" style="margin-bottom:10px;display:flex;flex-direction:column;gap:4px;"></div>
-        <select id="kortingMerkSelect" onchange="kortingMerkSelectChange()" style="width:100%;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;font-family:inherit;margin-bottom:4px;">
-          <option value="">— kies of typ merk —</option>
-        </select>
-        <input type="text" id="kortingMerk" placeholder="Of typ merknaam vrij (bijv. DUNLOP)" 
-          style="width:100%;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;margin-bottom:4px;font-family:inherit;text-transform:uppercase;">
-        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
-          <input type="text" id="kortingReeks" placeholder="Kortingen: bijv. 6,3,2" 
-            style="flex:1;padding:6px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;text-align:center;">
-          <button class="btn btn-groen" onclick="voegKortingToe()" style="padding:6px 14px;font-size:0.8rem;white-space:nowrap;">+</button>
-        </div>
+        <button class="btn btn-groen" onclick="openKortingWizard()" style="width:100%;margin-bottom:8px;">+ Korting toevoegen</button>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <input type="checkbox" id="kortingBetaling" style="width:14px;height:14px;accent-color:var(--oranje);">
-          <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting in reeks is betalingskorting (optioneel toepassen)</label>
+          <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting is betalingskorting (optioneel)</label>
         </div>
-        <small style="color:var(--grijs);">Reeks: kommagescheiden percentages. 6,3 = eerst 6% dan 3% over uitkomst</small>
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
           <button class="btn btn-outline" onclick="exporteerKortingen()" style="font-size:0.75rem;padding:5px 10px;">⬇ Exporteer als XLS</button>
           <label class="btn btn-outline" style="font-size:0.75rem;padding:5px 10px;cursor:pointer;">
@@ -378,6 +368,48 @@
   </div>
 </main>
 
+<!-- MODAL KORTING WIZARD -->
+<div class="modal-overlay" id="modalKortingWizard">
+  <div class="modal" style="max-width:420px;">
+    <h3>💰 Dealerkorting instellen</h3>
+    
+    <!-- Stap 1: Merk -->
+    <div id="kwStap1">
+      <label>Stap 1 — Kies merk</label>
+      <select id="kwMerkSelect" style="width:100%;padding:8px 11px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.85rem;margin-bottom:8px;font-family:inherit;">
+        <option value="">— kies merk —</option>
+      </select>
+      <input type="text" id="kwMerkVrij" placeholder="Of typ merknaam (bijv. DUNLOP)" 
+        style="width:100%;padding:8px 11px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.85rem;font-family:inherit;text-transform:uppercase;">
+      <div class="modal-knoppen">
+        <button class="btn btn-outline" onclick="sluitModal('modalKortingWizard')">Annuleren</button>
+        <button class="btn btn-groen" onclick="kwNaarStap2()">Volgende →</button>
+      </div>
+    </div>
+
+    <!-- Stap 2: Kortingen -->
+    <div id="kwStap2" style="display:none;">
+      <div style="font-size:0.8rem;color:var(--grijs);margin-bottom:10px;">Merk: <strong id="kwMerkLabel"></strong></div>
+      <label>Stap 2 — Voer kortingen in</label>
+      <small style="display:block;color:var(--grijs);margin-bottom:10px;">Voeg één voor één toe. Elke korting wordt berekend over de uitkomst van de vorige.</small>
+      <div id="kwReeksLijst" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <input type="number" id="kwNieuweKorting" placeholder="%" min="0.1" max="99" step="0.1"
+          style="flex:1;padding:8px 11px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.85rem;text-align:center;"
+          onkeydown="if(event.key==='Enter')kwVoegKortingToe()">
+        <button class="btn btn-groen" onclick="kwVoegKortingToe()" style="padding:8px 14px;">+ Voeg toe</button>
+      </div>
+      <div id="kwBerekening" style="background:var(--warmgrijs);border-radius:6px;padding:10px;font-size:0.82rem;margin-bottom:10px;display:none;">
+        <div id="kwBerekeningTekst"></div>
+      </div>
+      <div class="modal-knoppen">
+        <button class="btn btn-outline" onclick="kwNaarStap1()">← Terug</button>
+        <button class="btn btn-groen" onclick="kwBevestig()" id="kwBevestigBtn" disabled>✓ Opslaan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MAPPING -->
 <div class="modal-overlay" id="modalMapping">
   <div class="modal">
@@ -415,7 +447,7 @@
 
 <script>
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "4.2";
+const TOOL_VERSIE = "4.3";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -1567,6 +1599,119 @@ function renderKortingLijst() {
       <button onclick="verwijderKorting('${merk}')" style="background:none;border:none;cursor:pointer;color:var(--grijs);font-size:0.9rem;padding:0 2px;margin-left:auto;">✕</button>
     </div>`;
   }).join('');
+}
+
+// ─── KORTING WIZARD ──────────────────────────
+let kwReeks = [];
+let kwMerk = '';
+
+function openKortingWizard() {
+  kwReeks = [];
+  kwMerk = '';
+  kwNaarStap1();
+  // Vul merk dropdown
+  const sel = document.getElementById('kwMerkSelect');
+  const merken = new Set(Object.keys(kortingen));
+  bestanden.forEach(b => {
+    const merkMapping = b.mapping['Merk'];
+    let merkIdx = merkMapping ? b.headers.indexOf(merkMapping) : -1;
+    if (merkIdx < 0) merkIdx = b.headers.findIndex(h => /^(merk|marque|brand)$/i.test(h.trim()));
+    if (merkIdx < 0) return;
+    b.rijen.forEach(r => {
+      const m = (r[merkIdx]||'').trim().toUpperCase();
+      if (m && m.length > 1 && m.length < 40) merken.add(m);
+    });
+  });
+  sel.innerHTML = '<option value="">— kies merk —</option>' +
+    [...merken].sort().map(m => `<option value="${m}">${m}${kortingen[m]?' ✓':''}</option>`).join('');
+  // Als merk al geselecteerd in dropdown, vul tekstveld
+  sel.onchange = () => { document.getElementById('kwMerkVrij').value = sel.value; };
+  document.getElementById('kwMerkVrij').value = '';
+  document.getElementById('modalKortingWizard').classList.add('open');
+}
+
+function kwNaarStap1() {
+  document.getElementById('kwStap1').style.display = 'block';
+  document.getElementById('kwStap2').style.display = 'none';
+}
+
+function kwNaarStap2() {
+  const sel = document.getElementById('kwMerkSelect');
+  const vrij = document.getElementById('kwMerkVrij');
+  kwMerk = (vrij.value || sel.value || '').trim().toUpperCase();
+  if (!kwMerk) { alert('Kies of typ eerst een merknaam'); return; }
+  // Laad bestaande kortingen als die er zijn
+  kwReeks = kortingen[kwMerk] ? [...kortingen[kwMerk]] : [];
+  document.getElementById('kwMerkLabel').textContent = kwMerk;
+  document.getElementById('kwStap1').style.display = 'none';
+  document.getElementById('kwStap2').style.display = 'block';
+  document.getElementById('kwNieuweKorting').value = '';
+  kwRenderReeks();
+  setTimeout(() => document.getElementById('kwNieuweKorting').focus(), 100);
+}
+
+function kwVoegKortingToe() {
+  const inp = document.getElementById('kwNieuweKorting');
+  const pct = parseFloat(inp.value);
+  if (isNaN(pct) || pct <= 0 || pct >= 100) return;
+  kwReeks.push(pct);
+  inp.value = '';
+  kwRenderReeks();
+  inp.focus();
+}
+
+function kwVerwijderStap(idx) {
+  kwReeks.splice(idx, 1);
+  kwRenderReeks();
+}
+
+function kwRenderReeks() {
+  const el = document.getElementById('kwReeksLijst');
+  const btn = document.getElementById('kwBevestigBtn');
+  const ber = document.getElementById('kwBerekening');
+  if (!kwReeks.length) {
+    el.innerHTML = '<div style="font-size:0.78rem;color:var(--grijs);padding:6px 0;">Nog geen kortingen toegevoegd</div>';
+    btn.disabled = true;
+    ber.style.display = 'none';
+    return;
+  }
+  el.innerHTML = kwReeks.map((k,i) => {
+    const factor = kwReeks.slice(0,i+1).reduce((p,x) => p*(1-x/100), 1);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--warmgrijs);border-radius:5px;font-size:0.82rem;">
+      <span style="color:var(--grijs);min-width:20px;">${i+1}.</span>
+      <span style="font-weight:600;">-${k}%</span>
+      <span style="color:var(--grijs);">→ ×${(1-k/100).toFixed(4)}</span>
+      <span style="color:var(--donkergroen);font-size:0.75rem;">= ${(factor*100).toFixed(2)}% van basis</span>
+      <button onclick="kwVerwijderStap(${i})" style="background:none;border:none;cursor:pointer;color:var(--grijs);margin-left:auto;">✕</button>
+    </div>`;
+  }).join('');
+  // Berekening tonen
+  const effectief = kwReeks.reduce((p,k) => p*(1-k/100), 1);
+  const betalingAan = document.getElementById('kortingBetaling')?.checked;
+  const actief = (betalingAan || kwReeks.length===1) ? kwReeks : kwReeks.slice(0,-1);
+  const actFactor = actief.reduce((p,k) => p*(1-k/100), 1);
+  ber.style.display = 'block';
+  document.getElementById('kwBerekeningTekst').innerHTML =
+    `<strong>Voorbeeld €100 inkoop:</strong><br>` +
+    kwReeks.map((k,i) => {
+      const v = kwReeks.slice(0,i+1).reduce((p,x)=>p*(1-x/100),100);
+      const isBetalingsstap = i === kwReeks.length-1 && kwReeks.length > 1;
+      return `<span style="color:${isBetalingsstap?'var(--oranje)':'var(--tekst)'}">
+        Stap ${i+1}: -${k}% = <strong>€${v.toFixed(2)}</strong>${isBetalingsstap?' (betalingskorting)':''}
+      </span>`;
+    }).join('<br>') +
+    `<br><span style="color:var(--donkergroen);font-weight:600;">Netto inkoop: €${(actFactor*100).toFixed(2)}</span>`;
+  btn.disabled = false;
+}
+
+function kwBevestig() {
+  if (!kwMerk || !kwReeks.length) return;
+  kortingen[kwMerk] = kwReeks;
+  slaKortingenOp();
+  renderKortingLijst();
+  vulKortingMerkDropdown();
+  sluitModal('modalKortingWizard');
+  log(`Korting opgeslagen: ${kwMerk} → ${kwReeks.map(k=>k+'%').join(' → ')}`, 'ok');
 }
 
 function kortingMerkSelectChange() {
