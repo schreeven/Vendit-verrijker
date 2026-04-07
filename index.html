@@ -103,7 +103,7 @@ select{cursor:pointer}
       <h1 style="font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:-.02em">Product Enrichment Tool</h1>
     </div>
   </div>
-  <p style="color:#888;font-size:12px">AI-gestuurde SEO-tekstverrijking · Feed Monitor · 3-laags routing · Anti-hallucinatie · Vendit CAB-export · <strong style="color:#006633">v2.1</strong></p>
+  <p style="color:#888;font-size:12px">AI-gestuurde SEO-tekstverrijking · Feed Monitor · 3-laags routing · Anti-hallucinatie · Vendit CAB-export · <strong style="color:#006633">v2.2</strong></p>
 </div>
 
 <!-- NAV -->
@@ -626,6 +626,39 @@ function normalizeRows(rows){
   return rows.map(r=>{const n={};for(const[k,v]of Object.entries(r)){const lk=k.toLowerCase().trim();const mapped=MAP[k]||MAP[lk]||k;n[mapped]=v;}return n;});
 }
 
+// Converteert opschoontool CSV output naar het verrijker formaat
+// Opschoontool kolommen: Merk, Type, Soort, Omschrijving, Inkoop_ex, Verkoop_incl,
+//   name, Leverancier_artikel, Descriptif, EAN, Kleur, Maat, Afbeelding, ...
+function normalizeOpschoonRows(rows){
+  return rows.map(r=>{
+    // Descriptif gebruiken als brondata — verrijker ziet dit als bestaande description
+    // en gebruikt het als context voor de AI. Filter instelling bepaalt of het herschreven wordt.
+    const descriptif=(r['Descriptif']||'').trim();
+    const subOmschrijving=(r['Sub_omschrijving']||'').trim();
+    const brondata=[descriptif,subOmschrijving].filter(Boolean).join(' | ');
+
+    const out={};
+    // Kopieer alle originele velden eerst
+    Object.assign(out,r);
+    // Zet verrijker-velden
+    out['name']=r['name']||r['Omschrijving']||'';
+    out['description']=brondata;          // AI gebruikt dit als brondata
+    out['description_short']='';          // leeg = moet verrijkt worden
+    out['meta_title']='';
+    out['meta_description']='';
+    out['meta_keywords']='';
+    out['Merk']=r['Merk']||'';
+    out['Type']=r['Type']||'';
+    out['Soort']=r['Soort']||'';
+    out['Maat']=r['Maat']||'';
+    out['Kleur']=r['Kleur']||'';
+    out['Productnummer']=r['Leverancier_artikel']||'';
+    out['Verkoop_incl']=r['Verkoop_incl']||'';
+    out['link_rewrite']=(out['name']||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    return out;
+  });
+}
+
 function isSkipped(r){
   const name=(r.name||'').toLowerCase();
   const sk=parseKw(skipKw),ok=parseKw(onlyKw);
@@ -676,7 +709,9 @@ function detectCsvType(headers){
   const lc=headers.map(h=>h.toLowerCase().trim());
   const isPrestaShop=lc.includes('name')&&(lc.includes('description')||lc.includes('description_short'));
   const isCalimex=lc.includes('omschrijving')||lc.includes('productnummer');
-  return{isPrestaShop,isCalimex};
+  // Opschoontool output: heeft 'merk' + 'leverancier_artikel' + 'name'
+  const isOpschoon=lc.includes('merk')&&lc.includes('leverancier_artikel')&&lc.includes('name');
+  return{isPrestaShop,isCalimex,isOpschoon};
 }
 function buildAutoMapping(headers){
   const lc=headers.map(h=>h.toLowerCase().trim());
@@ -729,9 +764,15 @@ function processFile(text,file){
   ['downloadBtn','reportBtn','insuffBtn'].forEach(id=>{const el=$(id);if(el)el.style.display='none';});
   updateStats();
   rawCsvRows=raw;rawCsvHeaders=Object.keys(raw[0]);
-  const{isPrestaShop}=detectCsvType(rawCsvHeaders);
+  const{isPrestaShop,isOpschoon}=detectCsvType(rawCsvHeaders);
   const autoMapping=buildAutoMapping(rawCsvHeaders);
   if(isPrestaShop){finishProcessFile(normalizeRows(raw));}
+  else if(isOpschoon){
+    // Automatisch filter op 'desc' zetten — description heeft Descriptif brondata, short is leeg
+    if(filterMode==='strict'){setFilter('desc');}
+    finishProcessFile(normalizeOpschoonRows(raw));
+    addLog('📦 Opschoontool CSV herkend — filter automatisch ingesteld op "Description"','info');
+  }
   else{showMappingUI(rawCsvHeaders,autoMapping);showStatus('📋 '+raw.length.toLocaleString()+' rijen geladen · koppel de kolommen hieronder');}
 }
 function finishProcessFile(normalized){
@@ -889,7 +930,16 @@ async function callApi(messages,model,useSearch=false){
 }
 
 function buildProductContext(r){const extras=[r['Merk'],r['Type'],r['Maat'],r['Kleur'],r['Soort']].filter(v=>v&&v.trim());return extras.length?r.name+' ('+extras.join(', ')+')':r.name;}
-function buildBronInfo(r){const short=stripHtml(r.description_short||'');const existing=stripHtml(r.description||'');return[short,existing].filter(Boolean).join(' | ').slice(0,400);}
+function buildBronInfo(r){
+  const short=stripHtml(r.description_short||'');
+  const existing=stripHtml(r.description||'');
+  // Extra context uit opschoontool velden
+  const extras=[];
+  if(r['Soort']&&r['Soort'].trim()) extras.push('Soort: '+r['Soort'].trim());
+  if(r['Maat']&&r['Maat'].trim()) extras.push('Maat: '+r['Maat'].trim());
+  if(r['Kleur']&&r['Kleur'].trim()) extras.push('Kleur: '+r['Kleur'].trim());
+  return[short,existing,...extras].filter(Boolean).join(' | ').slice(0,500);
+}
 
 async function tryHaiku(batch){
   const descInstr=genDesc?'Vul description in.':'Laat description leeg ("")';
