@@ -210,6 +210,42 @@ select{cursor:pointer}
   </div>
 
   <div class="card">
+    <span class="lbl">Schrijfstijl — hoeveelheid tekst per product</span>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+      <div class="filter-btn" id="stijlAuto" onclick="setStijl('auto')">
+        <div style="font-size:12px;font-weight:700;color:#444;margin-bottom:3px">Automatisch</div>
+        <div style="font-size:11px;color:#999;line-height:1.4">Op basis van prijs</div>
+      </div>
+      <div class="filter-btn active" id="stijlCompact" onclick="setStijl('compact')">
+        <div style="font-size:12px;font-weight:700;color:#006633;margin-bottom:3px">Compact</div>
+        <div style="font-size:11px;color:#3aaa35;line-height:1.4">Kort · accessoires, plectra</div>
+      </div>
+      <div class="filter-btn" id="stijlStandaard" onclick="setStijl('standaard')">
+        <div style="font-size:12px;font-weight:700;color:#444;margin-bottom:3px">Standaard</div>
+        <div style="font-size:11px;color:#999;line-height:1.4">Normaal · meeste producten</div>
+      </div>
+      <div class="filter-btn" id="stijlUitgebreid" onclick="setStijl('uitgebreid')">
+        <div style="font-size:12px;font-weight:700;color:#444;margin-bottom:3px">Uitgebreid</div>
+        <div style="font-size:11px;color:#999;line-height:1.4">Lang · gitaren, versterkers</div>
+      </div>
+    </div>
+    <div id="stijlAutoInstellingen" style="display:none;background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:13px 15px;margin-bottom:0">
+      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:10px">Automatische prijsdrempels</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:#999;margin-bottom:4px">Onder € <input type="number" id="drempelCompact" value="20" min="1" max="9999" style="width:60px;padding:3px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px;display:inline"> = Compact</div>
+          <div style="font-size:10px;color:#bbb">bijv. plectra, riempjes, snaartjes</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#999;margin-bottom:4px">Boven € <input type="number" id="drempelUitgebreid" value="200" min="1" max="99999" style="width:60px;padding:3px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px;display:inline"> = Uitgebreid</div>
+          <div style="font-size:10px;color:#bbb">bijv. gitaren, versterkers, DJ-sets</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:#aaa;margin-top:8px">Daartussen = Standaard · Prijs wordt gelezen uit kolom <code>Verkoop_incl</code> of <code>price</code></div>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="collapsible-header" onclick="toggleCollapsible('promptSection')">
       <div>
         <span class="lbl" style="margin-bottom:2px">System prompt — configureerbaar</span>
@@ -502,6 +538,7 @@ OUTPUT: Geef ALLEEN een JSON array terug, geen uitleg, geen markdown backticks.`
 // ════════════════════════════════════════════════════════════
 let allProducts=[],priorityProducts=[],enriched=[],insufficient=[],report=[];
 let filterMode='strict',genDesc=false,clearDesc=false,useWebSearch=false;
+let schrijfStijl='compact'; // 'auto' | 'compact' | 'standaard' | 'uitgebreid'
 let skipKw='',onlyKw='',running=false,stopReq=false,cursor=0,skippedCount=0;
 let csvHeaders=[],fileName='',startTime=null,previewIdx=null;
 let consecutiveRateLimitHits=0,lastBatchTime=0;
@@ -727,6 +764,35 @@ function setFilter(mode){
     el.querySelector('div:last-child').style.color=m===mode?'#3aaa35':'#999';
   });
 }
+
+function setStijl(s){
+  schrijfStijl=s;
+  ['auto','compact','standaard','uitgebreid'].forEach(m=>{
+    const el=$('stijl'+m.charAt(0).toUpperCase()+m.slice(1));
+    if(!el)return;
+    el.classList.toggle('active',m===s);
+    el.querySelector('div:first-child').style.color=m===s?'#006633':'#444';
+    el.querySelector('div:last-child').style.color=m===s?'#3aaa35':'#999';
+  });
+  $('stijlAutoInstellingen').style.display=s==='auto'?'block':'none';
+}
+
+function bepaalStijlVoorProduct(p){
+  if(schrijfStijl!=='auto')return schrijfStijl;
+  const drempelC=parseFloat($('drempelCompact').value)||20;
+  const drempelU=parseFloat($('drempelUitgebreid').value)||200;
+  const prijs=parseFloat((p['Verkoop_incl']||p['price']||p['verkoop_incl']||'0').toString().replace(',','.').replace(/[^0-9.]/g,''))||0;
+  if(prijs>0&&prijs<drempelC)return'compact';
+  if(prijs>=drempelU)return'uitgebreid';
+  return'standaard';
+}
+
+function stijlInstructie(stijl){
+  if(stijl==='compact')return'SCHRIJFSTIJL: Compact. Description_short: max 3 bullets, elk max 8 woorden. Meta_title: max 50 tekens. Meta_description: max 100 tekens. Geen lange verhalen — dit is een eenvoudig accessoire.';
+  if(stijl==='uitgebreid')return'SCHRIJFSTIJL: Uitgebreid. Description_short: 6-7 bullets met specs en voordelen. Meta_title: volledig beschrijvend max 60 tekens. Meta_description: volledig met kenmerken max 155 tekens. Dit is een hoofdproduct — schrijf een informatieve tekst.';
+  return'SCHRIJFSTIJL: Standaard. Description_short: 4-5 bullets. Meta_title: max 60 tekens. Meta_description: max 155 tekens.';
+}
+
 function toggleSetting(key){
   if(key==='genDesc'){genDesc=!genDesc;$('knobGenDesc').style.background=genDesc?'#006633':'#ccc';$('ballGenDesc').style.left=genDesc?'19px':'3px';$('toggleGenDesc').style.background=genDesc?'#edf7ed':'#f9f9f6';$('toggleGenDesc').style.borderColor=genDesc?'#006633':'#ddd';$('labelGenDesc').textContent=genDesc?'Aan — lange beschrijving krijgt zelfde structuur als short, maar uitgebreider':'Uit — alleen description_short wordt gevuld (standaard)';}
   if(key==='clearDesc'){clearDesc=!clearDesc;$('knobClearDesc').style.background=clearDesc?'#b45309':'#ccc';$('ballClearDesc').style.left=clearDesc?'19px':'3px';$('toggleClearDesc').style.background=clearDesc?'#fff8eb':'#f9f9f6';$('toggleClearDesc').style.borderColor=clearDesc?'#b45309':'#ddd';$('labelClearDesc').textContent=clearDesc?'Aan — huidige tekst wordt als broninfo gebruikt voor de short, daarna leeggemaakt':'Uit — bestaande description blijft staan';}
@@ -819,12 +885,20 @@ function buildBronInfo(r){const short=stripHtml(r.description_short||'');const e
 
 async function tryHaiku(batch){
   const descInstr=genDesc?'Vul description in.':'Laat description leeg ("")';
-  const lines=batch.map((p,i)=>{const info=buildBronInfo(p);const ctx=buildProductContext(p);return(i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [context: '+ctx+']':'')+(info?' — brondata: "'+info+'"':' — GEEN BRONDATA');}).join('\n');
+  const lines=batch.map((p,i)=>{
+    const info=buildBronInfo(p);const ctx=buildProductContext(p);
+    const stijl=bepaalStijlVoorProduct(p);
+    return(i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [context: '+ctx+']':'')+(info?' — brondata: "'+info+'"':' — GEEN BRONDATA')+' ['+stijlInstructie(stijl)+']';
+  }).join('\n');
   return await callApi([{role:'user',content:'Verrijk de volgende '+batch.length+' producten. Schrijf UITSLUITEND op basis van de meegeleverde brondata.\nAls een product onvoldoende brondata heeft: geef {"name":"(naam)","insufficient":true} terug.\n'+descInstr+'\n\n'+lines+'\n\nGeef ALLEEN een JSON array terug. De array moet precies '+batch.length+' items bevatten, in dezelfde volgorde als de input.'}],MODEL_HAIKU);
 }
 async function trySonnet(batch){
   const descInstr=genDesc?'Vul description in.':'Laat description leeg ("")';
-  const lines=batch.map((p,i)=>{const info=buildBronInfo(p);const ctx=buildProductContext(p);return(i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [context: '+ctx+']':'')+(info?' — brondata: "'+info+'"':'');}).join('\n');
+  const lines=batch.map((p,i)=>{
+    const info=buildBronInfo(p);const ctx=buildProductContext(p);
+    const stijl=bepaalStijlVoorProduct(p);
+    return(i+1)+'. "'+p.name+'"'+(ctx!==p.name?' [context: '+ctx+']':'')+(info?' — brondata: "'+info+'"':'')+' ['+stijlInstructie(stijl)+']';
+  }).join('\n');
   return await callApi([{role:'user',content:'Verrijk de volgende '+batch.length+' producten voor schreeven.nl.\nSchrijf alleen op basis van de meegeleverde brondata. Geen aannames.\nOnvoldoende data -> {"name":"(naam)","insufficient":true}\n'+descInstr+'\n\n'+lines+'\n\nGeef ALLEEN een JSON array terug. De array moet precies '+batch.length+' items bevatten, in dezelfde volgorde als de input.'}],MODEL_SONNET);
 }
 async function trySonnetWeb(product){
