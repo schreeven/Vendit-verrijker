@@ -3,425 +3,343 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <title>Schreeven Opschoontool</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --groen: #3aaa35; --donkergroen: #006633;
-    --warmgrijs: #f5f5f0; --lichtgrijs: #e8e8e4;
-    --grijs: #999; --tekst: #222;
-    --rood: #cc3300; --oranje: #e67e00;
-    --blauw: #0066cc; --paars: #7c3aed;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Avenir','Nunito','Raleway',sans-serif; background: var(--warmgrijs); color: var(--tekst); min-height: 100vh; }
-  header { background: var(--donkergroen); color: white; padding: 16px 32px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-  header .logo { font-size: 1.1rem; font-weight: 700; }
-  header .subtitle { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
-  header .divider { width: 1px; height: 36px; background: rgba(255,255,255,0.25); margin: 0 8px; }
-  header h1 { font-size: 1.2rem; font-weight: 600; }
-  header .tag { margin-left: auto; font-size: 0.72rem; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; }
-  nav { background: #004d26; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 0 32px; display: flex; gap: 4px; }
-  nav a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: 9px 14px; border-bottom: 2px solid transparent; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
-  nav a:hover { color: white; background: rgba(255,255,255,0.08); }
-  nav a.actief { color: white; border-bottom-color: #3aaa35; }
-  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
-  .panel { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
-  .panel-header { background: var(--groen); color: white; padding: 12px 18px; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
-  .panel-header .step { background: rgba(255,255,255,0.25); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; }
-  .panel-body { padding: 18px; }
-  .linker-kolom, .rechter-kolom { display: flex; flex-direction: column; gap: 20px; }
-  .api-row { display: flex; gap: 8px; align-items: center; }
-  .api-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--lichtgrijs); border-radius: 6px; font-size: 0.85rem; font-family: monospace; }
-  .api-row input:focus { outline: none; border-color: var(--groen); }
-  .bestand-lijst { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-  .bestand-rij { border: 1px solid var(--lichtgrijs); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 24px 1fr auto auto; gap: 8px; align-items: center; }
-  .bestand-rij.klaar { border-color: var(--groen); background: #f8fdf8; }
-  .bestand-rang { width: 24px; height: 24px; border-radius: 50%; background: var(--donkergroen); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0; }
-  .bestand-naam { font-weight: 600; font-size: 0.83rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bestand-meta { font-size: 0.72rem; color: var(--grijs); margin-top: 2px; }
-  .profiel-badge-klein { font-size: 0.69rem; padding: 2px 7px; border-radius: 10px; background: var(--lichtgrijs); color: var(--grijs); white-space: nowrap; }
-  .bestand-rij.klaar .profiel-badge-klein { background: var(--groen); color: white; }
-  .verwijder-btn { background: none; border: none; cursor: pointer; color: var(--grijs); font-size: 1rem; padding: 2px 4px; border-radius: 4px; }
-  .verwijder-btn:hover { color: var(--rood); }
-  .upload-zone { border: 2px dashed var(--lichtgrijs); border-radius: 8px; padding: 24px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--warmgrijs); }
-  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--groen); background: #f0faf0; }
-  .upload-zone .icon { font-size: 1.8rem; margin-bottom: 6px; }
-  .upload-zone .label { font-size: 0.83rem; color: var(--grijs); }
-  .upload-zone .sublabel { font-size: 0.72rem; color: var(--grijs); margin-top: 3px; }
-  #fileInput { display: none; }
-  .merge-sleutel-rij { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-  .merge-sleutel-rij label { font-size: 0.78rem; font-weight: 600; color: var(--grijs); white-space: nowrap; }
-  .merge-sleutel-rij select { flex: 1; padding: 7px 10px; border: 1px solid var(--lichtgrijs); border-radius: 6px; font-size: 0.82rem; }
-  .prioriteit-tabel { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
-  .prioriteit-tabel th { background: var(--warmgrijs); padding: 6px 8px; text-align: left; font-size: 0.68rem; font-weight: 700; color: var(--grijs); text-transform: uppercase; }
-  .prioriteit-tabel td { padding: 4px 8px; border-bottom: 1px solid var(--warmgrijs); }
-  .prioriteit-tabel select { padding: 3px 6px; border: 1px solid var(--lichtgrijs); border-radius: 4px; font-size: 0.73rem; width: 100%; }
-  .mapping-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 5px 8px; align-items: center; max-height: 55vh; overflow-y: auto; padding-right: 4px; }
-  .mapping-label { font-size: 0.75rem; font-weight: 600; color: var(--donkergroen); padding: 5px 8px; background: #edf9ed; border-radius: 5px; text-align: center; }
-  .mapping-label.opt { background: var(--warmgrijs); color: var(--grijs); }
-  .mapping-arrow { color: var(--grijs); font-size: 0.85rem; text-align: center; }
-  .mapping-select { padding: 5px 7px; border: 1px solid var(--lichtgrijs); border-radius: 5px; font-size: 0.75rem; width: 100%; }
-  .mapping-select:focus { outline: none; border-color: var(--groen); }
-  .mapping-header { font-size: 0.68rem; font-weight: 700; color: var(--grijs); text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px; }
-  .optie-rij { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--warmgrijs); }
-  .optie-rij:last-child { border-bottom: none; }
-  .optie-rij input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--groen); margin-top: 2px; flex-shrink: 0; }
-  .optie-tekst { font-size: 0.82rem; }
-  .optie-tekst strong { display: block; margin-bottom: 2px; }
-  .optie-tekst span { color: var(--grijs); font-size: 0.74rem; }
-  .stats-bar { display: grid; grid-template-columns: repeat(6,1fr); gap: 1px; background: var(--lichtgrijs); border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
-  .stat-blok { background: white; padding: 10px 6px; text-align: center; }
-  .stat-blok .getal { font-size: 1.3rem; font-weight: 800; color: var(--donkergroen); line-height: 1; }
-  .stat-blok .label { font-size: 0.63rem; color: var(--grijs); margin-top: 3px; text-transform: uppercase; }
-  .voortgang-balk { height: 5px; background: var(--lichtgrijs); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
-  .voortgang-fill { height: 100%; background: var(--groen); border-radius: 3px; transition: width 0.3s ease; width: 0%; }
-  .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-groen { background: var(--groen); color: white; }
-  .btn-groen:hover:not(:disabled) { background: var(--donkergroen); }
-  .btn-outline { background: white; color: var(--tekst); border: 1px solid var(--lichtgrijs); }
-  .btn-outline:hover:not(:disabled) { border-color: var(--groen); color: var(--groen); }
-  .btn-rij { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-  .log-box { background: #1a1a1a; border-radius: 8px; padding: 12px; font-family: 'Courier New',monospace; font-size: 0.73rem; color: #ccc; height: 180px; overflow-y: auto; line-height: 1.6; }
-  .log-box .log-ok { color: #5dbb58; }
-  .log-box .log-warn { color: #f0a830; }
-  .log-box .log-err { color: #ff6b6b; }
-  .log-box .log-info { color: #6bb8ff; }
-  .preview-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--lichtgrijs); max-height: 380px; overflow-y: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-  th { background: var(--donkergroen); color: white; padding: 7px 9px; text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; position: sticky; top: 0; }
-  td { padding: 6px 9px; border-bottom: 1px solid var(--warmgrijs); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  tr:hover td { background: #f8fdf8; }
-  td.ok { color: var(--donkergroen); }
-  td.leeg { color: #ccc; font-style: italic; }
-  td.warn { color: var(--oranje); }
-  td.ai { color: var(--blauw); }
-  td.merge { color: var(--paars); font-weight: 600; }
-  .melding { padding: 9px 13px; border-radius: 6px; font-size: 0.81rem; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px; }
-  .m-info { background: #e8f4ff; border-left: 3px solid var(--blauw); }
-  .m-ok { background: #edf9ed; border-left: 3px solid var(--groen); }
-  .m-warn { background: #fff4e0; border-left: 3px solid var(--oranje); }
-  .tabs { display: flex; border-bottom: 2px solid var(--lichtgrijs); margin-bottom: 14px; }
-  .tab { padding: 7px 14px; font-size: 0.81rem; font-weight: 600; cursor: pointer; color: var(--grijs); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
-  .tab.actief { color: var(--donkergroen); border-bottom-color: var(--groen); }
-  .tab-content { display: none; }
-  .tab-content.actief { display: block; }
-  .soort-tag { display: inline-block; background: #e8f4ff; color: var(--blauw); padding: 1px 6px; border-radius: 9px; font-size: 0.68rem; font-weight: 600; }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: white; border-radius: 12px; padding: 22px; max-width: 560px; width: 92%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
-  .modal h3 { font-size: 1rem; margin-bottom: 14px; color: var(--donkergroen); }
-  .modal input, .modal select { width: 100%; padding: 7px 11px; border: 1px solid var(--lichtgrijs); border-radius: 6px; font-size: 0.83rem; margin-bottom: 9px; font-family: inherit; }
-  .modal input:focus, .modal select:focus { outline: none; border-color: var(--groen); }
-  .modal label { display: block; font-size: 0.74rem; font-weight: 600; color: var(--grijs); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
-  .modal-knoppen { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
-  .profiel-kaart { border: 1px solid var(--lichtgrijs); border-radius: 7px; padding: 9px 12px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-  .profiel-kaart:hover { border-color: var(--groen); background: #f8fdf8; }
-  .profiel-kaart.actief { border-color: var(--groen); background: #edf9ed; }
-  .profiel-naam { font-weight: 600; font-size: 0.85rem; flex: 1; }
-  .profiel-badge { font-size: 0.69rem; padding: 2px 7px; border-radius: 10px; background: var(--lichtgrijs); color: var(--grijs); }
-  .profiel-kaart.actief .profiel-badge { background: var(--groen); color: white; }
-  .profiel-nieuw { border: 1px dashed var(--lichtgrijs); border-radius: 7px; padding: 9px 12px; cursor: pointer; text-align: center; font-size: 0.8rem; color: var(--grijs); transition: all 0.15s; margin-top: 8px; }
-  .profiel-nieuw:hover { border-color: var(--groen); color: var(--groen); }
-  small { font-size: 0.71rem; color: var(--grijs); }
-  hr.scheider { border: none; border-top: 1px solid var(--lichtgrijs); margin: 14px 0; }
-  .merge-profiel-banner { background: linear-gradient(135deg, #edf9ed, #e8f4ff); border: 1px solid var(--groen); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 0.8rem; }
-  .merge-profiel-banner strong { color: var(--donkergroen); display: block; margin-bottom: 4px; }
-  .merge-profiel-banner span { color: var(--grijs); font-size: 0.73rem; }
-  .bestand-type-badge { font-size: 0.65rem; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
-  .btb-produits { background: #e8faf3; color: #0d6e4f; }
-  .btb-descriptifs { background: #e8f4ff; color: #1a5c99; }
-  .btb-abmusic { background: #f3e8ff; color: #5b21b6; }
-  .btb-onbekend { background: var(--lichtgrijs); color: var(--grijs); }
-  /* DASHBOARD */
-  .db-bronnen { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 8px; margin-bottom: 14px; }
-  .db-bron { background: var(--warmgrijs); border-radius: 8px; padding: 10px 12px; border: 1px solid var(--lichtgrijs); }
-  .db-bron.actief { border-color: var(--groen); background: #f0fbf0; }
-  .db-bron .db-bron-naam { font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .db-bron .db-bron-meta { font-size: 0.68rem; color: var(--grijs); }
-  .db-bron .db-bron-bar { height: 4px; border-radius: 2px; margin-top: 6px; background: var(--lichtgrijs); overflow: hidden; }
-  .db-bron .db-bron-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
-  .db-merge-rij { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; font-size: 0.78rem; }
-  .db-merge-blok { background: var(--warmgrijs); border: 1px solid var(--lichtgrijs); border-radius: 6px; padding: 5px 10px; }
-  .db-merge-blok.resultaat { background: white; border-color: var(--donkergroen); font-weight: 700; color: var(--donkergroen); }
-  .db-pijl { color: var(--grijs); }
-  .veld-grid { display: flex; flex-direction: column; gap: 4px; }
-  .veld-rij { display: grid; grid-template-columns: 120px 1fr 60px 90px; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--warmgrijs); }
-  .veld-rij:last-child { border-bottom: none; }
-  .veld-naam { font-size: 0.76rem; font-weight: 600; }
-  .veld-balk-wrap { height: 6px; background: var(--lichtgrijs); border-radius: 3px; overflow: hidden; }
-  .veld-balk { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-  .veld-pct { font-size: 0.72rem; color: var(--grijs); text-align: right; }
-  .veld-status { font-size: 0.68rem; padding: 2px 7px; border-radius: 10px; text-align: center; font-weight: 600; white-space: nowrap; }
-  .veld-status.vol { background: #edf9ed; color: var(--donkergroen); }
-  .veld-status.deel { background: #fff4e0; color: #854F0B; }
-  .veld-status.leeg { background: #ffe8e8; color: var(--rood); }
-  .veld-status.ai { background: #e8f4ff; color: var(--blauw); }
-  .veld-status.verrijker { background: #f3e8ff; color: var(--paars); }
-  .db-sectie { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--grijs); margin: 12px 0 6px; }
-  .db-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 14px; }
-  .db-stat { background: var(--warmgrijs); border-radius: 7px; padding: 9px 10px; text-align: center; }
-  .db-stat .ds-getal { font-size: 1.4rem; font-weight: 800; line-height: 1; }
-  .db-stat .ds-label { font-size: 0.63rem; color: var(--grijs); margin-top: 3px; text-transform: uppercase; }
-  .db-warn { background: #fff4e0; border-left: 3px solid var(--oranje); border-radius: 0 6px 6px 0; padding: 7px 10px; font-size: 0.78rem; margin-bottom: 6px; }
-  .db-ok { background: #edf9ed; border-left: 3px solid var(--groen); border-radius: 0 6px 6px 0; padding: 7px 10px; font-size: 0.78rem; margin-bottom: 6px; }
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito','Avenir','Segoe UI',sans-serif;background:#f5f5f0;min-height:100vh;color:#1a1a1a;padding:28px 20px}
+.btn{cursor:pointer;border:none;border-radius:5px;font-family:'Nunito','Avenir',sans-serif;font-size:13px;font-weight:600;padding:9px 18px;transition:all .15s;letter-spacing:.01em}
+.btn-green{background:#006633;color:#fff}.btn-green:hover:not(:disabled){background:#007a3d;transform:translateY(-1px);box-shadow:0 3px 10px rgba(27,94,59,.3)}.btn-green:disabled{background:#c8c8c0;color:#888;cursor:not-allowed}
+.btn-red{background:#c0392b;color:#fff}.btn-red:hover{background:#e74c3c}
+.btn-blue{background:#2c5f8a;color:#fff}.btn-blue:hover{background:#3474a7}
+.btn-orange{background:#b45309;color:#fff}.btn-orange:hover{background:#d4620a}
+.btn-gray{background:#e5e7eb;color:#555}.btn-gray:hover{background:#d1d5db}
+.btn-purple{background:#6d28d9;color:#fff}.btn-purple:hover{background:#7c3aed}
+.btn-teal{background:#0f766e;color:#fff}.btn-teal:hover{background:#0d9488}
+/* Opschoontool-specifieke knoppen die de JS gebruikt */
+.btn-groen{background:#006633;color:#fff;cursor:pointer;border:none;border-radius:5px;font-family:'Nunito','Avenir',sans-serif;font-size:13px;font-weight:600;padding:9px 17px;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-groen:hover:not(:disabled){background:#007a3d;transform:translateY(-1px)}
+.btn-groen:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:#fff;color:#555;border:1.5px solid #ddd;cursor:pointer;border-radius:5px;font-family:'Nunito','Avenir',sans-serif;font-size:13px;font-weight:600;padding:8px 15px;transition:all .15s;display:inline-flex;align-items:center;gap:5px;text-decoration:none}
+.btn-outline:hover:not(:disabled){border-color:#006633;color:#006633}
+.btn-outline:disabled{opacity:.4;cursor:not-allowed}
+.btn-rij{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.lbl{color:#006633;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;display:block}
+.sbox{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:7px;padding:13px 15px}
+.upzone{border:2px dashed #c8c8be;border-radius:8px;padding:34px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafaf7}
+.upzone:hover{border-color:#006633;background:#f0f7f3}
+/* Upload zone opschoontool */
+.upload-zone{border:2px dashed #c8c8be;border-radius:8px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafaf7}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#006633;background:#f0f7f3}
+.upload-zone .icon{font-size:28px;margin-bottom:8px}
+.upload-zone .label{font-size:13px;font-weight:600;color:#555}
+.upload-zone .sublabel{font-size:11px;color:#bbb;margin-top:4px}
+.pbar{height:7px;background:#e0e0d8;border-radius:4px;overflow:hidden;margin-bottom:14px}
+.pfill{height:100%;background:linear-gradient(90deg,#006633,#3aaa35);border-radius:4px;transition:width .4s ease}
+input[type=text],input[type=url],input[type=number],input[type=password],textarea,select{background:#f9f9f6;border:1.5px solid #ddd;border-radius:5px;padding:9px 13px;color:#1a1a1a;font-family:'Nunito','Avenir',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
+input[type=text]:focus,input[type=url]:focus,input[type=number]:focus,input[type=password]:focus,textarea:focus,select:focus{border-color:#006633}
+textarea{resize:vertical;line-height:1.6;font-size:12px}
+select{cursor:pointer}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f0f0eb}::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#aaa}
+.budget-ok{color:#006633;font-weight:700}.budget-err{color:#c0392b;font-weight:700}
+.api-input-wrap{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px 16px;margin-bottom:14px}
+.api-row{display:flex;gap:8px;align-items:center}
+/* Bestandslijst */
+.bestand-lijst{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.bestand-rij{border:1px solid #ddd;border-radius:8px;padding:10px 13px;display:grid;grid-template-columns:22px 1fr auto auto;gap:8px;align-items:center;background:#fff}
+.bestand-rij.klaar{border-color:#3aaa35;background:#f8fdf8}
+.bestand-rang{width:22px;height:22px;border-radius:50%;background:#006633;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.bestand-naam{font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bestand-meta{font-size:11px;color:#999;margin-top:2px}
+.profiel-badge-klein{font-size:10px;padding:2px 8px;border-radius:10px;background:#e0e0d8;color:#888;white-space:nowrap}
+.bestand-rij.klaar .profiel-badge-klein{background:#3aaa35;color:#fff}
+.verwijder-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:2px 4px;border-radius:4px;line-height:1}
+.verwijder-btn:hover{color:#c0392b}
+/* Profiel kaarten */
+.profiel-kaart{border:1px solid #ddd;border-radius:8px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:6px;background:#fff;transition:all .15s}
+.profiel-kaart:hover{border-color:#3aaa35;background:#f8fdf8}
+.profiel-kaart.actief{border-color:#006633;background:#edf7ed}
+.profiel-naam{font-weight:700;font-size:13px;flex:1}
+.profiel-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:#e0e0d8;color:#888}
+.profiel-kaart.actief .profiel-badge{background:#006633;color:#fff}
+.profiel-nieuw{border:1.5px dashed #ddd;border-radius:8px;padding:9px;cursor:pointer;text-align:center;font-size:12px;color:#999;transition:all .15s;margin-top:8px}
+.profiel-nieuw:hover{border-color:#3aaa35;color:#006633}
+/* Opties */
+.optie-rij{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f0}
+.optie-rij:last-child{border-bottom:none}
+.optie-rij input[type=checkbox]{width:16px;height:16px;accent-color:#006633;margin-top:2px;flex-shrink:0}
+.optie-tekst{font-size:13px}
+.optie-tekst strong{display:block;margin-bottom:2px;font-size:12px}
+.optie-tekst span{color:#999;font-size:11px}
+/* Stats bar opschoontool */
+.stats-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#e0e0d8;border-radius:8px;overflow:hidden;margin-bottom:14px}
+.stat-blok{background:#fff;padding:10px 6px;text-align:center}
+.stat-blok .getal{font-size:1.3rem;font-weight:800;color:#006633;line-height:1}
+.stat-blok .label{font-size:9px;color:#999;margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.voortgang-balk{height:6px;background:#e0e0d8;border-radius:3px;overflow:hidden;margin-bottom:14px}
+.voortgang-fill{height:100%;background:linear-gradient(90deg,#006633,#3aaa35);border-radius:3px;transition:width .3s ease;width:0%}
+/* Tabs opschoontool */
+.tabs{display:flex;border-bottom:2px solid #e0e0d8;margin-bottom:14px}
+.tab{padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#999;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.tab.actief{color:#006633;border-bottom-color:#3aaa35}
+.tab-content{display:none}.tab-content.actief{display:block}
+/* Merge/prioriteit tabel */
+.merge-sleutel-rij{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.merge-sleutel-rij label{font-size:11px;font-weight:700;color:#999;white-space:nowrap}
+.merge-sleutel-rij select{flex:1}
+.prioriteit-tabel{width:100%;border-collapse:collapse;font-size:11px}
+.prioriteit-tabel th{background:#f9f9f6;padding:6px 8px;text-align:left;font-size:10px;font-weight:700;color:#999;text-transform:uppercase}
+.prioriteit-tabel td{padding:4px 8px;border-bottom:1px solid #f5f5f0}
+.prioriteit-tabel select{padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:100%}
+/* Mapping modal */
+.mapping-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:5px 8px;align-items:center;max-height:52vh;overflow-y:auto;padding-right:4px}
+.mapping-label{font-size:11px;font-weight:700;color:#006633;padding:5px 8px;background:#edf7ed;border-radius:5px;text-align:center}
+.mapping-label.opt{background:#f9f9f6;color:#999}
+.mapping-arrow{color:#999;font-size:13px;text-align:center}
+.mapping-select{padding:5px 7px;border:1px solid #ddd;border-radius:5px;font-size:11px;width:100%;background:#fff}
+.mapping-select:focus{outline:none;border-color:#006633}
+.mapping-header{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px}
+/* Log box */
+.log-box{background:#0d0d0d;border:1px solid #222;border-radius:8px;padding:11px 13px;font-family:'Courier New',monospace;font-size:11px;color:#aaa;height:175px;overflow-y:auto;line-height:1.6}
+.log-box .log-ok{color:#3aaa35}.log-box .log-warn{color:#d97706}.log-box .log-err{color:#ef4444}.log-box .log-info{color:#60a5fa}
+/* Preview tabel */
+.preview-wrap{overflow-x:auto;border-radius:8px;border:1px solid #e0e0d8;max-height:360px;overflow-y:auto}
+.preview-wrap table{width:100%;border-collapse:collapse;font-size:12px}
+.preview-wrap th{background:#006633;color:#fff;padding:7px 9px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;white-space:nowrap;position:sticky;top:0}
+.preview-wrap td{padding:6px 9px;border-bottom:1px solid #f5f5f0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-wrap tr:hover td{background:#f9f9f6}
+td.ok{color:#006633}td.leeg{color:#ccc;font-style:italic}td.warn{color:#b45309}td.ai{color:#1e40af}td.merge{color:#7c3aed;font-weight:700}
+.soort-tag{display:inline-block;background:#e8f4ff;color:#1e40af;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700}
+/* Meldingen */
+.melding{padding:9px 13px;border-radius:7px;font-size:12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px}
+.m-info{background:#e8f4ff;border-left:3px solid #1e40af}.m-ok{background:#edf7ed;border-left:3px solid #006633}.m-warn{background:#fff4e0;border-left:3px solid #b45309}
+/* Dashboard */
+.db-bronnen{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.db-bron{background:#f9f9f6;border-radius:8px;padding:10px 12px;border:1px solid #e0e0d8}
+.db-bron.actief{border-color:#006633;background:#f0fbf0}
+.db-bron .db-bron-naam{font-size:11px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-bron .db-bron-meta{font-size:10px;color:#999}
+.db-bron .db-bron-bar{height:4px;border-radius:2px;margin-top:5px;background:#e0e0d8;overflow:hidden}
+.db-bron .db-bron-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.db-merge-rij{display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap;font-size:12px}
+.db-merge-blok{background:#f9f9f6;border:1px solid #e0e0d8;border-radius:6px;padding:5px 10px}
+.db-merge-blok.resultaat{background:#fff;border-color:#006633;font-weight:700;color:#006633}
+.db-pijl{color:#999}
+.veld-rij{display:grid;grid-template-columns:115px 1fr 55px 85px;gap:7px;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f0}
+.veld-rij:last-child{border-bottom:none}
+.veld-naam{font-size:11px;font-weight:700}
+.veld-balk-wrap{height:5px;background:#e0e0d8;border-radius:3px;overflow:hidden}
+.veld-balk{height:100%;border-radius:3px;transition:width .5s ease}
+.veld-pct{font-size:10px;color:#999;text-align:right}
+.veld-status{font-size:10px;padding:2px 6px;border-radius:9px;text-align:center;font-weight:700;white-space:nowrap}
+.veld-status.vol{background:#edf7ed;color:#006633}.veld-status.deel{background:#fff4e0;color:#854F0B}
+.veld-status.leeg{background:#ffe8e8;color:#c0392b}.veld-status.ai{background:#e8f4ff;color:#1e40af}
+.db-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.db-stat{background:#f9f9f6;border-radius:8px;padding:9px;text-align:center}
+.db-stat .ds-getal{font-size:1.3rem;font-weight:800;line-height:1}
+.db-stat .ds-label{font-size:9px;color:#999;margin-top:3px;text-transform:uppercase}
+.db-warn{background:#fff4e0;border-left:3px solid #b45309;border-radius:0 5px 5px 0;padding:6px 9px;font-size:11px;margin-bottom:5px}
+.db-ok{background:#edf7ed;border-left:3px solid #006633;border-radius:0 5px 5px 0;padding:6px 9px;font-size:11px;margin-bottom:5px}
+.db-sectie{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#999;margin:10px 0 5px}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:22px;max-width:540px;width:92%;box-shadow:0 16px 48px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:14px;margin-bottom:13px;color:#006633;font-weight:800}
+.modal input,.modal select{width:100%;padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:12px;margin-bottom:9px;font-family:inherit;background:#f9f9f6}
+.modal input:focus,.modal select:focus{outline:none;border-color:#006633;background:#fff}
+.modal label{display:block;font-size:10px;font-weight:700;color:#999;margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+.modal-knoppen{display:flex;gap:8px;justify-content:flex-end;margin-top:13px}
+hr.scheider{border:none;border-top:1px solid #e0e0d8;margin:13px 0}
+small{font-size:10px;color:#999}
+/* Layout */
+.two-col{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
 </style>
 </head>
 <body>
+<div id="app" style="max-width:1100px;margin:0 auto">
 
-<header>
-  <div>
-    <div class="logo">Schreeven Muziekinstrumenten</div>
-    <div class="subtitle">Nijmegen · Familiebedrijf sinds 1933</div>
-  </div>
-  <div class="divider"></div>
-  <h1>Opschoontool</h1>
-  <div class="tag">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · <strong>v5.1</strong></div>
-</header>
-<nav>
-  <a href="index.html">⚡ Vendit-verrijker</a>
-  <a href="opschoontool.html" class="actief">🧹 Opschoontool</a>
-</nav>
-
-<main>
-  <div class="linker-kolom">
-
-    <div class="panel">
-      <div class="panel-header">🔑 Anthropic API Key</div>
-      <div class="panel-body">
-        <div class="api-row">
-          <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
-          <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn btn-outline" style="text-decoration:none;font-size:0.73rem;padding:6px 10px;">Ophalen</a>
-        </div>
-        <small style="margin-top:5px;display:block;">Lokaal opgeslagen · nooit verstuurd buiten je browser</small>
-      </div>
+<!-- HEADER -->
+<div style="margin-bottom:20px;border-bottom:3px solid #006633;padding-bottom:18px">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+    <div style="width:38px;height:38px;border-radius:6px;overflow:hidden;flex-shrink:0;display:flex;flex-direction:column;border:1px solid #e0e0d8">
+      <div style="flex:1;background:#3aaa35"></div>
+      <div style="flex:1;background:#006633"></div>
     </div>
-
-    <div class="panel">
-      <div class="panel-header"><span class="step">1</span> Bestanden uploaden</div>
-      <div class="panel-body">
-        <div id="algamMergeBanner" style="display:none;" class="merge-profiel-banner">
-          <strong>✓ Algam 3-bestand merge herkend</strong>
-          <span id="algamMergeBannerTekst">Upload Produits.xlsx, Descriptifs_nl.csv en Tarif_AB_Music.xls</span>
-        </div>
-        <div class="bestand-lijst" id="bestandLijst"></div>
-        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-          <div class="icon">📂</div>
-          <div class="label">Klik of sleep bestanden hier</div>
-          <div class="sublabel">CSV, XLS en XLSX · Meerdere bestanden tegelijk mogelijk</div>
-        </div>
-        <input type="file" id="fileInput" accept=".csv,.txt,.xls,.xlsx" multiple>
-        <div style="margin-top:10px;padding:9px 12px;background:var(--warmgrijs);border-radius:6px;font-size:0.75rem;color:var(--grijs);">
-          <strong style="color:var(--donkergroen);display:block;margin-bottom:4px;">Algam 3-bestand merge</strong>
-          Sleep tegelijk: <strong>Produits.xlsx</strong> + <strong>Descriptifs_nl.csv</strong> + <strong>Tarif_AB_Music.xls</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel" id="mergePanel" style="display:none;">
-      <div class="panel-header"><span class="step">2</span> Merge instellingen</div>
-      <div class="panel-body">
-        <div id="algamMergeInfo" style="display:none;" class="melding m-ok" style="margin-bottom:10px;">
-          <span>✓</span><div><strong>Algam merge actief</strong> — prioriteiten automatisch ingesteld</div>
-        </div>
-        <div class="merge-sleutel-rij">
-          <label>Sleutelveld:</label>
-          <select id="mergeSleutel">
-            <option value="Leverancier_artikel">Leverancier_artikel (Productnummer)</option>
-            <option value="EAN">EAN / Barcode</option>
-            <option value="Type">Type</option>
-          </select>
-        </div>
-        <small style="display:block;margin-bottom:12px;">Records worden gematcht op dit veld.</small>
-        <div style="font-size:0.72rem;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Prioriteit per veld bij conflict</div>
-        <div style="max-height:200px;overflow-y:auto;">
-          <table class="prioriteit-tabel">
-            <thead><tr><th>Veld</th><th>Prioriteit</th></tr></thead>
-            <tbody id="prioriteitBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header"><span class="step" id="stap3nr">2</span> Profielen &amp; mapping</div>
-      <div class="panel-body">
-        <div id="bestandProfielLijst">
-          <div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>
-        </div>
-        <div class="profiel-nieuw" onclick="openNieuwProfiel()">+ Nieuw leveranciersprofiel aanmaken</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">💰 Dealerkortingen per merk</div>
-      <div class="panel-body">
-        <small style="display:block;margin-bottom:10px;color:var(--grijs);">
-          Kortingen worden gestapeld berekend: 6% → dan 3% over uitkomst → dan 2% etc.<br>
-          Betalingskorting is optioneel — vink aan of je die meeneemt.
-        </small>
-        <div id="kortingLijst" style="margin-bottom:10px;display:flex;flex-direction:column;gap:4px;"></div>
-        <button class="btn btn-groen" onclick="openKortingWizard()" style="width:100%;margin-bottom:8px;">+ Korting toevoegen</button>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <input type="checkbox" id="kortingBetaling" style="width:14px;height:14px;accent-color:var(--oranje);">
-          <label for="kortingBetaling" style="font-size:0.78rem;color:var(--grijs);">Laatste korting is betalingskorting (optioneel)</label>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-          <button class="btn btn-outline" onclick="exporteerKortingen()" style="font-size:0.75rem;padding:5px 10px;">⬇ Exporteer als XLS</button>
-          <label class="btn btn-outline" style="font-size:0.75rem;padding:5px 10px;cursor:pointer;">
-            ⬆ Importeer XLS
-            <input type="file" accept=".xlsx,.xls,.csv" onchange="importeerKortingen(event)" style="display:none;">
-          </label>
-          <button class="btn btn-outline" onclick="exporteerKortingenJSON()" style="font-size:0.75rem;padding:5px 10px;">💾 Sla op als JSON</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">⚙ Opties</div>
-      <div class="panel-body">
-        <div class="optie-rij">
-          <input type="checkbox" id="optSoort" checked>
-          <div class="optie-tekst"><strong>Soort detecteren via AI</strong><span>Claude vult productcategorie in als het veld leeg is</span></div>
-        </div>
-        <div class="optie-rij">
-          <input type="checkbox" id="optFrans" checked>
-          <div class="optie-tekst"><strong>Franse namen markeren</strong><span>Naam wordt gemarkeerd als ⚠ Frans — product blijft altijd bewaard</span></div>
-        </div>
-        <div class="optie-rij">
-          <input type="checkbox" id="optOmschrijving" checked>
-          <div class="optie-tekst"><strong>Omschrijving samenstellen</strong><span>Altijd: Merk + Type + name (dubbeling wordt automatisch verwijderd)</span></div>
-        </div>
-        <div class="optie-rij">
-          <input type="checkbox" id="optAlleenKern" checked>
-          <div class="optie-tekst"><strong>Alleen complete records</strong><span>Overslaan als Merk én Type leeg zijn</span></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="rechter-kolom">
-    <div class="panel">
-      <div class="panel-header"><span class="step" style="background:rgba(255,255,255,0.2);">4</span> Verwerken &amp; Preview</div>
-      <div class="panel-body">
-
-        <div class="stats-bar">
-          <div class="stat-blok"><div class="getal" id="stTotaal">—</div><div class="label">Totaal</div></div>
-          <div class="stat-blok"><div class="getal" id="stVerwerkt" style="color:var(--groen)">—</div><div class="label">Verwerkt</div></div>
-          <div class="stat-blok"><div class="getal" id="stGemergd" style="color:var(--paars)">—</div><div class="label">Gemergd</div></div>
-          <div class="stat-blok"><div class="getal" id="stFrans" style="color:var(--oranje)">—</div><div class="label">Frans ⚠</div></div>
-          <div class="stat-blok"><div class="getal" id="stOvegeslagen" style="color:var(--rood)">—</div><div class="label">Overgeslagen</div></div>
-          <div class="stat-blok"><div class="getal" id="stSoortAi" style="color:var(--blauw)">—</div><div class="label">Soort AI</div></div>
-        </div>
-
-        <div class="voortgang-balk"><div class="voortgang-fill" id="voortgangFill"></div></div>
-
-        <div class="tabs">
-          <div class="tab actief" onclick="toonTab('dashboard')">📊 Dashboard</div>
-          <div class="tab" onclick="toonTab('preview')">📋 Preview</div>
-          <div class="tab" onclick="toonTab('log')">📟 Log</div>
-          <div class="tab" onclick="toonTab('rapport')">📋 Rapport</div>
-        </div>
-
-        <div class="tab-content actief" id="tab-dashboard">
-          <div id="dashboardLeeg" style="text-align:center;padding:36px;color:var(--grijs);font-size:0.84rem;">Upload bestanden om het dashboard te zien</div>
-          <div id="dashboardInhoud" style="display:none;"></div>
-        </div>
-
-        <div class="tab-content" id="tab-preview">
-          <div id="previewLeeg" style="text-align:center;padding:40px;color:var(--grijs);font-size:0.84rem;">Upload bestanden en start de verwerking</div>
-          <div class="preview-wrap" id="previewWrap" style="display:none;">
-            <table><thead><tr>
-              <th>#</th><th>Merk</th><th>Type</th><th>Soort</th><th>Naam (webshop)</th>
-              <th>Lev.artikel</th><th>Inkoop ex</th><th>Verkoop incl</th><th>Bron</th><th>⚠</th>
-            </tr></thead><tbody id="previewBody"></tbody></table>
-          </div>
-        </div>
-
-        <div class="tab-content" id="tab-log">
-          <div class="log-box" id="logBox"><span class="log-info">Opschoontool gereed.</span></div>
-        </div>
-
-        <div class="tab-content" id="tab-rapport">
-          <div id="rapportLeeg" style="text-align:center;padding:40px;color:var(--grijs);font-size:0.84rem;">Rapport beschikbaar na verwerking</div>
-          <div id="rapportInhoud" style="display:none;"></div>
-        </div>
-
-        <div id="downloadOpties" style="display:none;margin-top:12px;padding:12px 14px;background:var(--warmgrijs);border-radius:8px;border:1px solid var(--lichtgrijs);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.3px;">Download filter — merken</div>
-            <div style="display:flex;gap:6px;">
-              <button onclick="merkFilterAlles(true)" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--lichtgrijs);border-radius:4px;background:white;cursor:pointer;color:var(--donkergroen);">Alles</button>
-              <button onclick="merkFilterAlles(false)" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--lichtgrijs);border-radius:4px;background:white;cursor:pointer;color:var(--grijs);">Geen</button>
-            </div>
-          </div>
-          <input type="text" id="merkFilterZoek" placeholder="Zoek merk..." onkeyup="filterMerkLijst()" 
-            style="width:100%;padding:5px 9px;border:1px solid var(--lichtgrijs);border-radius:5px;font-size:0.8rem;margin-bottom:6px;">
-          <div id="merkFilterLijst" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;"></div>
-          <div style="margin-top:8px;font-size:0.75rem;color:var(--grijs);" id="filterTeller"></div>
-        </div>
-        <div class="btn-rij">
-          <button class="btn btn-groen" id="btnStart" onclick="startVerwerking()" disabled>▶ Start verwerking</button>
-          <button class="btn btn-outline" id="btnHerbereken" onclick="herbereken()" disabled style="border-color:var(--oranje);color:var(--oranje);">⚡ Herbereken</button>
-          <button class="btn btn-outline" id="btnDownload" onclick="downloadCSV()" disabled>⬇ Download CSV</button>
-          <button class="btn btn-outline" onclick="resetAlles()">🔄 Reset</button>
-        </div>
-      </div>
+    <div>
+      <div style="color:#006633;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px">Schreeven Muziekinstrumenten</div>
+      <h1 style="font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:-.02em">Opschoontool</h1>
     </div>
   </div>
-</main>
-
-<!-- MODAL KORTING WIZARD -->
-<div class="modal-overlay" id="modalKortingWizard">
-  <div class="modal" style="max-width:420px;">
-    <h3>💰 Dealerkorting instellen</h3>
-    
-    <!-- Stap 1: Merk -->
-    <div id="kwStap1">
-      <label>Stap 1 — Kies merk</label>
-      <select id="kwMerkSelect" style="width:100%;padding:8px 11px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.85rem;margin-bottom:8px;font-family:inherit;">
-        <option value="">— kies merk —</option>
-      </select>
-      <input type="text" id="kwMerkVrij" placeholder="Of typ merknaam (bijv. DUNLOP)" 
-        style="width:100%;padding:8px 11px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.85rem;font-family:inherit;text-transform:uppercase;">
-      <div class="modal-knoppen">
-        <button class="btn btn-outline" onclick="sluitModal('modalKortingWizard')">Annuleren</button>
-        <button class="btn btn-groen" onclick="kwNaarStap2()">Volgende →</button>
-      </div>
-    </div>
-
-    <!-- Stap 2: Kortingen -->
-    <div id="kwStap2" style="display:none;">
-      <div style="font-size:0.8rem;color:var(--grijs);margin-bottom:10px;">Merk: <strong id="kwMerkLabel"></strong></div>
-      <label>Stap 2 — Voer kortingen in</label>
-      <small style="display:block;color:var(--grijs);margin-bottom:10px;">Voeg één voor één toe. Elke korting wordt berekend over de uitkomst van de vorige.</small>
-      <div id="kwReeksLijst" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-        <input type="number" id="kwNieuweKorting" placeholder="%" min="0.1" max="99" step="0.1"
-          style="flex:1;padding:8px 11px;border:1px solid var(--lichtgrijs);border-radius:6px;font-size:0.85rem;text-align:center;"
-          onkeydown="if(event.key==='Enter')kwVoegKortingToe()">
-        <button class="btn btn-groen" onclick="kwVoegKortingToe()" style="padding:8px 14px;">+ Voeg toe</button>
-      </div>
-      <div style="border-top:1px solid var(--lichtgrijs);padding-top:10px;margin-bottom:10px;">
-        <label style="font-size:0.78rem;font-weight:600;color:var(--oranje);display:block;margin-bottom:4px;">Betalingskorting (optioneel — apart veld)</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="number" id="kwBetalingPct" placeholder="bijv. 2" min="0" max="20" step="0.1"
-            style="width:100px;padding:6px 9px;border:1px solid var(--oranje);border-radius:5px;font-size:0.85rem;text-align:center;">
-          <span style="font-size:0.78rem;color:var(--grijs);">% — alleen toegepast als checkbox aangevinkt bij download</span>
-        </div>
-      </div>
-      <div id="kwBerekening" style="background:var(--warmgrijs);border-radius:6px;padding:10px;font-size:0.82rem;margin-bottom:10px;display:none;">
-        <div id="kwBerekeningTekst"></div>
-      </div>
-      <div class="modal-knoppen">
-        <button class="btn btn-outline" onclick="kwNaarStap1()">← Terug</button>
-        <button class="btn btn-groen" onclick="kwBevestig()" id="kwBevestigBtn" disabled>✓ Opslaan</button>
-      </div>
-    </div>
-  </div>
+  <p style="color:#888;font-size:12px">Leveranciers CSV → Standaard Schreeven Formaat · Multi-bestand merge · AI Soort detectie · <strong style="color:#006633">v5.1</strong></p>
 </div>
+
+<!-- NAV -->
+<div style="background:#004d26;margin-bottom:24px;border-radius:8px;overflow:hidden">
+  <nav style="display:flex;gap:0;padding:0 8px">
+    <a href="index.html" style="color:rgba(255,255,255,0.65);text-decoration:none;font-size:13px;font-weight:600;padding:9px 14px;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.65)'">⚡ Vendit-verrijker</a>
+    <a href="opschoontool.html" style="color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:9px 14px;border-bottom:2px solid #3aaa35;display:flex;align-items:center;gap:6px">🧹 Opschoontool</a>
+  </nav>
+</div>
+
+<div class="two-col">
+
+<!-- LINKER KOLOM -->
+<div>
+
+  <div class="card">
+    <span class="lbl">🔑 Anthropic API Key</span>
+    <div class="api-row">
+      <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" style="flex:1">
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn-outline" style="font-size:11px;padding:7px 11px">Ophalen</a>
+    </div>
+    <small style="margin-top:6px;display:block">Lokaal opgeslagen · nooit verstuurd buiten je browser</small>
+  </div>
+
+  <div class="card">
+    <span class="lbl"><span style="background:#006633;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:6px">1</span>Bestanden uploaden</span>
+    <div class="bestand-lijst" id="bestandLijst"></div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">📂</div>
+      <div class="label">Klik of sleep CSV/XLS/XLSX bestanden hier</div>
+      <div class="sublabel">Meerdere bestanden tegelijk mogelijk</div>
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.txt,.xls,.xlsx" multiple style="display:none">
+    <div style="margin-top:10px;padding:9px 12px;background:#f9f9f6;border-radius:7px;font-size:11px;color:#999;border:1px solid #e0e0d8">
+      <strong style="color:#006633;display:block;margin-bottom:3px">Algam 3-bestand merge</strong>
+      Sleep tegelijk: <strong>Produits.xlsx</strong> + <strong>Descriptifs_nl.csv</strong> + <strong>Tarif_AB_Music.xls</strong>
+    </div>
+  </div>
+
+  <div class="card" id="mergePanel" style="display:none">
+    <span class="lbl"><span style="background:#006633;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:6px">2</span>Merge instellingen</span>
+    <div class="merge-sleutel-rij">
+      <label>Sleutelveld:</label>
+      <select id="mergeSleutel">
+        <option value="Leverancier_artikel">Leverancier_artikel (Productnummer)</option>
+        <option value="EAN">EAN / Barcode</option>
+        <option value="Type">Type</option>
+      </select>
+    </div>
+    <small style="display:block;margin-bottom:12px">Records worden gematcht op dit veld.</small>
+    <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">Prioriteit per veld bij conflict</div>
+    <div style="max-height:190px;overflow-y:auto">
+      <table class="prioriteit-tabel">
+        <thead><tr><th>Veld</th><th>Prioriteit</th></tr></thead>
+        <tbody id="prioriteitBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="lbl"><span style="background:#006633;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:6px" id="stap3nr">2</span>Profielen &amp; mapping</span>
+    <div id="bestandProfielLijst">
+      <div style="text-align:center;padding:20px;color:#999;font-size:12px">Upload eerst een bestand</div>
+    </div>
+    <div class="profiel-nieuw" onclick="openNieuwProfiel()">+ Nieuw leveranciersprofiel aanmaken</div>
+  </div>
+
+  <div class="card">
+    <span class="lbl">⚙ Opties</span>
+    <div class="optie-rij">
+      <input type="checkbox" id="optSoort" checked>
+      <div class="optie-tekst"><strong>Soort detecteren via AI</strong><span>Claude vult productcategorie in als het veld leeg is</span></div>
+    </div>
+    <div class="optie-rij">
+      <input type="checkbox" id="optFrans" checked>
+      <div class="optie-tekst"><strong>Franse namen markeren</strong><span>Accent-detectie + Franse trefwoorden</span></div>
+    </div>
+    <div class="optie-rij">
+      <input type="checkbox" id="optOmschrijving" checked>
+      <div class="optie-tekst"><strong>Omschrijving samenstellen</strong><span>Merk + Type + Soort samenvoegen</span></div>
+    </div>
+    <div class="optie-rij">
+      <input type="checkbox" id="optAlleenKern" checked>
+      <div class="optie-tekst"><strong>Alleen complete records</strong><span>Overslaan als Merk én Type leeg zijn</span></div>
+    </div>
+  </div>
+
+</div><!-- /linker kolom -->
+
+<!-- RECHTER KOLOM -->
+<div>
+
+  <div class="card">
+    <span class="lbl"><span style="background:#006633;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:6px">4</span>Verwerken &amp; Preview</span>
+
+    <div class="stats-bar">
+      <div class="stat-blok"><div class="getal" id="stTotaal">—</div><div class="label">Totaal</div></div>
+      <div class="stat-blok"><div class="getal" id="stVerwerkt" style="color:#3aaa35">—</div><div class="label">Verwerkt</div></div>
+      <div class="stat-blok"><div class="getal" id="stGemergd" style="color:#6d28d9">—</div><div class="label">Gemergd</div></div>
+      <div class="stat-blok"><div class="getal" id="stFrans" style="color:#b45309">—</div><div class="label">Frans</div></div>
+      <div class="stat-blok"><div class="getal" id="stOvegeslagen" style="color:#c0392b">—</div><div class="label">Overgeslagen</div></div>
+      <div class="stat-blok"><div class="getal" id="stSoortAi" style="color:#1e40af">—</div><div class="label">Soort AI</div></div>
+    </div>
+
+    <div class="voortgang-balk"><div class="voortgang-fill" id="voortgangFill"></div></div>
+
+    <div class="tabs">
+      <button class="tab actief" onclick="toonTab('dashboard')">📊 Dashboard</button>
+      <button class="tab" onclick="toonTab('preview')">📋 Preview</button>
+      <button class="tab" onclick="toonTab('log')">📟 Log</button>
+      <button class="tab" onclick="toonTab('rapport')">📋 Rapport</button>
+    </div>
+
+    <div class="tab-content actief" id="tab-dashboard">
+      <div id="dashboardLeeg" style="text-align:center;padding:32px;color:#999;font-size:12px">Upload bestanden om het dashboard te zien</div>
+      <div id="dashboardInhoud" style="display:none"></div>
+    </div>
+
+    <div class="tab-content" id="tab-preview">
+      <div id="previewLeeg" style="text-align:center;padding:32px;color:#999;font-size:12px">Upload bestanden en start de verwerking</div>
+      <div class="preview-wrap" id="previewWrap" style="display:none">
+        <table><thead><tr>
+          <th>#</th><th>Merk</th><th>Type</th><th>Soort</th><th>Omschrijving</th>
+          <th>Lev.artikel</th><th>Inkoop ex</th><th>Verkoop incl</th><th>Bron</th><th>⚠</th>
+        </tr></thead><tbody id="previewBody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-log">
+      <div class="log-box" id="logBox"><span class="log-info">Opschoontool gereed.</span></div>
+    </div>
+
+    <div class="tab-content" id="tab-rapport">
+      <div id="rapportLeeg" style="text-align:center;padding:32px;color:#999;font-size:12px">Rapport beschikbaar na verwerking</div>
+      <div id="rapportInhoud" style="display:none"></div>
+    </div>
+
+    <div class="btn-rij">
+      <button class="btn-groen" id="btnStart" onclick="startVerwerking()" disabled>▶ Start verwerking</button>
+      <button class="btn-outline" id="btnHerbereken" onclick="herbereken()" disabled style="border-color:#b45309;color:#b45309">⚡ Herbereken</button>
+      <button class="btn-outline" id="btnDownload" onclick="downloadCSV()" disabled>⬇ Download CSV</button>
+      <button class="btn-outline" onclick="resetAlles()">🔄 Reset</button>
+    </div>
+
+    <!-- Download merkfilter -->
+    <div id="downloadOpties" style="display:none;margin-top:14px;padding:13px 15px;background:#f9f9f6;border-radius:8px;border:1px solid #e0e0d8">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.3px">Download filter — merken</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="merkFilterAlles(true)" style="font-size:10px;padding:2px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;color:#006633">Alles</button>
+          <button onclick="merkFilterAlles(false)" style="font-size:10px;padding:2px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;color:#999">Geen</button>
+        </div>
+      </div>
+      <input type="text" id="merkFilterZoek" placeholder="Zoek merk..." onkeyup="filterMerkLijst()" style="width:100%;margin-bottom:7px;padding:6px 10px;font-size:12px">
+      <div id="merkFilterLijst" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
+      <div style="margin-top:7px;font-size:11px;color:#999" id="filterTeller"></div>
+    </div>
+
+  </div>
+
+</div><!-- /rechter kolom -->
+
+</div><!-- /two-col -->
+
+</div><!-- /app -->
 
 <!-- MODAL MAPPING -->
 <div class="modal-overlay" id="modalMapping">
@@ -429,9 +347,9 @@
     <h3 id="modalMappingTitel">Kolommen koppelen</h3>
     <div id="modalMappingInhoud"></div>
     <div class="modal-knoppen">
-      <button class="btn btn-outline" onclick="sluitModal('modalMapping')">Annuleren</button>
-      <button class="btn btn-outline" onclick="mappingOpslaan()">💾 Opslaan als profiel</button>
-      <button class="btn btn-groen" onclick="mappingBevestigen()">✓ Bevestigen</button>
+      <button class="btn-outline" onclick="sluitModal('modalMapping')">Annuleren</button>
+      <button class="btn-outline" onclick="mappingOpslaan()">💾 Opslaan als profiel</button>
+      <button class="btn-groen" onclick="mappingBevestigen()">✓ Bevestigen</button>
     </div>
   </div>
 </div>
@@ -452,34 +370,28 @@
     <input type="text" id="nieuwPrefix" placeholder="bijv. ADU voor Dunlop via Algam">
     <small>Laat leeg als Type al marktklaar is bij deze leverancier</small>
     <div class="modal-knoppen">
-      <button class="btn btn-outline" onclick="sluitModal('modalNieuwProfiel')">Annuleren</button>
-      <button class="btn btn-groen" onclick="slaProfielOp()">Opslaan</button>
+      <button class="btn-outline" onclick="sluitModal('modalNieuwProfiel')">Annuleren</button>
+      <button class="btn-groen" onclick="slaProfielOp()">Opslaan</button>
     </div>
   </div>
 </div>
 
 <script>
-// ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "5.1";
 
 // ─── STATE ───────────────────────────────────
-let bestanden = [];
+let bestanden = [];      // [{naam, headers, rijen, profielId, mapping, klaar}]
 let profielen = {};
 let verwerktRijen = [];
 let bezig = false;
 let actiefMappingIdx = null;
-let veldPrioriteit = {};
-
-// Bestandstype tracking voor Algam merge
-let algamMergeStatus = { produits: null, descriptifs: null, abmusic: null };
+let veldPrioriteit = {}; // {veldKey: bestandIdx}
 
 const VELDEN = [
   {key:'Merk',               label:'Merk',                   vplicht:true},
   {key:'Type',               label:'Type',                   vplicht:true},
   {key:'Soort',              label:'Soort',                  vplicht:false},
   {key:'Omschrijving',       label:'Omschrijving',           vplicht:false},
-  {key:'Inkoop_basis',        label:'Inkoop basis (catalogus)', vplicht:false},
-  {key:'Inkoop_ex',          label:'Inkoop ex (na korting)',  vplicht:true},
+  {key:'Inkoop_ex',          label:'Inkoop ex',              vplicht:true},
   {key:'Verkoop_incl',       label:'Verkoop incl',           vplicht:true},
   {key:'Sub_omschrijving',   label:'Sub omschrijving',       vplicht:false},
   {key:'Maat',               label:'Maat',                   vplicht:false},
@@ -487,115 +399,98 @@ const VELDEN = [
   {key:'Verkoop_ex',         label:'Verkoop ex',             vplicht:false},
   {key:'Kleur',              label:'Kleur',                  vplicht:false},
   {key:'Gewicht',            label:'Gewicht',                vplicht:false},
-  {key:'Afmeting',            label:'Afmeting (product mm)',   vplicht:false},
-  {key:'Verpakking_afmeting', label:'Verpakking afmeting (cm)', vplicht:false},
-  {key:'Verpakking_gewicht',  label:'Verpakking gewicht (kg)',  vplicht:false},
-  {key:'Materiaal',           label:'Materiaal',               vplicht:false},
-  {key:'Hoeveelheid',         label:'Hoeveelheid',              vplicht:false},
-  {key:'Aantal_snaren',       label:'Aantal snaren',            vplicht:false},
-  {key:'Gauge',               label:'Gauge / snaarmaat',        vplicht:false},
-  {key:'Omwonden',            label:'Omwonden',                 vplicht:false},
-  {key:'Instrument',           label:'Instrument',               vplicht:false},
-  {key:'Inputs',              label:'Inputs',                   vplicht:false},
-  {key:'Outputs',             label:'Outputs',                  vplicht:false},
-  {key:'Vermogen',            label:'Vermogen',                 vplicht:false},
-  {key:'Aantal_kanalen',      label:'Aantal kanalen',           vplicht:false},
+  {key:'Afmeting',           label:'Afmeting',               vplicht:false},
   {key:'Voorraad_leverancier',label:'Voorraad leverancier',  vplicht:false},
   {key:'Afbeelding',         label:'Afbeelding URL',         vplicht:false},
   {key:'Leverancier_artikel',label:'Leverancier artikelcode',vplicht:false},
   {key:'Descriptif',         label:'Beschrijving (AI bron)', vplicht:false},
-  {key:'Materiaal',          label:'Materiaal',              vplicht:false},
-  {key:'Instrument',         label:'Instrument',             vplicht:false},
-  {key:'Inhoud',             label:'Inhoud (stuks/pack)',    vplicht:false},
-  {key:'Omwonden',           label:'Omwonden',               vplicht:false},
-  {key:'Aantal_snaren',      label:'Aantal snaren',          vplicht:false},
   {key:'name',               label:'Productnaam (webshop)',  vplicht:false},
 ];
 
-// ─── INGEBAKKEN PROFIELEN ────────────────────
-
-const ALGAM_PRODUITS = {
-  naam:'Algam Produits.xlsx', delimiter:',',
-  algamBestandType: 'produits',
-  algamPrefixStrip: true,
+const ALGAM = {
+  naam:'Algam (Produits.xlsx)', delimiter:';',
   mapping:{
-    'Merk':                ['Marque'],
-    'Leverancier_artikel': ['Produit'],
-    'Verkoop_incl':        ['TtcPublic'],
-    'Inkoop_ex':           ['HtBrut'],
-    'Afbeelding':          ['UrlImage','UrlImageBig'],
-    'EAN':                 ['CodeBarre'],
-    'Gewicht':             ['Poids'],
-    'Categorie':           ['Rubrique'],
-    'name':                ['Designation'],
-    'Type':                ['Serie','SousSerie'],
-    'Soort':               ['Rubrique'],
-    // Dimensies voor verzendkosten — worden samengevoegd in rijNaarRecord
-    '_Longueur':           ['Longueur'],
-    '_Largeur':            ['Largeur'],
-    '_Hauteur':            ['Hauteur'],
+    'Merk':                ['Marque','Merk','Brand','Fabricant','Manufacturer'],
+    // Produit = artikelcode MET prefix (ADU 6S6270) → wordt Type na strip
+    'Leverancier_artikel': ['Produit','Productnummer','Ref fournisseur',
+                            'Référence fournisseur','Supplier ref','Référence',
+                            'Reference','Art. fournisseur','Code fournisseur','Leverancier_artikel'],
+    'Soort':               ['Soort'],
+    // Rubrique / Gamme = interne categorie → fallback voor Soort AI
+    'Categorie':           ['Rubrique','Gamme','Serie','SousSerie',
+                            'Type','Catégorie','Categorie','Category','Famille','Rayon'],
+    'Inkoop_ex':           ['HtBrut','Inkoop Ex.','Inkoop_ex','Prix achat HT',
+                            'PA HT','Cost','Prix dachat HT'],
+    'Verkoop_incl':        ['TtcPublic','Verkoop Inc.','Verkoop_incl','Prix vente TTC',
+                            'Prix TTC','PV TTC','Retail','Prix conseillé TTC','PVTTC'],
+    'Verkoop_ex':          ['HtDeee','Verkoop Ex.','Verkoop_ex','Prix vente HT',
+                            'Prix HT','PV HT'],
+    'name':                ['Designation','Désignation','name','Omschrijving',
+                            'Libellé','Libelle','Nom produit','Naam'],
+    'Sub_omschrijving':    ['Sub_omschrijving','Désignation courte','Libellé court'],
+    'Descriptif':          ['Descriptif','Description','Omschrijving tekst',
+                            'Description longue','Présentation'],
+    'EAN':                 ['CodeBarre','Code Barre','EAN','EAN13','Code EAN',
+                            'Code barre','Barcode','GTIN'],
+    'Kleur':               ['Couleur','Kleur','Color','Coloris','Finition'],
+    'Maat':                ['Maat','Taille','Size','Format'],
+    'Gewicht':             ['Poids','Gewicht','Weight','Poids net','Poids brut'],
+    'Afmeting':            ['Longueur','Largeur','Hauteur','Afmeting','Dimensions',
+                            'Encombrement'],
+    'Voorraad_leverancier':['Voorraad','Stock','Quantité','Qté disponible',
+                            'Disponibilité','Stock disponible'],
+    'Afbeelding':          ['UrlImage','UrlImageBig','Afbeelding','Image',
+                            'Photo URL','Visuel','Lien image','URL image'],
   },
-  prefixRegels:[],
+  prefixRegels:[], algamPrefixStrip:true,
 };
 
+// AB Music prijslijst profiel (Tarif_AB_Music_2026.xls)
 const AB_MUSIC = {
-  naam:'AB Music Tarif prijslijst', delimiter:',',
-  algamBestandType: 'abmusic',
-  algamPrefixStrip: true,
+  naam:'AB Music (Tarif prijslijst)', delimiter:';',
   mapping:{
-    'Merk':                ['Marque'],
-    'Leverancier_artikel': ['Produit'],
-    'name':                ['Libelle'],
-    'Inkoop_ex':           ['Base HT'],
-    'Verkoop_incl':        ['Prix TTC\nindicatif','Prix TTC'],
-    'EAN':                 ['Code Barre','CodeBarre'],
+    'Merk':                ['Marque','Merk','Brand'],
+    // Produit = artikelcode MET prefix → strip via algamPrefixStrip
+    'Leverancier_artikel': ['Produit','Productnummer','Ref fournisseur','Leverancier_artikel'],
+    'name':                ['Libelle','Libellé','Designation','Désignation','name','Naam'],
+    'Inkoop_ex':           ['Base HT','HtBrut','Inkoop Ex.','Inkoop_ex','Prix achat HT'],
+    'Verkoop_incl':        ['Prix TTC\nindicatif','Prix TTC','TtcPublic',
+                            'Verkoop Inc.','Verkoop_incl','Prix conseillé TTC'],
+    'Verkoop_ex':          ['HT DEEE','HtDeee','Verkoop Ex.','Prix vente HT'],
+    'EAN':                 ['Code Barre','CodeBarre','EAN','EAN13','Barcode'],
+    'Soort':               ['Soort'],
+    'Categorie':           ['Rubrique','Gamme','Type','Catégorie','Categorie'],
+    'Descriptif':          ['Descriptif','Description','Libelle long'],
   },
-  prefixRegels:[],
+  prefixRegels:[], algamPrefixStrip:true,
 };
 
+// Descriptifs_nl.csv — NL vertaling (hogere prioriteit)
+// Descriptifs.csv — nieuwste versie, als aanvulling
+// Beide: geen header, positionele kolommen
+// Kolom 0: Cle, Kolom 1: artikelcode, Kolom 3: beschrijving
 const DESCRIPTIFS_NL = {
   naam:'Algam Descriptifs NL', delimiter:',',
-  algamBestandType: 'descriptifs',
   geenHeader: true,
   positieMapping: {
     'Leverancier_artikel': 1,
     'Descriptif':          3,
-    'Sub_omschrijving':    2,
   },
-  mapping:{ 'Leverancier_artikel':[], 'Descriptif':[], 'Sub_omschrijving':[] },
-  prefixRegels:[],
+  mapping:{ 'Leverancier_artikel': [], 'Descriptif': [] },
+  prefixRegels:[], algamPrefixStrip:true,
+  prioriteit: 10,  // hogere prioriteit = wint bij conflict
 };
 
-// Descriptifs.csv (FR) — zelfde structuur, maar Franse teksten als fallback
-const DESCRIPTIFS_FR = {
-  naam:'Algam Descriptifs FR (fallback)', delimiter:',',
-  algamBestandType: 'descriptifs_fr',  // apart type — lagere prioriteit dan NL
+const DESCRIPTIFS_NIEUW = {
+  naam:'Algam Descriptifs (nieuwste)', delimiter:',',
   geenHeader: true,
   positieMapping: {
     'Leverancier_artikel': 1,
     'Descriptif':          3,
-    'Sub_omschrijving':    2,
   },
-  mapping:{ 'Leverancier_artikel':[], 'Descriptif':[], 'Sub_omschrijving':[] },
-  prefixRegels:[],
-};
-
-// Prioriteiten voor Algam 3-bestand merge
-// Naam: AB Music Libelle wint (minder Frans)
-// Inkoop: AB Music Base HT wint (actueel)
-// Verkoop: Produits TtcPublic wint (volledigst)
-// Rest: Produits wint (meest compleet)
-const ALGAM_VELD_PRIORITEIT = {
-  'name':            'abmusic',
-  'Inkoop_ex':       'abmusic',
-  'Verkoop_incl':    'produits',
-  'Afbeelding':      'produits',
-  'Gewicht':         'produits',
-  'EAN':             'produits',
-  'Categorie':       'produits',
-  'Merk':            'produits',
-  'Descriptif':      'descriptifs',
-  'Sub_omschrijving':'descriptifs',
+  mapping:{ 'Leverancier_artikel': [], 'Descriptif': [] },
+  prefixRegels:[], algamPrefixStrip:true,
+  prioriteit: 5,  // lagere prioriteit — vult alleen aan waar NL leeg is
 };
 
 // ─── INIT ────────────────────────────────────
@@ -605,31 +500,30 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('apiKey').addEventListener('change', () =>
     localStorage.setItem('schreeven_api_key', document.getElementById('apiKey').value));
   laadProfielen();
-  laadKortingen();
   const zone = document.getElementById('uploadZone');
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('drag-over');
-    [...e.dataTransfer.files].forEach(leesBestand);
-  });
-  document.getElementById('fileInput').addEventListener('change', e => {
-    [...e.target.files].forEach(leesBestand); e.target.value = '';
-  });
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); [...e.dataTransfer.files].forEach(leesBestand); });
+  document.getElementById('fileInput').addEventListener('change', e => { [...e.target.files].forEach(leesBestand); e.target.value = ''; });
 });
 
 // ─── PROFIELEN ───────────────────────────────
 function laadProfielen() {
   const op = localStorage.getItem('schreeven_opschoon_profielen');
   profielen = op ? JSON.parse(op) : {};
-  profielen['algam_produits']    = ALGAM_PRODUITS;
+  // Ingebakken profielen — worden niet opgeslagen in localStorage
+  profielen['algam_produits']    = ALGAM;
   profielen['ab_music_tarif']    = AB_MUSIC;
   profielen['algam_descriptifs'] = DESCRIPTIFS_NL;
-  profielen['algam_descriptifs_fr'] = DESCRIPTIFS_FR;
+  profielen['algam_descriptifs_nieuw'] = DESCRIPTIFS_NIEUW;
 }
 function slaProfielenOp() {
   const k = {...profielen};
-  delete k['algam_produits']; delete k['ab_music_tarif']; delete k['algam_descriptifs']; delete k['algam_descriptifs_fr'];
+  // Verwijder alle ingebakken profielen voor opslag
+  delete k['algam_produits'];
+  delete k['ab_music_tarif'];
+  delete k['algam_descriptifs'];
+  delete k['algam_descriptifs_nieuw'];
   localStorage.setItem('schreeven_opschoon_profielen', JSON.stringify(k));
 }
 function openNieuwProfiel() { document.getElementById('modalNieuwProfiel').classList.add('open'); }
@@ -645,117 +539,58 @@ function slaProfielOp() {
   log(`Profiel aangemaakt: ${naam}`, 'ok');
 }
 
-// ─── BESTANDSTYPE HERKENNING ─────────────────
-function herkenAlgamBestandType(bestandNaam, headers) {
-  const n = bestandNaam.toLowerCase();
-  // Op bestandsnaam
-  if (n.includes('produits')) return 'produits';
-  if (n.includes('descriptifs_nl') || n.includes('descriptifs nl')) return 'descriptifs';
-  if (n.includes('descriptifs')) return 'descriptifs_fr';
-  if ((n.includes('tarif') && n.includes('ab')) || n.includes('ab_music') || n.includes('abmusic')) return 'abmusic';
-  // Op kolommen
-  if (headers.includes('TtcPublic') || headers.includes('CodeBarre')) return 'produits';
-  if (headers.includes('Libelle') && headers.includes('Base HT')) return 'abmusic';
-  return null;
-}
-
-function updateAlgamMergeBanner() {
-  const types = bestanden.map(b => b.algamBestandType).filter(Boolean);
-  const heeftProduits    = types.includes('produits');
-  const heeftDescriptifs = types.includes('descriptifs') || types.includes('descriptifs_fr');
-  const heeftDescriptifsNL = types.includes('descriptifs');
-  const heeftDescriptifsFR = types.includes('descriptifs_fr');
-  const heeftAbmusic     = types.includes('abmusic');
-  const banner = document.getElementById('algamMergeBanner');
-  const tekst  = document.getElementById('algamMergeBannerTekst');
-  const mergeInfo = document.getElementById('algamMergeInfo');
-
-  const ontbreekt = [];
-  if (!heeftProduits)    ontbreekt.push('Produits.xlsx');
-  if (!heeftDescriptifs) ontbreekt.push('Descriptifs_nl.csv');
-  if (!heeftAbmusic)     ontbreekt.push('Tarif_AB_Music.xls');
-
-  const isCompleet = heeftProduits && heeftDescriptifs && heeftAbmusic;
-  const isGestart  = heeftProduits || heeftDescriptifs || heeftAbmusic;
-
-  if (!isGestart) {
-    banner.style.display = 'none';
-  } else {
-    banner.style.display = 'block';
-    if (isCompleet) {
-      tekst.textContent = '3 bestanden geladen — optimale merge klaar';
-      banner.style.background = 'linear-gradient(135deg,#edf9ed,#edf9ed)';
-      banner.style.borderColor = 'var(--groen)';
-    } else {
-      tekst.textContent = `Nog te uploaden: ${ontbreekt.join(', ')}`;
-      banner.style.background = 'linear-gradient(135deg,#fff4e0,#fff4e0)';
-      banner.style.borderColor = 'var(--oranje)';
-    }
-  }
-  if (mergeInfo) mergeInfo.style.display = isCompleet ? 'flex' : 'none';
-}
-
-// ─── BESTANDEN INLEZEN ───────────────────────
+// ─── BESTANDEN ───────────────────────────────
 function leesBestand(file) {
-  if (/\.xlsx?$/i.test(file.name)) leesExcel(file);
-  else leesCSV(file);
+  const isExcel = /\.xlsx?$/i.test(file.name);
+  if (isExcel) {
+    leesExcel(file);
+  } else {
+    leesCSV(file);
+  }
 }
 
 function verwerkRijen(file, headers, rijen) {
-  const algamType = herkenAlgamBestandType(file.name, headers);
-  let profielId = null;
+  // Controleer of een profiel positionele mapping heeft (geen header)
+  // bijv. Descriptifs_nl.csv
+  let profielId = herkenProfiel(headers);
 
-  if (algamType === 'produits')    profielId = 'algam_produits';
-  else if (algamType === 'abmusic') profielId = 'ab_music_tarif';
-  else if (algamType === 'descriptifs') profielId = 'algam_descriptifs';
-  else profielId = herkenProfiel(headers);
+  // Fallback: herken op bestandsnaam
+  if (!profielId) {
+    const naam = file.name.toLowerCase();
+    if (naam.includes('descriptifs_nl')) profielId = 'algam_descriptifs';
+    else if (naam.includes('descriptifs')) profielId = 'algam_descriptifs_nieuw';
+    else if (naam.includes('tarif') && naam.includes('ab')) profielId = 'ab_music_tarif';
+    else if (naam.includes('produits')) profielId = 'algam_produits';
+  }
 
   const profiel = profielId ? profielen[profielId] : null;
+
+  // Positionele mapping: geen header, kolommen op index
   let mapping = {};
   let effectieveHeaders = headers;
-
   if (profiel && profiel.geenHeader) {
-    // Positionele mapping — geen header in bestand
-    const maxKol = Math.max(...rijen.map(r => r.length), headers.length);
+    // Rijen bevatten al data, eerste rij is geen header
+    // Maak fictieve headers op positie
+    const maxKol = Math.max(...rijen.map(r => r.length));
     effectieveHeaders = Array.from({length: maxKol}, (_, i) => `kolom_${i}`);
+    // Voeg eerste rij terug toe aan rijen (was al data)
     const alleRijen = [headers, ...rijen];
     Object.entries(profiel.positieMapping || {}).forEach(([veld, idx]) => {
       mapping[veld] = `kolom_${idx}`;
     });
-    bestanden.push({
-      naam: file.name, headers: effectieveHeaders,
-      rijen: alleRijen.map(r => effectieveHeaders.map((_, i) => r[i] || '')),
-      profielId, mapping, klaar: true, algamBestandType: algamType
-    });
+    bestanden.push({ naam: file.name, headers: effectieveHeaders, rijen: alleRijen.map(r => effectieveHeaders.map((_, i) => r[i] || '')), profielId, mapping, klaar: true });
     log(`Geladen: ${file.name} — ${alleRijen.length} rijen (positionele mapping)`, 'ok');
-  } else {
-    mapping = profielId ? autoMapping(headers, profiel) : {};
-    bestanden.push({ naam: file.name, headers, rijen, profielId, mapping, klaar: !!profielId, algamBestandType: algamType });
-    log(`Geladen: ${file.name} — ${rijen.length} rijen${algamType ? ` [${algamType}]` : ''}`, 'ok');
+    log(`  Profiel: ${profiel.naam}`, 'info');
+    renderAlles();
+    return;
   }
 
-  if (profiel) log(`  Profiel: ${profiel.naam}`, 'info');
+  mapping = profielId ? autoMapping(headers, profiel) : {};
+  bestanden.push({ naam: file.name, headers, rijen, profielId, mapping, klaar: !!profielId });
+  log(`Geladen: ${file.name} — ${rijen.length} rijen`, 'ok');
+  if (profielId) log(`  Profiel: ${profiel.naam}`, 'info');
   else log(`  Geen profiel herkend — stel mapping in`, 'warn');
-
-  // Stel Algam merge prioriteiten in als alle drie aanwezig
-  if (algamType) pas_algam_prioriteiten_toe();
   renderAlles();
-}
-
-function pas_algam_prioriteiten_toe() {
-  const types = bestanden.map((b,i) => ({type: b.algamBestandType, idx: i}));
-  const prodIdx    = types.find(t => t.type === 'produits')?.idx;
-  const descIdx    = types.find(t => t.type === 'descriptifs')?.idx;
-  const abmIdx     = types.find(t => t.type === 'abmusic')?.idx;
-  if (prodIdx === undefined) return;
-
-  // Zet veldprioriteiten op basis van bestandsindexen
-  Object.entries(ALGAM_VELD_PRIORITEIT).forEach(([veld, bronType]) => {
-    if (bronType === 'abmusic' && abmIdx !== undefined) veldPrioriteit[veld] = abmIdx;
-    else if (bronType === 'descriptifs' && descIdx !== undefined) veldPrioriteit[veld] = descIdx;
-    else if (bronType === 'produits') veldPrioriteit[veld] = prodIdx;
-  });
-  log('Algam merge prioriteiten automatisch ingesteld', 'ok');
 }
 
 function leesCSV(file) {
@@ -763,7 +598,6 @@ function leesCSV(file) {
   reader.onload = e => {
     let tekst = e.target.result;
     if (tekst.charCodeAt(0) === 0xFEFF) tekst = tekst.slice(1);
-    // Detecteer encoding problemen — probeer latin-1 als UTF-8 vreemd ziet
     const eerste = tekst.split('\n')[0];
     const delim = (eerste.match(/,/g)||[]).length > (eerste.match(/;/g)||[]).length ? ',' : ';';
     const alle = parseCSV(tekst, delim);
@@ -781,16 +615,20 @@ function leesExcel(file) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
+      // Eerste werkblad gebruiken
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const alleRijen = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (alleRijen.length < 2) { log(`${file.name}: leeg of ongeldig`, 'err'); return; }
+      // Alle waarden naar string
       const headers = alleRijen[0].map(h => String(h).trim());
       const rijen = alleRijen.slice(1)
         .filter(r => r.some(c => c !== '' && c !== null && c !== undefined))
         .map(r => headers.map((_, i) => String(r[i] ?? '').trim()));
-      log(`Excel geladen: ${file.name} (${workbook.SheetNames[0]})`, 'ok');
+      log(`Excel geladen: ${file.name} (werkblad: ${workbook.SheetNames[0]})`, 'ok');
       verwerkRijen(file, headers, rijen);
-    } catch(err) { log(`Excel inlezen mislukt: ${err.message}`, 'err'); }
+    } catch(err) {
+      log(`Excel inlezen mislukt: ${err.message}`, 'err');
+    }
   };
   reader.readAsArrayBuffer(file);
 }
@@ -824,58 +662,114 @@ function autoMapping(headers, profiel) {
     if (k) m[v.key] = k;
     else if (headers.includes(v.key)) m[v.key] = v.key;
   });
-  // Extra: Categorie voor AI soort fallback
-  if (!m['Categorie'] && profiel.mapping['Categorie']) {
-    const k = (profiel.mapping['Categorie']||[]).find(c => headers.includes(c));
-    if (k) m['Categorie'] = k;
-  }
-  // Extra: dimensievelden voor verzendkosten (beginnen met _)
-  ['_Longueur','_Largeur','_Hauteur'].forEach(veld => {
-    if (profiel.mapping[veld]) {
-      const k = (profiel.mapping[veld]||[]).find(c => headers.includes(c));
-      if (k) m[veld] = k;
-    }
-  });
   return m;
 }
 
-// ─── MERK NORMALISATIE ───────────────────────
-const MERK_UITZONDERINGEN = {
-  // Afkortingen die volledig in caps blijven
-  'hk audio':        'HK Audio',
-  'bg':              'BG',
-  'jm':              'JM',
-  'akg':             'AKG',
-  'jbl':             'JBL',
-  'qsc':             'QSC',
-  'rme':             'RME',
-  'dpa':             'DPA',
-  'iem':             'IEM',
-  'svt':             'SVT',
-  'ldm':             'LDM',
-  'lr baggs':        'LR Baggs',
-  'tc electronic':   'TC Electronic',
-  'tc helicon':      'TC Helicon',
-  'c.f martin & co': 'C.F. Martin & Co.',
-  'c.f. martin':     'C.F. Martin',
-  'q-sys':           'Q-SYS',
-  'g&l':             'G&L',
-  'k&m':             'K&M',
-  'hughes & kettner':'Hughes & Kettner',
-  'allen & heath':   'Allen & Heath',
-  'martin by harman':'Martin By Harman',
-  'martin audio':    'Martin Audio',
-  'cf martin':       'C.F. Martin',
-};
+// ─── RENDER ──────────────────────────────────
+function renderAlles() {
+  renderBestandenLijst();
+  renderBestandProfielen();
+  document.getElementById('mergePanel').style.display = bestanden.length > 1 ? 'block' : 'none';
+  document.getElementById('stap3nr').textContent = bestanden.length > 1 ? '3' : '2';
+  if (bestanden.length > 1) renderPrioriteitTabel();
+  document.getElementById('btnStart').disabled = bestanden.length === 0;
+  berekenDashboard(false);
+  if (bestanden.length > 0) toonTab('dashboard');
+}
 
-function normaliseerMerk(merk) {
-  if (!merk) return merk;
-  const s = merk.trim();
-  const lower = s.toLowerCase();
-  // Check uitzonderingen
-  if (MERK_UITZONDERINGEN[lower]) return MERK_UITZONDERINGEN[lower];
-  // Standaard Title Case
-  return lower.replace(/\b\w/g, c => c.toUpperCase());
+function renderBestandenLijst() {
+  document.getElementById('bestandLijst').innerHTML = bestanden.map((b,i) => `
+    <div class="bestand-rij ${b.klaar?'klaar':''}">
+      <div class="bestand-rang">${i+1}</div>
+      <div><div class="bestand-naam">${b.naam}</div><div class="bestand-meta">${b.rijen.length} rijen · ${b.headers.length} kol.</div></div>
+      <div class="profiel-badge-klein">${b.profielId ? profielen[b.profielId].naam : 'Geen profiel'}</div>
+      <button class="verwijder-btn" onclick="verwijderBestand(${i})">✕</button>
+    </div>`).join('');
+}
+
+function renderBestandProfielen() {
+  const el = document.getElementById('bestandProfielLijst');
+  if (!bestanden.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>'; return; }
+  el.innerHTML = bestanden.map((b,i) => `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);margin-bottom:6px;text-transform:uppercase;">Bestand ${i+1}: ${b.naam}</div>
+      ${Object.entries(profielen).map(([id,p]) => `
+        <div class="profiel-kaart ${b.profielId===id?'actief':''}" onclick="selecteerProfiel(${i},'${id}')">
+          <div class="profiel-naam">${p.naam}${p.prioriteit?` <span style="font-size:10px;color:#006633;font-weight:400">(prioriteit ${p.prioriteit})</span>`:''}</div>
+          <div class="profiel-badge">${b.profielId===id?'Actief':'Selecteer'}</div>
+        </div>`).join('')}
+      <button class="btn btn-outline" style="width:100%;margin-top:6px;font-size:0.77rem;" onclick="openMappingModal(${i})">⚙ Mapping instellen</button>
+    </div>
+    ${i < bestanden.length-1 ? '<hr class="scheider">' : ''}`).join('');
+}
+
+function renderPrioriteitTabel() {
+  const tbody = document.getElementById('prioriteitBody');
+  tbody.innerHTML = VELDEN.filter(v => v.key !== 'Omschrijving').map(v => `
+    <tr>
+      <td style="font-weight:600;">${v.label}</td>
+      <td><select onchange="setPrioriteit('${v.key}',this.value)">
+        ${bestanden.map((b,i) => `<option value="${i}" ${(veldPrioriteit[v.key]??0)===i?'selected':''}>B${i+1}: ${b.naam.slice(0,18)}</option>`).join('')}
+      </select></td>
+    </tr>`).join('');
+}
+
+function setPrioriteit(veld, idx) { veldPrioriteit[veld] = parseInt(idx); }
+function verwijderBestand(idx) { bestanden.splice(idx,1); veldPrioriteit={}; renderAlles(); if (!bestanden.length) document.getElementById('btnStart').disabled=true; }
+function selecteerProfiel(bi, pid) {
+  bestanden[bi].profielId = pid;
+  bestanden[bi].mapping = autoMapping(bestanden[bi].headers, profielen[pid]);
+  bestanden[bi].klaar = true;
+  renderAlles();
+  log(`Bestand ${bi+1}: profiel "${profielen[pid].naam}"`, 'info');
+}
+
+// ─── MAPPING MODAL ───────────────────────────
+function openMappingModal(idx) {
+  actiefMappingIdx = idx;
+  const b = bestanden[idx];
+  document.getElementById('modalMappingTitel').textContent = `Kolommen koppelen — ${b.naam}`;
+  let html = '<div class="mapping-grid"><div class="mapping-header">Schreeven veld</div><div></div><div class="mapping-header">Kolom in CSV</div>';
+  VELDEN.forEach(v => {
+    const huidig = b.mapping[v.key]||'';
+    const opties = b.headers.map(h => `<option value="${h}" ${h===huidig?'selected':''}>${h}</option>`).join('');
+    html += `<div class="mapping-label ${v.vplicht?'':'opt'}">${v.label}${v.vplicht?' *':''}</div>
+      <div class="mapping-arrow">→</div>
+      <select class="mapping-select" data-veld="${v.key}"><option value="">— niet gebruiken —</option>${opties}</select>`;
+  });
+  html += '</div>';
+  document.getElementById('modalMappingInhoud').innerHTML = html;
+  document.getElementById('modalMapping').classList.add('open');
+}
+
+function leesModalMapping() {
+  const m = {};
+  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) m[s.dataset.veld]=s.value; });
+  return m;
+}
+
+function mappingBevestigen() {
+  if (actiefMappingIdx===null) return;
+  bestanden[actiefMappingIdx].mapping = leesModalMapping();
+  bestanden[actiefMappingIdx].klaar = true;
+  sluitModal('modalMapping');
+  renderAlles();
+  berekenDashboard(false);
+  log(`Mapping bevestigd voor bestand ${actiefMappingIdx+1}`, 'ok');
+}
+
+function mappingOpslaan() {
+  const naam = prompt('Naam voor dit profiel:');
+  if (!naam) return;
+  const mapping = {};
+  leesModalMapping();
+  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) mapping[s.dataset.veld]=[s.value]; });
+  const id = 'p_' + naam.toLowerCase().replace(/\s+/g,'_');
+  profielen[id] = { naam, delimiter:';', mapping, prefixRegels:[] };
+  slaProfielenOp();
+  bestanden[actiefMappingIdx].profielId = id;
+  mappingBevestigen();
+  log(`Profiel opgeslagen: ${naam}`, 'ok');
 }
 
 // ─── RECORD VERWERKEN ────────────────────────
@@ -885,27 +779,13 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     const k = mapping[v.key];
     r[v.key] = k ? ((rij[headers.indexOf(k)]||'').trim()) : '';
   });
-  // Categorie apart opslaan voor AI fallback
-  const catK = mapping['Categorie'];
-  if (catK) r._catFallback = (rij[headers.indexOf(catK)]||'').trim();
 
-  // Normaliseer Merk naar Title Case — voorkomt dubbelen (DUNLOP vs Dunlop)
-  if (r.Merk) {
-    r.Merk = normaliseerMerk(r.Merk);
-  }
-
-  // Algam prefix strip: "DUN 6502" → Type="6502", Leverancier_artikel="DUN 6502"
+  // Algam prefix strip
   if (profiel?.algamPrefixStrip && r.Leverancier_artikel) {
+    if (r.Type) { r._catFallback = r.Type; r.Type = ''; }
     const m = r.Leverancier_artikel.match(/^([A-Z]{2,4}) (.+)$/);
-    if (m) {
-      r.Type = r.Type || m[2].trim();
-    } else {
-      // Geen prefix match — gebruik Leverancier_artikel zelf als Type
-      r.Type = r.Type || r.Leverancier_artikel;
-    }
+    r.Type = m ? m[2].trim() : r.Leverancier_artikel;
   }
-  // AB Music: Libelle is de naam, maar als Type nog leeg is gebruik Libelle als fallback
-  if (!r.Type && r.name) r.Type = r.name;
 
   // Handmatige prefix strip
   if (profiel?.prefixRegels?.length && r.Type) {
@@ -917,126 +797,7 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
     });
   }
 
-  // Descriptifs FR: zelfde structuur maar check of tekst echt Frans is
-  if (profiel?.algamBestandType === 'descriptifs_fr') {
-    const col2 = mapping['Sub_omschrijving'] ? (rij[headers.indexOf(mapping['Sub_omschrijving'])]||'').trim() : '';
-    const col3 = r.Descriptif || '';
-    if (col2 && col3) r.Descriptif = col3 + ' | ' + col2;
-    else if (col2 && !col3) r.Descriptif = col2;
-    // Markeer alleen als de tekst echt Frans is
-    if (isFrenchDescriptif(r.Descriptif)) {
-      r._isFrDescriptif = true;
-    }
-    // Zo niet: tekst is universeel (- Color : zwart stijl) → gewoon gebruiken
-  }
-
-  // Descriptifs_nl: kolom_2 + kolom_3 samenvoegen + velden parsen
-  if (profiel?.algamBestandType === 'descriptifs') {
-    const col2 = mapping['Sub_omschrijving'] ? (rij[headers.indexOf(mapping['Sub_omschrijving'])]||'').trim() : '';
-    const col3 = r.Descriptif || '';
-    if (col2 && col3) r.Descriptif = col3 + ' | ' + col2;
-    else if (col2 && !col3) r.Descriptif = col2;
-
-    // Parse "- Sleutel : waarde" blokken uit kolom_3 naar losse velden
-    if (col3) {
-      const parseVal = (tekst, sleutels) => {
-        for (const s of sleutels) {
-          const m = tekst.match(new RegExp('-\\s*' + s + '\\s*:\\s*([^-]+?)(?=\\s*-\\s*[A-Z]|$)', 'i'));
-          if (m) return m[1].trim();
-        }
-        return '';
-      };
-      if (!r.Kleur)          r.Kleur          = parseVal(col3, ['Color','Kleuren','Kleur','Couleur']);
-      if (!r.Gewicht)        r.Gewicht        = parseVal(col3, ['Gewicht','Poids','Weight']);
-      if (!r.Afmeting)       r.Afmeting       = parseVal(col3, ['Afmetingen \\(mm\\)','Afmeting','Dimensions']);
-      if (!r.Materiaal)      r.Materiaal      = parseVal(col3, ['Materiaal','Material']);
-      if (!r.Hoeveelheid)    r.Hoeveelheid    = parseVal(col3, ['Hoeveelheid','Quantity']);
-      if (!r.Aantal_snaren)  r.Aantal_snaren  = parseVal(col3, ['Aantal snaren']);
-      if (!r.Gauge)          r.Gauge          = parseVal(col3, ['Gauge']);
-      if (!r.Omwonden)       r.Omwonden       = parseVal(col3, ['Omwonden']);
-      if (!r.Instrument)     r.Instrument     = parseVal(col3, ['Bestemming','Destination','Instrument']);
-      if (!r.Inputs)         r.Inputs         = parseVal(col3, ['Inputs']);
-      if (!r.Outputs)        r.Outputs        = parseVal(col3, ['Outputs']);
-      if (!r.Vermogen)       r.Vermogen       = parseVal(col3, ['Vermogen','Puissance']);
-      if (!r.Aantal_kanalen) r.Aantal_kanalen = parseVal(col3, ['Aantal kanalen']);
-      if (!r.Maat) {
-        let maatVal = parseVal(col3, ['Formaat','Dikte','Taille','Format']);
-        r.Maat = maatVal.replace(/\s*mm$/i, '').trim();
-      }
-      if (!r.Kleur) r.Kleur = parseVal(col3, ['Afwerking']);
-      if (!r.Sub_omschrijving) {
-        const hoeV = r.Hoeveelheid || '';
-        const hoe  = hoeV && hoeV !== '1' ? hoeV + ' stuks' : '';
-        r.Sub_omschrijving = [r.Materiaal, hoe].filter(Boolean).join(' · ');
-      }
-      if (!r._catFallback) {
-        r._catFallback = parseVal(col3, ['Instrument']);
-      }
-    }
-  }
-
-  // Produits: L x B x H = verpakkingsdimensies (doos) — NIET productafmeting
-  if (profiel?.algamBestandType === 'produits') {
-    const lk = mapping['_Longueur'], bk = mapping['_Largeur'], hk = mapping['_Hauteur'];
-    const l = lk ? (rij[headers.indexOf(lk)]||'').trim() : '';
-    const b = bk ? (rij[headers.indexOf(bk)]||'').trim() : '';
-    const h = hk ? (rij[headers.indexOf(hk)]||'').trim() : '';
-    if (l && b && l !== '0' && b !== '0') {
-      r.Verpakking_afmeting = h && h !== '0' ? `${l} x ${b} x ${h} cm` : `${l} x ${b} cm`;
-    }
-    // Poids = verpakkingsgewicht in kg
-    if (r.Gewicht) {
-      r.Verpakking_gewicht = r.Gewicht;
-      r.Gewicht = ''; // Gewicht veld bewaren voor productgewicht uit Descriptifs_nl
-    }
-  }
-
-  // Kleur en Maat extraheren uit name (AB Music Libelle) als veld nog leeg is
-  if (!r.Kleur && r.name) {
-    const kleurWoorden = {
-      'black':'zwart','white':'wit','red':'rood','blue':'blauw',
-      'green':'groen','yellow':'geel','grey':'grijs','gray':'grijs',
-      'brown':'bruin','silver':'zilver','gold':'goud','orange':'oranje',
-      'purple':'paars','pink':'roze','transparent':'transparant',
-      'natural':'naturel','zwart':'zwart','wit':'wit','rood':'rood',
-      'blauw':'blauw','groen':'groen','geel':'geel','grijs':'grijs',
-    };
-    const naamLower = r.name.toLowerCase();
-    for (const [en, nl] of Object.entries(kleurWoorden)) {
-      if (new RegExp('\\b' + en + '\\b').test(naamLower)) {
-        r.Kleur = nl; break;
-      }
-    }
-  }
-
-  if (!r.Maat && r.name) {
-    const naam = r.name;
-    // Dikte in mm (plectra): 0.73mm, 1,14mm, .88mm
-    let m = naam.match(/(?:^|\s)(\d+[.,]\d+)\s*mm(?:\s|$|-)/i);
-    if (m) { r.Maat = m[1]; }  // alleen het getal, bijv. "0,73" niet "0,73 mm"
-    else if ((m = naam.match(/(?:^|\s)([.,]\d+)\s*mm(?:\s|$|-)/i))) { r.Maat = m[1]; }
-    // Zwaarte snaren/plectra: extra light, light, medium, heavy, extra heavy
-    else if ((m = naam.match(/\b(extra\s*light|extra\s*heavy|medium\s*light|medium\s*heavy|light|medium|heavy)\b/i))) {
-      r.Maat = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
-    }
-    // Instrument fractie: 4/4, 3/4, 1/2, 1/4
-    else if ((m = naam.match(/\b([1-4]\/[248])\b/))) {
-      r.Maat = m[1];
-    }
-    // Inch formaat: 22", 14", 10 inch
-    else if ((m = naam.match(/\b(\d{1,2})["\s]*(inch|")/i))) {
-      r.Maat = m[1] + '"';
-    }
-    // Instrument formaat
-    else if ((m = naam.match(/\b(dreadnought|auditorium|concert|soprano|tenor|bariton|parlor|jumbo|grand)\b/i))) {
-      r.Maat = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
-    }
-  }
-
-  // EU notatie voor prijsvelden
-  ['Inkoop_ex','Inkoop_basis','Verkoop_incl','Verkoop_ex'].forEach(k => {
-    if (r[k]) r[k] = r[k].replace('.', ',');
-  });
+  if (!r.Soort && (r.Categorie || r._catFallback)) r._catFallback = r.Categorie || r._catFallback;
   r._warnings = [];
   r._soortBron = 'geen';
   return r;
@@ -1044,26 +805,21 @@ function rijNaarRecord(rij, headers, mapping, profiel) {
 
 // ─── MERGE ───────────────────────────────────
 function mergeRecords(recordsPerBestand, sleutelveld) {
+  // Bouw profiel-prioriteit map op per bestandsindex
+  // Hogere prioriteit = wint bij conflict (bijv. Descriptifs_nl > Descriptifs)
+  const bestandPrioriteit = bestanden.map(b => {
+    const profiel = b.profielId ? profielen[b.profielId] : null;
+    return profiel?.prioriteit ?? 0;
+  });
+
   const lookups = recordsPerBestand.map(recs => {
     const map = new Map();
-    recs.forEach(r => {
-      const k = (r[sleutelveld]||'').trim().toLowerCase();
-      if (k) map.set(k, r);
-    });
+    recs.forEach(r => { const k=(r[sleutelveld]||'').trim().toLowerCase(); if(k) map.set(k,r); });
     return map;
   });
 
   const alleSleutels = new Set();
-  // Descriptifs_nl mag geen nieuwe sleutels aanmaken — alleen aanvullen
-  // Basis = AB Music + Produits
-  // Beide descriptifs types (NL en FR) zijn aanvulling, niet basis
-  const descriptifIndices = bestanden
-    .map((b,i) => (b.algamBestandType === 'descriptifs' || b.algamBestandType === 'descriptifs_fr') ? i : -1)
-    .filter(i => i >= 0);
-  lookups.forEach((l, idx) => {
-    if (!descriptifIndices.includes(idx)) l.forEach((_,k) => alleSleutels.add(k));
-  });
-  if (alleSleutels.size === 0) lookups.forEach(l => l.forEach((_,k) => alleSleutels.add(k)));
+  lookups.forEach(l => l.forEach((_,k) => alleSleutels.add(k)));
 
   let aantalGemergd = 0;
   const resultaat = [];
@@ -1076,31 +832,32 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
     VELDEN.forEach(v => merged[v.key]='');
 
     VELDEN.forEach(v => {
-      const prio = veldPrioriteit[v.key] ?? 0;
-      // Sorteer: descriptifs_fr altijd na descriptifs_nl
-      const frIndices = bestanden
-        .map((b,i) => b.algamBestandType === 'descriptifs_fr' ? i : -1)
-        .filter(i => i >= 0);
-      const volgorde = [prio, ...lookups.map((_,i)=>i).filter(i=>i!==prio)]
-        .sort((a,b) => {
-          const aFr = frIndices.includes(a) ? 1 : 0;
-          const bFr = frIndices.includes(b) ? 1 : 0;
-          return aFr - bFr; // FR komt altijd laatste
-        });
+      // Handmatige prioriteit via UI, of profiel-prioriteit als fallback
+      const handmatigPrio = veldPrioriteit[v.key];
+      
+      // Sorteer bestanden op prioriteit voor dit veld:
+      // 1. Handmatig ingesteld in UI
+      // 2. Profiel-prioriteit (bijv. Descriptifs_nl prioriteit:10 > Descriptifs prioriteit:5)
+      // 3. Volgorde van uploaden
+      let volgorde;
+      if (handmatigPrio !== undefined) {
+        volgorde = [handmatigPrio, ...lookups.map((_,i)=>i).filter(i=>i!==handmatigPrio)];
+      } else {
+        // Sorteer op profiel prioriteit (hoog naar laag)
+        volgorde = lookups.map((_,i)=>i).sort((a,b) => (bestandPrioriteit[b]||0) - (bestandPrioriteit[a]||0));
+      }
+      
       for (const idx of volgorde) {
         const rec = lookups[idx]?.get(sleutel);
         if (rec?.[v.key]) {
           merged[v.key] = rec[v.key];
           if (!merged._bronBestanden.includes(idx)) merged._bronBestanden.push(idx);
-          // Markeer als Frans descriptif
-          if (frIndices.includes(idx) && v.key === 'Descriptif') {
-            merged._franseDescriptif = true;
-          }
           break;
         }
       }
     });
 
+    // Extra velden overnemen
     aanwezig.forEach(r => {
       if (r._catFallback && !merged._catFallback) merged._catFallback = r._catFallback;
       merged._warnings.push(...(r._warnings||[]));
@@ -1111,40 +868,7 @@ function mergeRecords(recordsPerBestand, sleutelveld) {
   });
 
   log(`Merge: ${resultaat.length} unieke records (${aantalGemergd} uit meerdere bestanden)`, 'ok');
-  // Debug: tel per merk
-  const merkTeller = {};
-  resultaat.forEach(r => { const m = r.Merk||'?'; merkTeller[m] = (merkTeller[m]||0)+1; });
-  const top5 = Object.entries(merkTeller).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  log(`Top merken: ${top5.map(([m,n])=>m+':'+n).join(', ')}`, 'info');
-  log(`Basis sleutels: ${alleSleutels.size} (descriptifs uitgesloten: ${descriptifIndices.length} bestanden)`, 'info');
   return { records: resultaat, aantalGemergd };
-}
-
-// ─── OMSCHRIJVING SAMENSTELLEN ──────────────────
-function stelOmschrijvingSamen(r) {
-  const merk  = (r.Merk  || '').trim();
-  const type_ = (r.Type  || '').trim();
-  const name  = (r.name  || '').trim();
-  const soort = (r.Soort || '').trim();
-
-  // Omschrijving = MERK (caps) + Type (zonder prefix) + name
-  const merkCaps = merk.toUpperCase();
-  // Strip leverancier prefix uit Leverancier_artikel: "ADU 412R73" → "412R73"
-  const artikelClean = (r.Leverancier_artikel || type_ || '')
-    .replace(/^[A-Z]{2,4}\s+/, '').trim();
-  const delen = [];
-  let opgebouwd = '';
-  const voegToe = (deel) => {
-    if (!deel) return;
-    if (!opgebouwd.toLowerCase().includes(deel.toLowerCase())) {
-      delen.push(deel);
-      opgebouwd = delen.join(' ');
-    }
-  };
-  voegToe(merkCaps);
-  voegToe(artikelClean);
-  voegToe(name);
-  return opgebouwd.trim();
 }
 
 // ─── HOOFDVERWERKING ─────────────────────────
@@ -1154,15 +878,16 @@ async function startVerwerking() {
   document.getElementById('btnStart').disabled = true;
   verwerktRijen = [];
 
-  const optSoort       = document.getElementById('optSoort').checked;
-  const optFrans       = document.getElementById('optFrans').checked;
+  const optSoort = document.getElementById('optSoort').checked;
+  const optFrans = document.getElementById('optFrans').checked;
   const optOmschrijving = document.getElementById('optOmschrijving').checked;
-  const optAlleenKern  = document.getElementById('optAlleenKern').checked;
-  const sleutelveld    = document.getElementById('mergeSleutel')?.value || 'Leverancier_artikel';
+  const optAlleenKern = document.getElementById('optAlleenKern').checked;
+  const sleutelveld = document.getElementById('mergeSleutel')?.value || 'Leverancier_artikel';
 
   log('Start verwerking...', 'ok');
   document.getElementById('voortgangFill').style.width = '10%';
 
+  // Rijen → records per bestand
   const recordsPerBestand = bestanden.map(b => {
     const profiel = b.profielId ? profielen[b.profielId] : null;
     return b.rijen.map(rij => rijNaarRecord(rij, b.headers, b.mapping, profiel));
@@ -1171,6 +896,7 @@ async function startVerwerking() {
   document.getElementById('voortgangFill').style.width = '30%';
   await wacht(0);
 
+  // Merge of direct
   let records, aantalGemergd = 0;
   if (bestanden.length > 1) {
     log(`Merge ${bestanden.length} bestanden op "${sleutelveld}"...`, 'info');
@@ -1183,78 +909,46 @@ async function startVerwerking() {
   document.getElementById('voortgangFill').style.width = '50%';
   await wacht(0);
 
+  // Opschonen
   let aantalFrans = 0, aantalOvergeslagen = 0;
   for (const r of records) {
     if (optAlleenKern && (!r.Merk || !r.Type)) { aantalOvergeslagen++; continue; }
-
-    // Franse descriptif markeren
-    if (r._franseDescriptif || r._isFrDescriptif) {
-      r._warnings.push('Descriptif is Frans — vertalen');
-    }
-    // Franse naam: NOOIT weggooien — altijd markeren met waarschuwing
-    if (optFrans && bevatFrans(r.name || '')) {
-      r._warnings.push('Franse naam — controleren');
-      aantalFrans++;
-    }
-
-    // Pas dealerkorting toe op inkoopprijs — bewaar basis
-    if (r.Inkoop_ex && r.Merk) {
-      const kortingReeks = kortingen[(r.Merk||'').toUpperCase()] ||
-        Object.entries(kortingen).find(([k]) => (r.Merk||'').toUpperCase().includes(k))?.[1];
-      if (kortingReeks && kortingReeks.length) {
-        r.Inkoop_basis = r.Inkoop_ex.replace('.', ','); // bewaar origineel in EU notatie
-        r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
-      }
-    }
-    r.Omschrijving = stelOmschrijvingSamen(r); // altijd samenstellen
-    if (optSoort && !r.Soort && (r.Type || r.name)) r._soortNodig = true;
+    if (optFrans && bevatFrans(r.name||r.Omschrijving||'')) { r._warnings.push('Franse naam'); aantalFrans++; }
+    if (optOmschrijving) r.Omschrijving = [r.Merk,r.Type,r.Soort].filter(Boolean).join(' ');
+    if (optSoort && !r.Soort && (r.Type||r.name)) r._soortNodig = true;
     verwerktRijen.push(r);
   }
 
-  log(`${verwerktRijen.length} records na filter (${aantalOvergeslagen} overgeslagen, ${aantalFrans} Frans)`, 'info');
+  log(`${verwerktRijen.length} records na filter (${aantalOvergeslagen} overgeslagen)`, 'info');
   document.getElementById('voortgangFill').style.width = '65%';
 
+  // AI soort
   let aantalSoortAi = 0;
   if (optSoort) {
     const nodig = verwerktRijen.filter(r => r._soortNodig);
     if (nodig.length) {
       log(`Soort AI detectie voor ${nodig.length} producten...`, 'info');
       aantalSoortAi = await detecteerSoortBatch(nodig);
-      verwerktRijen.forEach(r => {
-        r.Omschrijving = stelOmschrijvingSamen(r);
-      });
+      if (optOmschrijving) verwerktRijen.forEach(r => { r.Omschrijving = [r.Merk,r.Type,r.Soort].filter(Boolean).join(' '); });
     }
   }
 
   document.getElementById('voortgangFill').style.width = '100%';
   updateStats(records.length, verwerktRijen.length, aantalGemergd, aantalFrans, aantalOvergeslagen, aantalSoortAi);
-  renderPreview(verwerktRijen.slice(0, 100));
+  renderPreview(verwerktRijen.slice(0,100));
   maakRapport(records.length, aantalGemergd, aantalFrans, aantalOvergeslagen, aantalSoortAi);
   berekenDashboard(true);
   toonTab('dashboard');
   document.getElementById('btnDownload').disabled = false;
-  document.getElementById('btnHerbereken').disabled = false;
-  vulMerkFilter();
   bezig = false;
   log('✓ Verwerking voltooid', 'ok');
 }
 
 // ─── DETECTIE ────────────────────────────────
-function isFrenchDescriptif(tekst) {
-  if (!tekst) return false;
-  // Echte Franse accenten (é,è,ê,ë,â,î,ô,û,ù,ü,à,ä)
-  if (/[àâäéèêëîïôùûü]/i.test(tekst)) return true;
-  // Franse sleutelwoorden in descriptif context
-  if (/\b(Catégorie|Couleur|Matériau|Désignation|Épaisseur|Finition|Quantité|Longueur|Largeur|Hauteur)\b/.test(tekst)) return true;
-  // Franse kleurwoorden
-  if (/\b(noir|blanc|rouge|bleu|vert|jaune|gris|brun|doré|argenté)\b/i.test(tekst)) return true;
-  return false;
-}
-
 function bevatFrans(t) {
   if (!t) return false;
   return /[àáâãäéèêëîïôùûüç]/i.test(t) ||
-    /\b(pour|avec|sans|noir|blanc|rouge|bleu|bois|guitare|basse|clavier|trompette|clarinette|saxophone|violon|sachet|présentoir|bocal|tourne|mécanique|jeu de|pièces)\b/i.test(t);
+    /\b(pour|avec|sans|noir|blanc|rouge|bleu|bois|metal|guitare|basse|clavier|batterie|trompette|clarinette|saxophone|violon|fl[uû]te)\b/i.test(t);
 }
 
 async function detecteerSoortBatch(producten) {
@@ -1264,7 +958,7 @@ async function detecteerSoortBatch(producten) {
   for (let i = 0; i < producten.length; i += BATCH) {
     const batch = producten.slice(i, i+BATCH);
     const lijst = batch.map((r,idx) => {
-      const cat = r.Categorie || r._catFallback || '';
+      const cat = r.Categorie||r._catFallback||'';
       return `${idx+1}. Merk:${r.Merk||'?'} Type:${r.Type||'?'} Cat:${cat} Naam:${(r.name||'').slice(0,50)} Info:${(r.Descriptif||'').slice(0,70)}`;
     }).join('\n');
     const prompt = `Medewerker Nederlandse muziekwinkel. Geef per product een kort Nederlands soort-label (1-2 woorden, lowercase).\nVoorbeelden: plectrum, capo, snaren, slide, vingerplectrum, gitaarversterker, klarinet, DJ controller, cajon, effectpedaal\nGebruik Naam en Cat als primaire bron. Type is artikelcode.\nAlleen JSON array: ["label1","label2",...]\n\n${lijst}`;
@@ -1276,303 +970,144 @@ async function detecteerSoortBatch(producten) {
       });
       const data = await resp.json();
       const labels = JSON.parse((data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim());
-      batch.forEach((r,idx) => {
-        if (labels[idx] && labels[idx] !== '?') { r.Soort = labels[idx]; r._soortBron = 'ai'; totaal++; }
-      });
+      batch.forEach((r,idx) => { if(labels[idx]&&labels[idx]!=='?') { r.Soort=labels[idx]; r._soortBron='ai'; totaal++; } });
       log(`Soort batch ${Math.floor(i/BATCH)+1}: ${labels.filter(l=>l&&l!=='?').length}/${batch.length}`, 'info');
-    } catch(err) { log(`Soort batch fout: ${err.message}`, 'warn'); }
+    } catch(err) { log(`Soort batch fout: ${err.message}`,'warn'); }
     await wacht(500);
   }
   return totaal;
 }
 
-// ─── RENDER ──────────────────────────────────
-function renderAlles() {
-  renderBestandenLijst();
-  renderBestandProfielen();
-  vulKortingMerkDropdown();
-  updateAlgamMergeBanner();
-  document.getElementById('mergePanel').style.display = bestanden.length > 1 ? 'block' : 'none';
-  document.getElementById('stap3nr').textContent = bestanden.length > 1 ? '3' : '2';
-  if (bestanden.length > 1) renderPrioriteitTabel();
-  document.getElementById('btnStart').disabled = bestanden.length === 0;
-  berekenDashboard(false);
-  if (bestanden.length > 0) toonTab('dashboard');
-}
-
-function bestandTypeBadge(type) {
-  if (type === 'produits')    return '<span class="bestand-type-badge btb-produits">Produits</span>';
-  if (type === 'descriptifs') return '<span class="bestand-type-badge btb-descriptifs">Descriptifs NL</span>';
-  if (type === 'descriptifs_fr') return '<span class="bestand-type-badge btb-descriptifs" style="background:#fff4e0;color:#854F0B;">Descriptifs FR</span>';
-  if (type === 'abmusic')     return '<span class="bestand-type-badge btb-abmusic">AB Music</span>';
-  return '';
-}
-
-function renderBestandenLijst() {
-  document.getElementById('bestandLijst').innerHTML = bestanden.map((b,i) => `
-    <div class="bestand-rij ${b.klaar?'klaar':''}">
-      <div class="bestand-rang">${i+1}</div>
-      <div>
-        <div class="bestand-naam">${b.naam} ${bestandTypeBadge(b.algamBestandType)}</div>
-        <div class="bestand-meta">${b.rijen.length.toLocaleString()} rijen · ${b.headers.length} kol.</div>
-      </div>
-      <div class="profiel-badge-klein">${b.profielId ? profielen[b.profielId].naam : 'Geen profiel'}</div>
-      <button class="verwijder-btn" onclick="verwijderBestand(${i})">✕</button>
-    </div>`).join('');
-}
-
-function renderBestandProfielen() {
-  const el = document.getElementById('bestandProfielLijst');
-  if (!bestanden.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>';
-    return;
-  }
-  el.innerHTML = bestanden.map((b,i) => `
-    <div style="margin-bottom:14px;">
-      <div style="font-size:0.75rem;font-weight:700;color:var(--grijs);margin-bottom:6px;text-transform:uppercase;">
-        Bestand ${i+1}: ${b.naam}
-      </div>
-      ${b.algamBestandType ? `
-        <div class="melding m-ok" style="margin-bottom:8px;padding:7px 10px;">
-          <span>✓</span><div style="font-size:0.78rem;">
-            <strong>Algam profiel herkend</strong> — ${profielen[b.profielId]?.naam || ''}
-          </div>
-        </div>` :
-        Object.entries(profielen).map(([id,p]) => `
-          <div class="profiel-kaart ${b.profielId===id?'actief':''}" onclick="selecteerProfiel(${i},'${id}')">
-            <div class="profiel-naam">${p.naam}</div>
-            <div class="profiel-badge">${b.profielId===id?'Actief':'Selecteer'}</div>
-          </div>`).join('')
-      }
-      <button class="btn btn-outline" style="width:100%;margin-top:6px;font-size:0.77rem;" onclick="openMappingModal(${i})">⚙ Mapping bekijken / aanpassen</button>
-    </div>
-    ${i < bestanden.length-1 ? '<hr class="scheider">' : ''}`).join('');
-}
-
-function renderPrioriteitTabel() {
-  const tbody = document.getElementById('prioriteitBody');
-  tbody.innerHTML = VELDEN.filter(v => v.key !== 'Omschrijving').map(v => {
-    const huidigePrio = veldPrioriteit[v.key] ?? 0;
-    const algamTypeVanPrio = bestanden[huidigePrio]?.algamBestandType;
-    const autoLabel = algamTypeVanPrio ? ` (auto: ${algamTypeVanPrio})` : '';
-    return `<tr>
-      <td style="font-weight:600;">${v.label}${autoLabel ? `<span style="color:var(--groen);font-size:0.68rem;font-weight:400;"> ${autoLabel}</span>` : ''}</td>
-      <td><select onchange="setPrioriteit('${v.key}',this.value)">
-        ${bestanden.map((b,i) => `<option value="${i}" ${huidigePrio===i?'selected':''}>B${i+1}: ${b.naam.slice(0,18)}</option>`).join('')}
-      </select></td>
-    </tr>`;
-  }).join('');
-}
-
-function setPrioriteit(veld, idx) { veldPrioriteit[veld] = parseInt(idx); }
-function verwijderBestand(idx) {
-  bestanden.splice(idx, 1); veldPrioriteit = {};
-  renderAlles();
-  if (!bestanden.length) document.getElementById('btnStart').disabled = true;
-}
-function selecteerProfiel(bi, pid) {
-  bestanden[bi].profielId = pid;
-  bestanden[bi].mapping = autoMapping(bestanden[bi].headers, profielen[pid]);
-  bestanden[bi].klaar = true;
-  renderAlles();
-  log(`Bestand ${bi+1}: profiel "${profielen[pid].naam}"`, 'info');
-}
-
-// ─── KOLOMNAAM VERTALINGEN ───────────────────────
-const KOLOM_LABELS = {
-  // Produits.xlsx
-  'Marque':        'Merk (Marque)',
-  'Produit':       'Artikelcode (Produit)',
-  'Designation':   'Productnaam FR (Designation)',
-  'Rubrique':      'Categorie NL (Rubrique)',
-  'Gamme':         'Productlijn (Gamme)',
-  'Serie':         'Serie/Type (Serie)',
-  'SousSerie':     'Sub-serie (SousSerie)',
-  'TtcPublic':     'Adviesprijs incl BTW (TtcPublic)',
-  'HtBrut':        'Inkoopprijs excl BTW (HtBrut)',
-  'HtDeee':        'Milieubijdrage (HtDeee)',
-  'CodeBarre':     'Barcode/EAN (CodeBarre)',
-  'Poids':         'Gewicht kg (Poids)',
-  'Volume':        'Volume m³ (Volume)',
-  'Longueur':      'Lengte cm (Longueur)',
-  'Largeur':       'Breedte cm (Largeur)',
-  'Hauteur':       'Hoogte cm (Hauteur)',
-  'UrlImage':      'Afbeelding URL (UrlImage)',
-  'UrlImageBig':   'Afbeelding groot (UrlImageBig)',
-  'UrlImageSmall': 'Afbeelding klein (UrlImageSmall)',
-  'UrlProduit':    'Product URL (UrlProduit)',
-  'ImageBN':       'Afbeelding zwart/wit (ImageBN)',
-  'Cle':           'Intern ID (Cle)',
-  'Division':      'Divisie (Division)',
-  'Douane':        'Douanecode (Douane)',
-  'Origine':       'Herkomstland (Origine)',
-  'CondiVente':    'Verkoopverpakking (CondiVente)',
-  'CondiMaster':   'Masterkarton (CondiMaster)',
-  'UVC':           'Consumentenverpakking (UVC)',
-  'InnerCarton':   'Binnenkarton (InnerCarton)',
-  // AB Music
-  'Libelle':       'Productnaam NL (Libelle)',
-  'Base HT':       'Inkoopprijs excl BTW (Base HT)',
-  'Prix TTC\nindicatif': 'Adviesprijs incl BTW (Prix TTC)',
-  // Descriptifs_nl
-  'kolom_0':       'Intern ID (kolom 0)',
-  'kolom_1':       'Artikelcode (kolom 1)',
-  'kolom_2':       'Lange beschrijving NL (kolom 2)',
-  'kolom_3':       'Spec-bullets NL (kolom 3)',
-};
-
-function kolomLabel(h) {
-  return KOLOM_LABELS[h] || h;
-}
-
-// ─── MAPPING MODAL ───────────────────────────
-function openMappingModal(idx) {
-  actiefMappingIdx = idx;
-  const b = bestanden[idx];
-  document.getElementById('modalMappingTitel').textContent = `Kolommen koppelen — ${b.naam}`;
-  let html = '<div class="mapping-grid"><div class="mapping-header">Schreeven veld</div><div></div><div class="mapping-header">Kolom in CSV</div>';
-  VELDEN.forEach(v => {
-    const huidig = b.mapping[v.key] || '';
-    const opties = b.headers.map(h => `<option value="${h}" ${h===huidig?'selected':''}>${kolomLabel(h)}</option>`).join('');
-    html += `<div class="mapping-label ${v.vplicht?'':'opt'}">${v.label}${v.vplicht?' *':''}</div>
-      <div class="mapping-arrow">→</div>
-      <select class="mapping-select" data-veld="${v.key}"><option value="">— niet gebruiken —</option>${opties}</select>`;
-  });
-  html += '</div>';
-  document.getElementById('modalMappingInhoud').innerHTML = html;
-  document.getElementById('modalMapping').classList.add('open');
-}
-
-function leesModalMapping() {
-  const m = {};
-  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) m[s.dataset.veld] = s.value; });
-  return m;
-}
-
-function mappingBevestigen() {
-  if (actiefMappingIdx === null) return;
-  bestanden[actiefMappingIdx].mapping = leesModalMapping();
-  bestanden[actiefMappingIdx].klaar = true;
-  sluitModal('modalMapping');
-  renderAlles();
-  log(`Mapping bevestigd voor bestand ${actiefMappingIdx+1}`, 'ok');
-}
-
-function mappingOpslaan() {
-  const naam = prompt('Naam voor dit profiel:');
-  if (!naam) return;
-  const mapping = {};
-  document.querySelectorAll('#modalMappingInhoud [data-veld]').forEach(s => { if (s.value) mapping[s.dataset.veld] = [s.value]; });
-  const id = 'p_' + naam.toLowerCase().replace(/\s+/g,'_');
-  profielen[id] = { naam, delimiter:';', mapping, prefixRegels:[] };
-  slaProfielenOp();
-  bestanden[actiefMappingIdx].profielId = id;
-  mappingBevestigen();
-  log(`Profiel opgeslagen: ${naam}`, 'ok');
-}
 
 // ─── DASHBOARD ───────────────────────────────
 function berekenDashboard(verwerkt) {
   const leeg = document.getElementById('dashboardLeeg');
   const inhoud = document.getElementById('dashboardInhoud');
   if (!bestanden.length) { leeg.style.display='block'; inhoud.style.display='none'; return; }
-  leeg.style.display = 'none'; inhoud.style.display = 'block';
+  leeg.style.display = 'none';
+  inhoud.style.display = 'block';
 
+  // Bepaal bronset — voor verwerking: schat op basis van mapping, na verwerking: werkelijke data
   const bronKleuren = ['#1D9E75','#378ADD','#7F77DD','#BA7517','#E24B4A'];
   const heeftVerwerkt = verwerkt && verwerktRijen.length > 0;
+  const dataset = heeftVerwerkt ? verwerktRijen : null;
 
+  // Bronbestanden samenvatting
   const bronHTML = bestanden.map((b,i) => {
     const kleur = bronKleuren[i % bronKleuren.length];
     const gevuldeVelden = VELDEN.filter(v => b.mapping[v.key]).length;
     const pct = Math.round(gevuldeVelden / VELDEN.length * 100);
-    const typeLabel = b.algamBestandType ? ` · ${b.algamBestandType}` : '';
     return `<div class="db-bron actief">
-      <div class="db-bron-naam" style="color:${kleur}">B${i+1}: ${b.naam.replace(/\..+$/,'')}${typeLabel}</div>
-      <div class="db-bron-meta">${b.rijen.length.toLocaleString()} rijen · ${gevuldeVelden} velden</div>
+      <div class="db-bron-naam" style="color:${kleur}">B${i+1}: ${b.naam.replace(/\..+$/,'')}</div>
+      <div class="db-bron-meta">${b.rijen.length.toLocaleString()} rijen · ${gevuldeVelden} velden gekoppeld</div>
       <div class="db-bron-bar"><div class="db-bron-fill" style="width:${pct}%;background:${kleur}"></div></div>
     </div>`;
   }).join('');
 
+  // Merge preview
   let mergeHTML = '';
   if (bestanden.length > 1) {
     const sleutel = document.getElementById('mergeSleutel')?.value || 'Leverancier_artikel';
-    const bronBlokken = bestanden.map((b,i) => `<div class="db-merge-blok">B${i+1}</div>`).join('<div class="db-pijl">+</div>');
-    const totaalUniek = heeftVerwerkt ? verwerktRijen.length.toLocaleString() : `~${Math.max(...bestanden.map(b=>b.rijen.length)).toLocaleString()}`;
-    mergeHTML = `<div class="db-sectie">Merge strategie</div>
+    const bronBlokken = bestanden.map((b,i) => `<div class="db-merge-blok">B${i+1}: ${b.naam.replace(/\..+$/,'')}</div>`).join('<div class="db-pijl">+</div>');
+    const totaalUniek = heeftVerwerkt
+      ? verwerktRijen.length.toLocaleString()
+      : `~${Math.max(...bestanden.map(b=>b.rijen.length)).toLocaleString()}`;
+    mergeHTML = `<div class="db-sectie">Merge</div>
     <div class="db-merge-rij">
       ${bronBlokken}
       <div class="db-pijl">→</div>
       <div class="db-merge-blok resultaat">${totaalUniek} unieke records · sleutel: ${sleutel}</div>
-    </div>
-    <div style="font-size:0.73rem;color:var(--grijs);margin-bottom:10px;">
-      Naam: AB Music Libelle wint · Inkoop: AB Music Base HT · Verkoop: Produits TtcPublic · Descriptif: Descriptifs_nl kolom 3+2
     </div>`;
   }
 
-  const veldStats = VELDEN.filter(v => v.key !== 'Omschrijving').map(v => {
-    let pct = 0, bronLabel = '', status = 'leeg';
+  // Vulgraad per veld berekenen
+  const veldStats = VELDEN.filter(v => !['Omschrijving'].includes(v.key)).map(v => {
+    let pct = 0;
+    let bronLabel = '';
+    let status = 'leeg';
+
     if (heeftVerwerkt) {
+      // Na verwerking: werkelijke vulgraad
       const gevuld = verwerktRijen.filter(r => r[v.key] && r[v.key] !== '').length;
       pct = Math.round(gevuld / verwerktRijen.length * 100);
+      // Bepaal bron
       const aiGevuld = verwerktRijen.filter(r => r._soortBron === 'ai' && v.key === 'Soort').length;
       bronLabel = aiGevuld > 0 ? `AI: ${aiGevuld}` : '';
+      // Bron uit bronBestanden
+      if (!bronLabel) {
+        const bronIdxSet = new Set(verwerktRijen.flatMap(r => r._bronBestanden||[]).filter(i => {
+          const b = bestanden[i];
+          return b && b.mapping[v.key];
+        }));
+        bronLabel = [...bronIdxSet].map(i => `B${i+1}`).join('+');
+      }
     } else {
-      const bronIdxSet = bestanden.filter(b => b.mapping[v.key]).map(b => bestanden.indexOf(b));
+      // Voor verwerking: schat op basis van mapping
+      const bronIdxSet = bestanden.filter(b => b.mapping[v.key]).map((b,_) => bestanden.indexOf(b));
       if (bronIdxSet.length > 0) {
+        // Schat op het grootste bestand dat dit veld heeft
         const grootsteBron = bronIdxSet.reduce((a,b) => bestanden[a].rijen.length >= bestanden[b].rijen.length ? a : b);
-        pct = Math.round(bestanden[grootsteBron].rijen.length / Math.max(...bestanden.map(b=>b.rijen.length)) * 100);
+        const totaalRijen = Math.max(...bestanden.map(b=>b.rijen.length));
+        pct = Math.round(bestanden[grootsteBron].rijen.length / totaalRijen * 100);
         bronLabel = bronIdxSet.map(i=>`B${i+1}`).join('+');
       }
-      // Velden die via tekst-parsing gevuld worden — tonen geschatte dekking
-      const geparsed = {
-        'Kleur':               { pct: 65, label: 'uit Descriptif Color + naam' },
-        'Maat':                { pct: 40, label: 'uit Descriptif Formaat/Dikte + naam' },
-        'Afmeting':            { pct: 30, label: 'uit Descriptif Afmetingen (mm)' },
-        'Verpakking_afmeting': { pct: 89, label: 'uit Produits L×B×H' },
-        'Verpakking_gewicht':  { pct: 92, label: 'uit Produits Poids' },
-      };
-      if (geparsed[v.key] && bestanden.some(b => b.algamBestandType)) {
-        pct = geparsed[v.key].pct;
-        bronLabel = geparsed[v.key].label;
-        status = 'ai';
-      }
     }
-    if (v.key === 'Soort' && !heeftVerwerkt) { status='ai'; bronLabel='AI detectie'; pct=5; }
-    if (status !== 'ai') {
-      if (pct >= 90) status='vol';
-      else if (pct >= 40) status='deel';
-      else status='leeg';
-    }
-    const balkKleur = status==='vol'?'#1D9E75':status==='deel'?'#BA7517':status==='ai'?'#378ADD':'#E24B4A';
-    const statusLabels = {vol:'volledig',deel:'gedeeltelijk',leeg:'ontbreekt',ai:'AI detectie'};
+
+    // Status bepalen
+    if (v.key === 'Ecom_kort' || v.key === 'Ecom_lang' || v.key === 'meta_title' || v.key === 'meta_description' || v.key === 'meta_keywords') {
+      status = 'verrijker';
+      bronLabel = '→ verrijker';
+      pct = heeftVerwerkt ? 0 : 0;
+    } else if (v.key === 'Soort' && !heeftVerwerkt) {
+      status = 'ai';
+      bronLabel = 'AI detectie';
+      pct = bestanden.some(b => b.mapping['Soort']) ? 30 : 5;
+    } else if (pct >= 90) status = 'vol';
+    else if (pct >= 40) status = 'deel';
+    else if (pct > 0) status = 'leeg';
+    else status = 'leeg';
+
+    // Balk kleur
+    const balkKleur = status === 'vol' ? '#1D9E75' :
+                      status === 'deel' ? '#BA7517' :
+                      status === 'ai' ? '#378ADD' :
+                      status === 'verrijker' ? '#7F77DD' : '#E24B4A';
+
+    const statusLabels = {vol:'volledig', deel:'gedeeltelijk', leeg:'ontbreekt', ai:'AI detectie', verrijker:'→ verrijker'};
+
     return `<div class="veld-rij">
       <div class="veld-naam">${v.label}</div>
       <div class="veld-balk-wrap"><div class="veld-balk" style="width:${pct}%;background:${balkKleur}"></div></div>
-      <div class="veld-pct">${pct}%${bronLabel?` <span style="font-size:0.65rem;color:var(--grijs)">${bronLabel}</span>`:''}</div>
+      <div class="veld-pct">${status === 'verrijker' ? '—' : pct + '%'}${bronLabel ? ` <span style="font-size:0.65rem;color:var(--grijs)">${bronLabel}</span>` : ''}</div>
       <div><span class="veld-status ${status}">${statusLabels[status]}</span></div>
     </div>`;
   }).join('');
 
-  let volTotaal=0,deelTotaal=0,leegTotaal=0,klaarvoor=0;
+  // Samenvatting stats
+  let volTotaal = 0, deelTotaal = 0, leegTotaal = 0, klaarvoor = 0;
   if (heeftVerwerkt) {
-    const kern = ['Merk','Type','Inkoop_ex','Verkoop_incl'];
-    volTotaal  = verwerktRijen.filter(r => kern.every(k=>r[k])).length;
-    deelTotaal = verwerktRijen.filter(r => kern.some(k=>r[k]) && !kern.every(k=>r[k])).length;
+    const kernVelden = ['Merk','Type','Inkoop_ex','Verkoop_incl'];
+    volTotaal = verwerktRijen.filter(r => kernVelden.every(k => r[k])).length;
+    deelTotaal = verwerktRijen.filter(r => kernVelden.some(k => r[k]) && !kernVelden.every(k => r[k])).length;
     leegTotaal = verwerktRijen.filter(r => !r.Merk && !r.Type).length;
-    klaarvoor  = verwerktRijen.filter(r => r.Merk && r.Type).length;
+    klaarvoor = verwerktRijen.filter(r => r.Merk && r.Type).length;
   }
 
+  // Waarschuwingen
   const warns = [];
-  if (!bestanden.some(b => b.mapping['Inkoop_ex'])) warns.push('Geen inkoopprijs gekoppeld');
+  if (!bestanden.some(b => b.mapping['Inkoop_ex'])) warns.push('Geen inkoopprijs gekoppeld in een van de bestanden');
   if (!bestanden.some(b => b.mapping['EAN'])) warns.push('Geen EAN/barcode gekoppeld');
+  if (bestanden.length > 1 && !document.getElementById('mergeSleutel')?.value) warns.push('Sleutelveld voor merge niet ingesteld');
   const fransWarn = heeftVerwerkt ? verwerktRijen.filter(r => r._warnings?.includes('Franse naam')).length : 0;
-  if (fransWarn > 0) warns.push(`${fransWarn} producten met Franse naam overgeslagen`);
+  if (fransWarn > 0) warns.push(`${fransWarn} producten met Franse naam gedetecteerd`);
 
+  const warnHTML = warns.map(w => `<div class="db-warn">${w}</div>`).join('');
   const okItems = [];
-  if (bestanden.some(b => b.mapping['Afbeelding'])) okItems.push('Afbeelding URLs aanwezig (Produits)');
-  if (bestanden.some(b => b.mapping['Descriptif'])) okItems.push('NL beschrijving als AI broninfo');
-  if (bestanden.some(b => b.algamBestandType === 'abmusic')) okItems.push('AB Music naam wint — minder Frans');
-  if (bestanden.some(b => b.algamBestandType === 'abmusic')) okItems.push('AB Music inkoopprijs meest actueel');
+  if (bestanden.some(b => b.mapping['Merk'])) okItems.push('Merk gekoppeld');
+  if (bestanden.some(b => b.mapping['Verkoop_incl'])) okItems.push('Verkoopprijs aanwezig');
+  if (bestanden.some(b => b.mapping['Afbeelding'])) okItems.push('Afbeelding URLs aanwezig');
+  if (bestanden.some(b => b.mapping['Descriptif'])) okItems.push('NL beschrijving als AI bron');
+  const okHTML = okItems.map(o => `<div class="db-ok">✓ ${o}</div>`).join('');
 
   inhoud.innerHTML = `
     <div class="db-sectie">Bronbestanden</div>
@@ -1586,8 +1121,7 @@ function berekenDashboard(verwerkt) {
       <div class="db-stat"><div class="ds-getal" style="color:var(--rood)">${leegTotaal.toLocaleString()}</div><div class="ds-label">Overgeslagen</div></div>
       <div class="db-stat"><div class="ds-getal" style="color:var(--blauw)">${klaarvoor.toLocaleString()}</div><div class="ds-label">Naar verrijker</div></div>
     </div>` : ''}
-    ${warns.map(w=>`<div class="db-warn">${w}</div>`).join('')}
-    ${okItems.map(o=>`<div class="db-ok">✓ ${o}</div>`).join('')}
+    ${warnHTML}${okHTML}
     <div class="db-sectie">Vulgraad per veld</div>
     <div class="veld-grid">${veldStats}</div>
   `;
@@ -1607,12 +1141,12 @@ function renderPreview(rijen) {
       <td class="${r.Merk?'ok':'leeg'}">${r.Merk||'—'}</td>
       <td class="${r.Type?'ok':'leeg'}">${r.Type||'—'}</td>
       <td>${soort}</td>
-      <td class="${r.name?'ok':'leeg'}" title="${r.name||''}">${r.name||'—'}</td>
+      <td>${r.Omschrijving||'—'}</td>
       <td class="${r.Leverancier_artikel?'ok':'leeg'}">${r.Leverancier_artikel||'—'}</td>
       <td class="${r.Inkoop_ex?'ok':'leeg'}">${r.Inkoop_ex||'—'}</td>
       <td class="${r.Verkoop_incl?'ok':'leeg'}">${r.Verkoop_incl||'—'}</td>
       <td class="${isMerge?'merge':'ok'}">${bron}</td>
-      <td class="${w?'warn':''}">${w||''}</td>
+      <td class="${w?'warn':''}">${w}</td>
     </tr>`;
   }).join('');
 }
@@ -1625,497 +1159,66 @@ function maakRapport(totaal, gemergd, frans, overgeslagen, soortAi) {
   el.innerHTML = `
     <div class="melding m-ok"><span>✓</span><div><strong>${verwerktRijen.length} producten klaar voor export</strong> (van ${totaal} ingelezen)</div></div>
     ${bestanden.length>1?`<div class="melding m-info"><span>🔗</span><div><strong>${gemergd} records samengesteld uit meerdere bestanden</strong></div></div>`:''}
-    ${overgeslagen?`<div class="melding m-warn"><span>⚠</span><div><strong>${overgeslagen} overgeslagen</strong> — Merk/Type ontbreekt of Franse naam</div></div>`:''}
-    ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten met Franse naam gemarkeerd</strong> — controleer en vertaal vóór Vendit import</div></div>`:''}
+    ${overgeslagen?`<div class="melding m-warn"><span>⚠</span><div><strong>${overgeslagen} overgeslagen</strong> — Merk of Type ontbreekt</div></div>`:''}
+    ${frans?`<div class="melding m-warn"><span>🇫🇷</span><div><strong>${frans} producten met Franse naam</strong> — controleer voor webshop</div></div>`:''}
     ${soortAi?`<div class="melding m-info"><span>🤖</span><div><strong>${soortAi} Soort-labels door AI ingevuld</strong></div></div>`:''}
     <div class="melding m-ok"><span>📥</span><div>Output klaar voor Vendit CAB import of als invoer voor de Vendit-verrijker</div></div>`;
 }
 
-// ─── DEALERKORTINGEN ─────────────────────────
-let kortingen = {}; // {MERKNAAM: [6, 3, 2]}
-let kortingBetalingAan = false;
-
-function laadKortingen() {
-  const op = localStorage.getItem('schreeven_kortingen');
-  kortingen = op ? JSON.parse(op) : {};
-  renderKortingLijst();
-}
-
-function slaKortingenOp() {
-  localStorage.setItem('schreeven_kortingen', JSON.stringify(kortingen));
-}
-
-function renderKortingLijst() {
-  const el = document.getElementById('kortingLijst');
-  if (!el) return;
-  if (!Object.keys(kortingen).length) {
-    el.innerHTML = '<div style="font-size:0.75rem;color:var(--grijs);padding:6px 0;">Geen kortingen ingesteld</div>';
-    return;
-  }
-  el.innerHTML = Object.entries(kortingen).map(([merk, obj]) => {
-    const reeks = Array.isArray(obj) ? obj : (obj?.reeks || []);
-    const betaling = Array.isArray(obj) ? null : obj?.betaling;
-    const effectief = reeks.reduce((p, k) => p * (1 - k/100), 1);
-    const formule = reeks.map(k => `-${k}%`).join(' → ');
-    const betalingLabel = betaling ? ` <span style="color:var(--oranje);font-size:0.68rem;">+ ${betaling}% betaling apart</span>` : '';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--warmgrijs);border-radius:5px;font-size:0.78rem;flex-wrap:wrap;">
-      <span style="font-weight:700;min-width:80px;">${merk}</span>
-      <span style="color:var(--grijs);font-family:monospace;font-size:0.72rem;">${formule}</span>
-      <span style="color:var(--donkergroen);font-weight:600;">= ×${effectief.toFixed(4)}</span>
-      <span style="color:var(--grijs);font-size:0.7rem;">op Inkoop_basis</span>
-      ${betalingLabel}
-      <button onclick="verwijderKorting('${merk}')" style="background:none;border:none;cursor:pointer;color:var(--grijs);font-size:0.9rem;padding:0 2px;margin-left:auto;">✕</button>
-    </div>`;
-  }).join('');
-}
-
-// ─── KORTING WIZARD ──────────────────────────
-let kwReeks = [];
-let kwMerk = '';
-
-function openKortingWizard() {
-  kwReeks = [];
-  kwMerk = '';
-  kwNaarStap1();
-  // Vul merk dropdown
-  const sel = document.getElementById('kwMerkSelect');
-  const merken = new Set(Object.keys(kortingen));
-  bestanden.forEach(b => {
-    const merkMapping = b.mapping['Merk'];
-    let merkIdx = merkMapping ? b.headers.indexOf(merkMapping) : -1;
-    if (merkIdx < 0) merkIdx = b.headers.findIndex(h => /^(merk|marque|brand)$/i.test(h.trim()));
-    if (merkIdx < 0) return;
-    b.rijen.forEach(r => {
-      const m = (r[merkIdx]||'').trim().toUpperCase();
-      if (m && m.length > 1 && m.length < 40) merken.add(m);
-    });
-  });
-  sel.innerHTML = '<option value="">— kies merk —</option>' +
-    [...merken].sort().map(m => `<option value="${m}">${m}${kortingen[m]?' ✓':''}</option>`).join('');
-  // Als merk al geselecteerd in dropdown, vul tekstveld
-  sel.onchange = () => { document.getElementById('kwMerkVrij').value = sel.value; };
-  document.getElementById('kwMerkVrij').value = '';
-  document.getElementById('modalKortingWizard').classList.add('open');
-}
-
-function kwNaarStap1() {
-  document.getElementById('kwStap1').style.display = 'block';
-  document.getElementById('kwStap2').style.display = 'none';
-}
-
-function kwNaarStap2() {
-  const sel = document.getElementById('kwMerkSelect');
-  const vrij = document.getElementById('kwMerkVrij');
-  kwMerk = (vrij.value || sel.value || '').trim().toUpperCase();
-  if (!kwMerk) { alert('Kies of typ eerst een merknaam'); return; }
-  // Laad bestaande kortingen als die er zijn
-  kwReeks = kortingen[kwMerk] ? [...kortingen[kwMerk]] : [];
-  document.getElementById('kwMerkLabel').textContent = kwMerk;
-  document.getElementById('kwStap1').style.display = 'none';
-  document.getElementById('kwStap2').style.display = 'block';
-  document.getElementById('kwNieuweKorting').value = '';
-  kwRenderReeks();
-  setTimeout(() => document.getElementById('kwNieuweKorting').focus(), 100);
-}
-
-function kwVoegKortingToe() {
-  const inp = document.getElementById('kwNieuweKorting');
-  const pct = parseFloat(inp.value);
-  if (isNaN(pct) || pct <= 0 || pct >= 100) return;
-  kwReeks.push(pct);
-  inp.value = '';
-  kwRenderReeks();
-  inp.focus();
-}
-
-function kwVerwijderStap(idx) {
-  kwReeks.splice(idx, 1);
-  kwRenderReeks();
-}
-
-function kwRenderReeks() {
-  const el = document.getElementById('kwReeksLijst');
-  const btn = document.getElementById('kwBevestigBtn');
-  const ber = document.getElementById('kwBerekening');
-  if (!kwReeks.length) {
-    el.innerHTML = '<div style="font-size:0.78rem;color:var(--grijs);padding:6px 0;">Nog geen kortingen toegevoegd</div>';
-    btn.disabled = true;
-    ber.style.display = 'none';
-    return;
-  }
-  el.innerHTML = kwReeks.map((k,i) => {
-    const factor = kwReeks.slice(0,i+1).reduce((p,x) => p*(1-x/100), 1);
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--warmgrijs);border-radius:5px;font-size:0.82rem;">
-      <span style="color:var(--grijs);min-width:20px;">${i+1}.</span>
-      <span style="font-weight:600;">-${k}%</span>
-      <span style="color:var(--grijs);">→ ×${(1-k/100).toFixed(4)}</span>
-      <span style="color:var(--donkergroen);font-size:0.75rem;">= ${(factor*100).toFixed(2)}% van basis</span>
-      <button onclick="kwVerwijderStap(${i})" style="background:none;border:none;cursor:pointer;color:var(--grijs);margin-left:auto;">✕</button>
-    </div>`;
-  }).join('');
-  // Berekening tonen
-  const effectief = kwReeks.reduce((p,k) => p*(1-k/100), 1);
-  const betalingAan = document.getElementById('kortingBetaling')?.checked;
-  const actief = (betalingAan || kwReeks.length===1) ? kwReeks : kwReeks.slice(0,-1);
-  const actFactor = actief.reduce((p,k) => p*(1-k/100), 1);
-  ber.style.display = 'block';
-  document.getElementById('kwBerekeningTekst').innerHTML =
-    `<strong>Voorbeeld €100 inkoop:</strong><br>` +
-    kwReeks.map((k,i) => {
-      const v = kwReeks.slice(0,i+1).reduce((p,x)=>p*(1-x/100),100);
-      const isBetalingsstap = i === kwReeks.length-1 && kwReeks.length > 1;
-      return `<span style="color:${isBetalingsstap?'var(--oranje)':'var(--tekst)'}">
-        Stap ${i+1}: -${k}% = <strong>€${v.toFixed(2)}</strong>${isBetalingsstap?' (betalingskorting)':''}
-      </span>`;
-    }).join('<br>') +
-    `<br><span style="color:var(--donkergroen);font-weight:600;">Netto inkoop: €${(actFactor*100).toFixed(2)}</span>`;
-  btn.disabled = false;
-}
-
-function kwBevestig() {
-  if (!kwMerk || !kwReeks.length) return;
-  // Betalingskorting is apart veld in wizard
-  const betalingEl = document.getElementById('kwBetalingPct');
-  const betalingPct = betalingEl ? parseFloat(betalingEl.value) : NaN;
-  kortingen[kwMerk] = {
-    reeks: kwReeks,
-    betaling: !isNaN(betalingPct) && betalingPct > 0 ? betalingPct : null,
-  };
-  slaKortingenOp();
-  renderKortingLijst();
-  vulKortingMerkDropdown();
-  sluitModal('modalKortingWizard');
-  log(`Korting opgeslagen: ${kwMerk} → ${kwReeks.map(k=>k+'%').join(' → ')}`, 'ok');
-}
-
-function kortingMerkSelectChange() {
-  const sel = document.getElementById('kortingMerkSelect');
-  const inp = document.getElementById('kortingMerk');
-  if (sel.value) inp.value = sel.value;
-}
-
-function vulKortingMerkDropdown() {
-  const sel = document.getElementById('kortingMerkSelect');
-  if (!sel) return;
-  const huidig = sel.value;
-  const merken = new Set();
-
-  // Altijd: al opgeslagen kortingen
-  Object.keys(kortingen).forEach(m => merken.add(m));
-
-  // Merken uit geladen bestanden — zoek Merk kolom op index
-  bestanden.forEach(b => {
-    // Probeer via mapping
-    const merkMapping = b.mapping['Merk'];
-    let merkIdx = merkMapping ? b.headers.indexOf(merkMapping) : -1;
-    // Fallback: zoek kolom die 'merk' of 'marque' heet
-    if (merkIdx < 0) {
-      merkIdx = b.headers.findIndex(h => /^(merk|marque|brand)$/i.test(h.trim()));
-    }
-    if (merkIdx < 0) return;
-    b.rijen.forEach(r => {
-      const m = (r[merkIdx] || '').trim().toUpperCase();
-      if (m && m.length > 1 && m.length < 40) merken.add(m);
-    });
-  });
-
-  sel.innerHTML = '<option value="">— kies of typ merk —</option>' +
-    [...merken].sort().map(m =>
-      `<option value="${m}" ${m === huidig ? 'selected' : ''}>${m}${kortingen[m] ? ' ✓' : ''}</option>`
-    ).join('');
-}
-
-function voegKortingToe() {
-  // Vrij tekstveld heeft prioriteit, anders dropdown
-  const inp = document.getElementById('kortingMerk');
-  const sel = document.getElementById('kortingMerkSelect');
-  const merk = ((inp?.value || sel?.value || '')).trim().toUpperCase();
-  const reeksStr = (document.getElementById('kortingReeks').value || '').trim();
-  if (!merk || !reeksStr) return;
-  const reeks = reeksStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n > 0 && n < 100);
-  if (!reeks.length) return;
-  kortingen[merk] = reeks;
-  slaKortingenOp();
-  renderKortingLijst();
-  document.getElementById('kortingMerk').value = '';
-  document.getElementById('kortingReeks').value = '';
-  document.getElementById('kortingMerkSelect').value = '';
-  log(`Korting opgeslagen: ${merk} → ${reeks.map(k=>k+'%').join(' → ')}`, 'ok');
-  vulKortingMerkDropdown();
-}
-
-function exporteerKortingen() {
-  // Exporteer als CSV/XLS compatibel formaat
-  const regels = [['Merk','Korting_1_%','Korting_2_%','Korting_3_%','Korting_4_%','Betalingskorting_laatste']];
-  Object.entries(kortingen).forEach(([merk, reeks]) => {
-    const betalingIdx = reeks.length > 1 ? reeks.length - 1 : -1;
-    const rij = [merk];
-    reeks.forEach((k, i) => rij.push(k));
-    while (rij.length < 5) rij.push('');
-    rij.push(betalingIdx >= 0 ? 'ja' : 'nee');
-    regels.push(rij);
-  });
-  const csv = '\uFEFF' + regels.map(r => r.join(';')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-  a.download = `schreeven_dealerkortingen_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  log('Kortingsprofiel geëxporteerd als CSV', 'ok');
-}
-
-function exporteerKortingenJSON() {
-  const json = JSON.stringify(kortingen, null, 2);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
-  a.download = `schreeven_dealerkortingen_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  log('Kortingsprofiel geëxporteerd als JSON', 'ok');
-}
-
-function importeerKortingen(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const naam = file.name.toLowerCase();
-
-  if (naam.endsWith('.json')) {
-    // JSON import
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        Object.entries(data).forEach(([merk, reeks]) => {
-          if (Array.isArray(reeks) && reeks.every(k => typeof k === 'number')) {
-            kortingen[merk.toUpperCase()] = reeks;
-          }
-        });
-        slaKortingenOp();
-        renderKortingLijst();
-        log(`Kortingsprofiel geladen: ${Object.keys(data).length} merken`, 'ok');
-      } catch(e) { log('JSON import mislukt: ' + e.message, 'err'); }
-    };
-    reader.readAsText(file);
-  } else {
-    // CSV import
-    const reader = new FileReader();
-    reader.onload = e => {
-      const regels = e.target.result.replace(/\r/g,'').split('\n').filter(Boolean);
-      let geladen = 0;
-      regels.slice(1).forEach(regel => {
-        const delen = regel.split(';').map(s => s.trim().replace(/^"|"$/g,''));
-        const merk = (delen[0]||'').toUpperCase();
-        if (!merk) return;
-        const reeks = [];
-        for (let i = 1; i <= 4; i++) {
-          const v = parseFloat(delen[i]);
-          if (!isNaN(v) && v > 0) reeks.push(v);
-        }
-        if (reeks.length) { kortingen[merk] = reeks; geladen++; }
-      });
-      slaKortingenOp();
-      renderKortingLijst();
-      vulKortingMerkDropdown();
-      log(`Kortingsprofiel geladen: ${geladen} merken`, 'ok');
-    };
-    reader.readAsText(file, 'UTF-8');
-  }
-  event.target.value = ''; // reset file input
-}
-
-function verwijderKorting(merk) {
-  delete kortingen[merk];
-  slaKortingenOp();
-  renderKortingLijst();
-}
-
-function pasKortingToe(inkoopStr, merk) {
-  if (!inkoopStr) return inkoopStr;
-  const inkoop = parseFloat(inkoopStr.replace(',', '.'));
-  if (isNaN(inkoop)) return inkoopStr;
-  const merkUpper = (merk || '').toUpperCase();
-  const merkTitle = (merk || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  // Match op CAPS, Title Case of gedeeltelijk
-  const gevonden = kortingen[merkUpper] || kortingen[merkTitle] ||
-    Object.entries(kortingen).find(([k,v]) => {
-      const kUp = k.toUpperCase();
-      return merkUpper === kUp || merkUpper.includes(kUp) || kUp.includes(merkUpper);
-    })?.[1];
-  // Ondersteun beide formaten: array [6,3] en {reeks:[6,3], betaling:2}
-  const reeks = Array.isArray(gevonden) ? gevonden : (gevonden?.reeks || []);
-  const betalingPctObj = Array.isArray(gevonden) ? null : gevonden?.betaling;
-  if (!reeks || !reeks.length) return inkoopStr;
-
-  // Pas ALLE handelskortingen toe
-  let resultaat = reeks.reduce((p, k) => p * (1 - k/100), inkoop);
-
-  // Betalingskorting apart — alleen als aangevinkt
-  const betalingAan = document.getElementById('kortingBetaling')?.checked || false;
-  const betalingPct = betalingPctObj;
-  if (betalingAan && betalingPct) {
-    resultaat = resultaat * (1 - betalingPct/100);
-  }
-
-  return resultaat.toFixed(2).replace('.', ','); // EU notatie
-}
-
-// ─── HERBEREKEN ──────────────────────────────
-function herbereken() {
-  if (!verwerktRijen.length) return;
-  log('⚡ Herbereken kortingen + omschrijving...', 'info');
-
-  const optOmschrijving = true; // altijd
-
-  verwerktRijen.forEach(r => {
-    // Herbereken korting op Inkoop_basis
-    if (r.Inkoop_basis && r.Merk) {
-      // Reset eerst naar basis
-      r.Inkoop_ex = r.Inkoop_basis.replace(',', '.'); // tijdelijk punt voor berekening
-      // Pas nieuwe korting toe
-      const nieuweInkoop = pasKortingToe(r.Inkoop_basis, r.Merk);
-      if (nieuweInkoop !== r.Inkoop_basis) {
-        r.Inkoop_ex = nieuweInkoop;
-      }
-    } else if (r.Inkoop_ex && r.Merk && !r.Inkoop_basis) {
-      // Geen basis bekend — pas toe op huidige inkoop
-      r.Inkoop_ex = pasKortingToe(r.Inkoop_ex, r.Merk);
-    }
-
-    // Herbereken omschrijving
-    r.Omschrijving = stelOmschrijvingSamen(r);
-  });
-
-  vulMerkFilter();
-  log(`✓ Herberekend: ${verwerktRijen.length.toLocaleString()} producten`, 'ok');
-  toonTab('log');
-}
-
-// ─── MERKFILTER ──────────────────────────────
-let geselecteerdeMerken = new Set();
-
-function vulMerkFilter() {
-  if (!verwerktRijen.length) return;
-  const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))].sort();
-  geselecteerdeMerken = new Set(merken);
-  renderMerkFilterLijst(merken);
-  document.getElementById('downloadOpties').style.display = 'block';
-  updateFilterTeller();
-}
-
-function renderMerkFilterLijst(merken) {
-  const el = document.getElementById('merkFilterLijst');
-  if (!el) return;
-  if (!merken) merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))].sort();
-  el.innerHTML = merken.map(m => {
-    const n = verwerktRijen.filter(r => r.Merk === m).length;
-    const checked = geselecteerdeMerken.has(m);
-    return `<label style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:0.8rem;${checked?'background:#edf9ed':''}">
-      <input type="checkbox" ${checked?'checked':''} onchange="toggleMerk('${m.replace(/'/g,"\'")}', this.checked)"
-        style="width:14px;height:14px;accent-color:var(--groen);flex-shrink:0;">
-      <span style="flex:1;">${m}</span>
-      <span style="color:var(--grijs);font-size:0.72rem;">${n}</span>
-    </label>`;
-  }).join('');
-}
-
-function toggleMerk(merk, aan) {
-  if (aan) geselecteerdeMerken.add(merk);
-  else geselecteerdeMerken.delete(merk);
-  updateFilterTeller();
-  renderMerkFilterLijst();
-}
-
-function merkFilterAlles(aan) {
-  const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))];
-  geselecteerdeMerken = aan ? new Set(merken) : new Set();
-  renderMerkFilterLijst();
-  updateFilterTeller();
-}
-
-function filterMerkLijst() {
-  const zoek = (document.getElementById('merkFilterZoek')?.value||'').toLowerCase();
-  const merken = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))]
-    .filter(m => m.toLowerCase().includes(zoek)).sort();
-  renderMerkFilterLijst(merken);
-}
-
-function updateFilterTeller() {
-  const alle = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))];
-  const isAlles = geselecteerdeMerken.size === alle.length;
-  const n = isAlles ? verwerktRijen.length : verwerktRijen.filter(r => geselecteerdeMerken.has(r.Merk)).length;
-  const el = document.getElementById('filterTeller');
-  if (el) el.textContent = isAlles
-    ? `Alle ${alle.length} merken · ${n.toLocaleString()} producten`
-    : `${geselecteerdeMerken.size} van ${alle.length} merken · ${n.toLocaleString()} producten`;
-}
-
-
 // ─── DOWNLOAD ────────────────────────────────
 function downloadCSV() {
   if (!verwerktRijen.length) return;
-  const alle = [...new Set(verwerktRijen.map(r => r.Merk).filter(Boolean))];
-  const isAlles = !geselecteerdeMerken || geselecteerdeMerken.size === alle.length;
-  const rijen = isAlles ? verwerktRijen : verwerktRijen.filter(r => geselecteerdeMerken.has(r.Merk));
-  const merkSuffix = (!isAlles && geselecteerdeMerken.size === 1)
-    ? '_' + [...geselecteerdeMerken][0].toLowerCase().replace(/[^a-z0-9]/g,'_')
-    : (!isAlles ? `_${geselecteerdeMerken.size}merken` : '');
   const keys = VELDEN.map(v=>v.key);
-  // Velden die als tekst moeten worden opgeslagen (niet als formule)
-  const TEKST_VELDEN = new Set(['Descriptif','Sub_omschrijving','Omschrijving','name']);
-  const regels = rijen.map(r => keys.map(k => {
-    let w = r[k] || '';
-    // Voorkom Excel #NAAM? fout: cel die begint met - of = wordt als formule gezien
-    const alsFormule = w.startsWith('-') || w.startsWith('=') || w.startsWith('+');
-    const quoten = alsFormule || w.includes(';') || w.includes('"') || w.includes('\n');
-    if (alsFormule) w = "'" + w; // apostrof voorkomt formule-interpretatie
-    return quoten ? `"${w.replace(/"/g,'""')}"` : w;
+  const regels = verwerktRijen.map(r => keys.map(k => {
+    const w=r[k]||'';
+    return (w.includes(';')||w.includes('"')||w.includes('\n')) ? `"${w.replace(/"/g,'""')}"` : w;
   }).join(';'));
   const csv = '\uFEFF' + [keys.join(';'), ...regels].join('\n');
-  log(`CSV gedownload — ${rijen.length} producten${merkSuffix ? ' (' + merkSuffix.slice(1) + ')' : ''}`, 'ok');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-  a.download = `schreeven_opgeschoond${merkSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `schreeven_opgeschoond_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-
+  log(`CSV gedownload — ${verwerktRijen.length} producten`, 'ok');
 }
 
 // ─── HULP ────────────────────────────────────
 function updateStats(t,v,g,f,o,s) {
-  document.getElementById('stTotaal').textContent = t||'—';
-  document.getElementById('stVerwerkt').textContent = v||'—';
-  document.getElementById('stGemergd').textContent = g||'—';
-  document.getElementById('stFrans').textContent = f||'—';
-  document.getElementById('stOvegeslagen').textContent = o||'—';
-  document.getElementById('stSoortAi').textContent = s||'—';
+  document.getElementById('stTotaal').textContent=t||'—';
+  document.getElementById('stVerwerkt').textContent=v||'—';
+  document.getElementById('stGemergd').textContent=g||'—';
+  document.getElementById('stFrans').textContent=f||'—';
+  document.getElementById('stOvegeslagen').textContent=o||'—';
+  document.getElementById('stSoortAi').textContent=s||'—';
 }
 function toonTab(naam) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('actief', ['dashboard','preview','log','rapport'][i]===naam));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('actief', c.id===`tab-${naam}`));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('actief',['dashboard','preview','log','rapport'][i]===naam));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('actief',c.id===`tab-${naam}`));
 }
-function log(tekst, type='info') {
-  const box = document.getElementById('logBox');
-  const el = document.createElement('div');
-  el.className = `log-${type}`;
-  el.textContent = `[${new Date().toLocaleTimeString('nl-NL')}] ${tekst}`;
-  box.appendChild(el); box.scrollTop = box.scrollHeight;
+function log(tekst,type='info') {
+  const box=document.getElementById('logBox');
+  const el=document.createElement('div');
+  el.className=`log-${type}`;
+  el.textContent=`[${new Date().toLocaleTimeString('nl-NL')}] ${tekst}`;
+  box.appendChild(el); box.scrollTop=box.scrollHeight;
 }
 function sluitModal(id) { document.getElementById(id).classList.remove('open'); }
 function resetAlles() {
-  bestanden = []; verwerktRijen = []; bezig = false; veldPrioriteit = {};
-  document.getElementById('bestandLijst').innerHTML = '';
-  document.getElementById('bestandProfielLijst').innerHTML = '<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>';
-  document.getElementById('mergePanel').style.display = 'none';
-  document.getElementById('algamMergeBanner').style.display = 'none';
-  document.getElementById('previewLeeg').style.display = 'block';
-  document.getElementById('previewWrap').style.display = 'none';
-  document.getElementById('rapportLeeg').style.display = 'block';
-  document.getElementById('rapportInhoud').style.display = 'none';
-  document.getElementById('btnStart').disabled = true;
-  document.getElementById('btnDownload').disabled = true;
-  document.getElementById('btnHerbereken').disabled = true;
-  document.getElementById('voortgangFill').style.width = '0%';
-  document.getElementById('logBox').innerHTML = '<span class="log-info">Reset.</span>';
+  bestanden=[]; verwerktRijen=[]; bezig=false; veldPrioriteit={};
+  ['bestandLijst'].forEach(id=>document.getElementById(id).innerHTML='');
+  document.getElementById('bestandProfielLijst').innerHTML='<div style="text-align:center;padding:20px;color:var(--grijs);font-size:0.82rem;">Upload eerst een bestand</div>';
+  document.getElementById('mergePanel').style.display='none';
+  document.getElementById('previewLeeg').style.display='block';
+  document.getElementById('previewWrap').style.display='none';
+  document.getElementById('rapportLeeg').style.display='block';
+  document.getElementById('rapportInhoud').style.display='none';
+  document.getElementById('btnStart').disabled=true;
+  document.getElementById('btnDownload').disabled=false;
+  document.getElementById('voortgangFill').style.width='0%';
+  document.getElementById('logBox').innerHTML='<span class="log-info">Reset.</span>';
   updateStats(0,0,0,0,0,0);
 }
-function wacht(ms) { return new Promise(r => setTimeout(r, ms)); }
+function wacht(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
 </script>
 </body>
 </html>
