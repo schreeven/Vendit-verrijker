@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Schreeven Opschoontool</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -506,7 +507,7 @@ hr.scheider { border: none; border-top: 1px solid #e5e7eb; margin: 14px 0; }
 <script>
 
 // ─── VERSIE ─────────────────────────────────
-const TOOL_VERSIE = "5.2";
+const TOOL_VERSIE = "5.3";
 
 // ─── STATE ───────────────────────────────────
 let bestanden = [];
@@ -2223,11 +2224,23 @@ function toonTab(naam) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('actief', c.id===`tab-${naam}`));
 }
 function log(tekst, type='info') {
+  const t = '[' + new Date().toLocaleTimeString('nl-NL') + '] ' + tekst;
+  // Originele logBox (verborgen compatibiliteit)
   const box = document.getElementById('logBox');
-  const el = document.createElement('div');
-  el.className = `log-${type}`;
-  el.textContent = `[${new Date().toLocaleTimeString('nl-NL')}] ${tekst}`;
-  box.appendChild(el); box.scrollTop = box.scrollHeight;
+  if (box) {
+    const el = document.createElement('div');
+    el.className = 'log-' + type;
+    el.textContent = t;
+    box.appendChild(el); box.scrollTop = box.scrollHeight;
+  }
+  // Wizard tab-log
+  const lb = document.getElementById('logBoxTab');
+  if (lb) {
+    const el = document.createElement('div');
+    el.className = 'log-' + type;
+    el.textContent = t;
+    lb.appendChild(el); lb.scrollTop = lb.scrollHeight;
+  }
 }
 function sluitModal(id) { document.getElementById(id).classList.remove('open'); }
 function resetAlles() {
@@ -2459,20 +2472,7 @@ async function startVerwerking() {
   document.getElementById('btnHerbereken').disabled = false;
 }
 
-// Override log — ook in tab-log weergeven
-const _log_orig = log;
-function log(tekst, type) {
-  type = type || 'info';
-  _log_orig(tekst, type);
-  const lb = document.getElementById('logBoxTab');
-  if (lb) {
-    const el = document.createElement('div');
-    el.className = 'log-' + type;
-    el.textContent = '[' + new Date().toLocaleTimeString('nl-NL') + '] ' + tekst;
-    lb.appendChild(el);
-    lb.scrollTop = lb.scrollHeight;
-  }
-}
+// log() is gecombineerd in de originele definitie hierboven (geen override nodig)
 
 // handleFiles wrapper voor wizard
 function handleFiles(files) {
